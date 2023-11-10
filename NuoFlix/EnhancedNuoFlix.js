@@ -262,7 +262,8 @@ function generateCommentObject() {
     commentItemData.id = ++counter;
     // section "form"
     commentItemData.form = {};
-    if (tmp = commentRaw.getElementsByClassName('sendReplyProfil')[0]) {
+    tmp = commentRaw.getElementsByClassName('sendReplyProfil')[0];
+    if (tmp) {
       commentItemData.form.txt_id = tmp.getAttribute('data-reply').toString();
       commentItemData.form.btn_id = tmp.getAttribute('data-id').toString();
       tmp = null;
@@ -272,7 +273,8 @@ function generateCommentObject() {
     }
     // section "video"
     commentItemData.video = {};
-    if (tmp = commentRaw.children[0].children[0]) {
+    tmp = commentRaw.children[0].children[0];
+    if (tmp) {
       commentItemData.video.url = tmp.getAttribute('href');
       commentItemData.video.title = tmp.innerText;
       tmp = null;
