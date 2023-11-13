@@ -2,7 +2,7 @@
 // @name            Enhanced NuoFlix
 // @name:de         NuoFlix 2.0
 // @namespace       http://tampermonkey.net/
-// @version         1.2.0
+// @version         1.2.1
 // @description     Block feature: deletes comments from blocked user | profile page: pagination, comment filter (unread / only conversation with User XY)
 // @description:de  Blockierfunktion: entfernt Kommentare von blockierten Usern | Profilseite: Seitenumbruch, Kommentarfilter (ungelesene / nur Konversation mit User XY)
 // @icon            https://nuoflix.de/favicon-16x16.png
@@ -13,7 +13,7 @@
 // @grant           GM_listValues
 // @author          stuck1a
 // @website         https://stuck1a.de/
-// @match           http*://nuoflix.de/profil*
+// @match           http*://nuoflix.de/*
 // @run-at          document-end
 // @updateURL       https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/NuoFlix/EnhancedNuoFlix.js
 // @downloadURL     https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/NuoFlix/EnhancedNuoFlix.js
@@ -59,6 +59,8 @@ const i18n = new Map([
       [ 'Noch keine Kommentare...', 'No comments yet...' ],
       [ 'Zeige {0} ältere Antworten', 'Show {0} old replies' ],
       [ 'Kein Kommentar entspricht den Filterkriterien', 'No comments match the filter criteria' ],
+      [ 'Hinzufügen...', 'Add...' ],
+      [ 'Entfernen', 'Delete' ],
     ])
   ],
   [
@@ -81,6 +83,8 @@ const i18n = new Map([
       [ 'Noch keine Kommentare...', 'Kommentariyev poka net...' ],
       [ 'Zeige {0} ältere Antworten', 'Показаны {0} старых ответов' ],
       [ 'Kein Kommentar entspricht den Filterkriterien', 'Net kommentariyev, sootvetstvuyushchikh kriteriyam fil\'tra.' ],
+      [ 'Hinzufügen...', 'Dobavlyat\'...' ],
+      [ 'Entfernen', 'Udalyat\'' ],
     ])
   ],
 ]);
@@ -850,6 +854,18 @@ function changeFilter(filterName, newValue) {
 }
 
 
+/**
+ * Checks, whether we are currently on the page "My Profile" or not.
+ *
+ * @return {boolean}
+ */
+function onProfilePage() {
+  return window.location.toString().startsWith('nuoflix.de/profil/')
+      || window.location.toString().startsWith('http://nuoflix.de/profil/')
+      || window.location.toString().startsWith('https://nuoflix.de/profil/')
+}
+
+
 
 /**
  * Deletes the pagination UI from DOM, if exists and rebuild + insert it
@@ -1083,173 +1099,175 @@ let currentLength = defaultLength;
 let activeLanguage = defaultLanguage;
 let filteredCommentsCount = 0;
 let commentData, storedData, totalComments;
-let enhancedUiContainer, 
+let enhancedUiContainer, commentFilters,
     paginationContainer, paginationContainerBottom, paginationControlContainer,
     customCommentContainer, originalCommentContainer;
-let commentFilters = new Map([
-  // currently supported types for property "value" are: boolean, string, array
-  [ 'filterOnlyNew', { active: false, value: false } ],
-  [ 'filterOnlyUser', { active: false, value: [] } ],    // OR logic
-  [ 'filterSkipUser', { active: false, value: [] } ],    // OR logic
-  [ 'filterTextSearch', { active: false, value: [] } ],  // AND logic (search input is split into single words)
-]);
 
 
-const globalStyles = `
-    <style>
-        :root {
-          --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
-          --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
-        }
-        .hidden {
-          display: none !important;
-        }
-        #paginationContainer .btn.disabled {
-          background-color: darkgray !important;
-          color: lightgray !important;
-          cursor: default !important;
-        }
-        #paginationContainer .btn:not(.disabled):hover {
-          font-weight: bold;
-          background-color: #bd8656;
-        }
-        #paginationContainer, #paginationContainerBottom {
-          text-align: center;
-          margin-block: 0.8rem;
-        }
-        .buttonGroup {
-          display: inline-block;
-        }
-        #paginationNext {
-          margin-inline: 0 !important;
-          padding-inline: 2rem;
-          border-radius: 10% 25% 25% 10%;
-        }
-        #paginationLast {
-          border-radius: 20% 50% 50% 20%;
-          padding-inline: 1rem;
-          padding-block: 0 !important;
-          margin-inline-start: 0 !important;
-        }
-        #paginationBack {
-          margin-inline: 0 !important;
-          padding-inline: 2rem;
-          border-radius: 25% 10% 10% 25%;
-        }
-        #paginationFirst {
-          border-radius: 50% 20% 20% 50%;
-          padding-inline: 1rem;
-          padding-block: 0 !important;
-          margin-inline-start: 0 !important;
-        }
-        .pageNrBtn {
-          padding-inline: max(1.0vw, 10px);
-          margin-inline: 0.25rem !important;
-        }
-        .pageNrBtn.activePage {
-          cursor: default !important;
-          font-weight: bold !important;
-          background-color: #c86852 !important;
-        }
-        #paginationControl {
-          display: flow-root;
-        }
-        #commentsFromToContainer {
-          float: left;
-        }
-        #commentsPerPageContainer {
-          float: right;
-          display: flex;
-        }
-        #commentsPerPageContainer small {
-          align-self: center;
-          white-space: pre;
-          margin-inline-end: 0.75rem;
-        }
-        #commentsPerPageContainer .select {
-          background-color: #eee;
-          margin-block: auto;
-          padding: 0.4rem;
-          font-size: 0.75rem;
-          text-align: center;
-          text-align-last: center;
-        }
-        #btnFilterNew:after {
-          content: "\\00a0\\00a0\\00a0" var(--svg-unchecked);
-          vertical-align: -10%;
-        }
-        #btnFilterNew.filterIsActive:after {
-          content: "\\00a0\\00a0\\00a0" var(--svg-checked);
-        }
-        .btn-small {
-          font-size: 0.75rem;
-          padding: 0.2rem 0.75rem;
-        }
-        .ui-card {
-          padding: 0.75rem;
-          margin-block: 1rem;
-          border: 1px solid #949296;
-          min-width: 12rem;
-          max-width: 30rem;
-          border-radius: 3px;
-        }
-        .msgNoResults {
-          margin-block: 2rem;
-          text-align: center;
-          font-style: italic;
-        }     
-        .repliesCollapsed .replyContainer:nth-last-child(n+${expandedReplyCount + 1}) {
-          display: none;
-        }
-        .expander {
-          cursor: pointer;
-          color: #d53d16;
-        }
-        .expander:hover {
-          font-weight: bold;
-        }
-    </style>
-    <style id="style_newComment">
-        .newComment {
-          background-color: ${highlightedCommentsColor};
-        }
-    </style>
-    <style id="style_newReply">
-        .newReply {
-          background-color: ${highlightedRepliesColor};
-        }
-    </style>
-`;
-
-
-const mainSwitchHtml = `
-    <div id="mainSwitchContainer">
-        <div>
-            <input id="mainSwitch" type="checkbox" name="mainSwitch" checked="checked">
-            <label for="mainSwitch" class="mainSwitch"></label>
-        </div>
-        <style>
-            #mainSwitchContainer {
+// Execution path for profile page
+if (onProfilePage()) {
+  commentFilters = new Map([
+    // currently supported types for property "value" are: boolean, string, array
+    [ 'filterOnlyNew', { active: false, value: false } ],
+    [ 'filterOnlyUser', { active: false, value: [] } ],    // OR logic
+    [ 'filterSkipUser', { active: false, value: [] } ],    // OR logic
+    [ 'filterTextSearch', { active: false, value: [] } ],  // AND logic (search input is split into single words)
+  ]);
+  
+  const globalStyles = `
+      <style>
+          :root {
+            --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
+            --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
+          }
+          .hidden {
+            display: none !important;
+          }
+          #paginationContainer .btn.disabled {
+            background-color: darkgray !important;
+            color: lightgray !important;
+            cursor: default !important;
+          }
+          #paginationContainer .btn:not(.disabled):hover {
+            font-weight: bold;
+            background-color: #bd8656;
+          }
+          #paginationContainer, #paginationContainerBottom {
+            text-align: center;
+            margin-block: 0.8rem;
+          }
+          .buttonGroup {
+            display: inline-block;
+          }
+          #paginationNext {
+            margin-inline: 0 !important;
+            padding-inline: 2rem;
+            border-radius: 10% 25% 25% 10%;
+          }
+          #paginationLast {
+            border-radius: 20% 50% 50% 20%;
+            padding-inline: 1rem;
+            padding-block: 0 !important;
+            margin-inline-start: 0 !important;
+          }
+          #paginationBack {
+            margin-inline: 0 !important;
+            padding-inline: 2rem;
+            border-radius: 25% 10% 10% 25%;
+          }
+          #paginationFirst {
+            border-radius: 50% 20% 20% 50%;
+            padding-inline: 1rem;
+            padding-block: 0 !important;
+            margin-inline-start: 0 !important;
+          }
+          .pageNrBtn {
+            padding-inline: max(1.0vw, 10px);
+            margin-inline: 0.25rem !important;
+          }
+          .pageNrBtn.activePage {
+            cursor: default !important;
+            font-weight: bold !important;
+            background-color: #c86852 !important;
+          }
+          #paginationControl {
+            display: flow-root;
+          }
+          #commentsFromToContainer {
+            float: left;
+          }
+          #commentsPerPageContainer {
+            float: right;
+            display: flex;
+          }
+          #commentsPerPageContainer small {
+            align-self: center;
+            white-space: pre;
+            margin-inline-end: 0.75rem;
+          }
+          #commentsPerPageContainer .select {
+            background-color: #eee;
+            margin-block: auto;
+            padding: 0.4rem;
+            font-size: 0.75rem;
+            text-align: center;
+            text-align-last: center;
+          }
+          #btnFilterNew:after {
+            content: "\\00a0\\00a0\\00a0" var(--svg-unchecked);
+            vertical-align: -10%;
+          }
+          #btnFilterNew.filterIsActive:after {
+            content: "\\00a0\\00a0\\00a0" var(--svg-checked);
+          }
+          .btn-small {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.75rem;
+          }
+          .ui-card {
+            padding: 0.75rem;
+            margin-block: 1rem;
+            border: 1px solid #949296;
+            min-width: 12rem;
+            max-width: 30rem;
+            border-radius: 3px;
+          }
+          .msgNoResults {
+            margin-block: 2rem;
+            text-align: center;
+            font-style: italic;
+          }     
+          .repliesCollapsed .replyContainer:nth-last-child(n+${expandedReplyCount + 1}) {
+            display: none;
+          }
+          .expander {
+            cursor: pointer;
+            color: #d53d16;
+          }
+          .expander:hover {
+            font-weight: bold;
+          }
+      </style>
+      <style id="style_newComment">
+          .newComment {
+            background-color: ${highlightedCommentsColor};
+          }
+      </style>
+      <style id="style_newReply">
+          .newReply {
+            background-color: ${highlightedRepliesColor};
+          }
+      </style>
+  `;
+  
+  const mainSwitchHtml = `
+      <div id="mainSwitchContainer">
+          <div>
+              <input id="mainSwitch" type="checkbox" name="mainSwitch" checked="checked">
+              <label for="mainSwitch" class="mainSwitch"></label>
+          </div>
+          <style>
+              #mainSwitchContainer {
                 height: 89px;
                 width: 158px;
-            }
-            #mainSwitchContainer > div {
+              }
+              #mainSwitchContainer > div {
                 width: 151px;
                 height: 60px;
                 position: relative;
                 inset-block-start: 31px;
                 left: 3px;
-            }
-            #mainSwitchContainer *, #mainSwitchContainer *:after, #mainSwitchContainer *:before {
+              }
+              #mainSwitchContainer *, #mainSwitchContainer *:after, #mainSwitchContainer *:before {
                 box-sizing: border-box;
-            }
-            #mainSwitch {
+              }
+              #mainSwitch {
                 visibility: hidden;
                 clip: rect(0 0 0 0);
                 position: absolute;
                 left: 9999px;
-            }
-            .mainSwitch {
+              }
+              .mainSwitch {
                 display: block;
                 width: 65px;
                 height: 30px;
@@ -1267,8 +1285,8 @@ const mainSwitchHtml = `
                 cursor: pointer;
                 border-radius: 0.35em;
                 box-shadow: 0 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 1px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
-            }
-            .mainSwitch:before {
+              }
+              .mainSwitch:before {
                 display: block;
                 position: absolute;
                 left: -35px;
@@ -1283,8 +1301,8 @@ const mainSwitchHtml = `
                 box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 1px 1px rgba(0, 0, 0, 0.3), 0 0 8px 2px rgba(0, 0, 0, 0.2), 0 2px 4px 2px rgba(0, 0, 0, 0.1);
                 pointer-events: none;
                 transition: all 0.2s ease-out;
-            }
-            .mainSwitch:after {
+              }
+              .mainSwitch:after {
                 content: "";
                 position: absolute;
                 right: -25px;
@@ -1296,8 +1314,8 @@ const mainSwitchHtml = `
                 margin-top: -8px;
                 z-index: -1;
                 box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -47px 32px 15px 13px rgba(0, 0, 0, 0.25);
-            }
-            #mainSwitch:checked ~ .mainSwitch {
+              }
+              #mainSwitch:checked ~ .mainSwitch {
                 background: #b7bfc2;
                 background: -moz-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
                 background: -webkit-gradient(linear, left top, right top, color-stop(0%, #b7bfc2), color-stop(26%, #e1e9ec), color-stop(32%, #fff9f4), color-stop(38%, #d4dcdf), color-stop(66%, #ccd4d7), color-stop(71%, #d8e0e3), color-stop(100%, #ced8da));
@@ -1306,127 +1324,168 @@ const mainSwitchHtml = `
                 background: -ms-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
                 background: linear-gradient(to right, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b7bfc2', endColorstr='#ced8da',GradientType=1 );
-            }
-            #mainSwitch:checked ~ .mainSwitch:after {
+              }
+              #mainSwitch:checked ~ .mainSwitch:after {
                 background: #b1ffff;
                 box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -65px 25px 15px 13px rgba(0, 0, 0, 0.25);
-            }
-        </style>
-    </div>
-`;
-
-
-const menuBaseHtml = `
-    <div id="enhancedUi">
-        <div class="ui-card" style="width: 30%;">
-            <div>Ignorierte User:</div>
-            <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
-            <div>
-                <a id="addIgnoreUser" class="btn btn-small">Hinzufügen...</a>
-                <a id="deleteIgnoreUser" class="btn btn-small" style="float: right;">Entfernen</a>
-            </div>
-        </div>
-        <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
-    </div>
-`;
-
-
-
-document.body.appendChild(globalStyles.parseHTML());
-
-// add the new UI and store its reference
-addCommentMenuToPage(menuBaseHtml.parseHTML());
-enhancedUiContainer = document.getElementById('enhancedUi');
-
-// hide the original comment container
-originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
-// if not found probably not logged in (anymore), so lets stop here
-if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
-
-
-originalCommentContainer.id = 'originalCommentContainer';
-originalCommentContainer.classList.add('hidden');
-
-// get stored comment data (to identify new comments) and update storage with the new comment data
-storedData = get_value('commentData');
-commentData = generateCommentObject();
-totalComments = commentData.length;
-DEBUG_setSomeFakeData();
-set_value('commentData', commentData);
-
-// add custom comment container
-customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
-originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
-
-// restore list of ignored users
-const storedIgnoreList = get_value('ignoredUsers');
-for (const user of storedIgnoreList) {
-  document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
-  const ignoreFilter = commentFilters.get('filterSkipUser');
-  ignoreFilter.value.push(user);
-  ignoreFilter.active = true;
-}
-
-// mount handlers for ignore user feature
-document.getElementById('addIgnoreUser').addEventListener('click', function() {
-  const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
-  if (user === null || user === '') return;
-  const selectElement = document.getElementById('ignoredUsers');
-  for (const option of selectElement.children) {
-    if (option.innerText === user) return;
-  }
-  const option = `<option>${user}</option>`.parseHTML();
-  document.getElementById('ignoredUsers').appendChild(option);
-  // update filter
-  const ignoreFilter = commentFilters.get('filterSkipUser');
-  ignoreFilter.value.push(user);
-  ignoreFilter.active = true;
-  // update storage
-  set_value('ignoredUsers', ignoreFilter.value);
-  updatePage();
-});
-document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
-  const selectElement = document.getElementById('ignoredUsers');
-  if (selectElement.selectedOptions.length > 0) {
-    const user = selectElement.selectedOptions[0].innerText.trim();
-    selectElement.selectedOptions[0].remove();
+              }
+          </style>
+      </div>
+  `;
+  
+  const menuBaseHtml = `
+      <div id="enhancedUi">
+          <div class="ui-card" style="width: 30%;">
+              <div>Ignorierte User:</div>
+              <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
+              <div>
+                  <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
+                  <a id="deleteIgnoreUser" class="btn btn-small" style="float: right;">${t('Entfernen')}</a>
+              </div>
+          </div>
+          <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
+      </div>
+  `;
+  
+  document.body.appendChild(globalStyles.parseHTML());
+  
+  // add the new UI and store its reference
+  addCommentMenuToPage(menuBaseHtml.parseHTML());
+  enhancedUiContainer = document.getElementById('enhancedUi');
+  
+  // hide the original comment container
+  originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+  // if not found probably not logged in (anymore), so lets stop here
+  if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
+  
+  originalCommentContainer.id = 'originalCommentContainer';
+  originalCommentContainer.classList.add('hidden');
+  
+  // get stored comment data (to identify new comments) and update storage with the new comment data
+  storedData = get_value('commentData');
+  commentData = generateCommentObject();
+  totalComments = commentData.length;
+  DEBUG_setSomeFakeData();
+  set_value('commentData', commentData);
+  
+  // add custom comment container
+  customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
+  originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
+  
+  // restore list of ignored users
+  const storedIgnoreList = get_value('ignoredUsers');
+  for (const user of storedIgnoreList) {
+    document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
     const ignoreFilter = commentFilters.get('filterSkipUser');
-    // update filter
-    const oldIgnoreList = ignoreFilter.value;
-    ignoreFilter.value = [];
-    for (const entry of oldIgnoreList) {
-      if (entry !== user) ignoreFilter.value.push(entry);
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
+  }
+  
+  // mount handlers for ignore user feature
+  document.getElementById('addIgnoreUser').addEventListener('click', function() {
+    const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
+    if (user === null || user === '') return;
+    const selectElement = document.getElementById('ignoredUsers');
+    for (const option of selectElement.children) {
+      if (option.innerText === user) return;
     }
-    if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
+    const option = `<option>${user}</option>`.parseHTML();
+    document.getElementById('ignoredUsers').appendChild(option);
+    // update filter
+    const ignoreFilter = commentFilters.get('filterSkipUser');
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
     // update storage
     set_value('ignoredUsers', ignoreFilter.value);
     updatePage();
-  }
-});
+  });
+  document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
+    const selectElement = document.getElementById('ignoredUsers');
+    if (selectElement.selectedOptions.length > 0) {
+      const user = selectElement.selectedOptions[0].innerText.trim();
+      selectElement.selectedOptions[0].remove();
+      const ignoreFilter = commentFilters.get('filterSkipUser');
+      // update filter
+      const oldIgnoreList = ignoreFilter.value;
+      ignoreFilter.value = [];
+      for (const entry of oldIgnoreList) {
+        if (entry !== user) ignoreFilter.value.push(entry);
+      }
+      if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
+      // update storage
+      set_value('ignoredUsers', ignoreFilter.value);
+      updatePage();
+    }
+  });
+    
+  // add fancy switch to turn off all features and restore the original elements instead
+  enhancedUiContainer.parentElement.insertBefore(mainSwitchHtml.parseHTML(), enhancedUiContainer);
+  document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
   
-// add fancy switch to turn off all features and restore the original elements instead
-enhancedUiContainer.parentElement.insertBefore(mainSwitchHtml.parseHTML(), enhancedUiContainer);
-document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
+  // mount handler for "new only" filter button
+  document.getElementById('btnFilterNew').addEventListener('click', function() {
+    changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
+    if (commentFilters.get('filterOnlyNew').active) {
+      // this will change the cross to a hook in the filter button
+      this.classList.add('filterIsActive');
+      // no need to highlight new comments if we filter all not new
+      document.getElementById('style_newComment').innerText = '';
+    } else {
+      this.classList.remove('filterIsActive');
+      document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
+    }
+  });
+  
+  // show all that fancy stuff
+  updatePage();
+  
+  // mount handler for selecting another length value
+  document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+}
 
-// mount handler for "new only" filter button
-document.getElementById('btnFilterNew').addEventListener('click', function() {
-  changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
-  if (commentFilters.get('filterOnlyNew').active) {
-    // this will change the cross to a hook in the filter button
-    this.classList.add('filterIsActive');
-    // no need to highlight new comments if we filter all not new
-    document.getElementById('style_newComment').innerText = '';
-  } else {
-    this.classList.remove('filterIsActive');
-    document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
+
+
+// if we are somewhere else, check if there is a comment section and try to apply ignored user list on it
+else if (document.getElementById('commentContent')) {
+  // function to delete comments and replies of a given user
+  const removeCommentsFrom = function(username) {
+    const allComments = document.querySelectorAll('.profilName');
+    for (let i = allComments.length - 1; i >= 0; i--) {
+      const comment = allComments[i];
+      if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
+        if (comment.id.startsWith('comment_')) {
+          // also remove spacer if its a reply
+          if (comment.previousElementSibling) comment.previousElementSibling.remove();
+        }
+        if (comment.parentElement.classList.contains('commentItem')) {
+          comment.parentElement.remove();
+        } else {
+          comment.remove();
+        }
+      }
+    }
   }
-});
+  // we need some delay for the comments to load
+  function tryToApply() {
+    setTimeout(function() {
+      if (comments.childElementCount > 0) {
+        for (const user of storedIgnoreList) removeCommentsFrom(user);
+      } else {
+        // retry it up to 3 times after waiting one second after each try
+        if (retries < 2) {
+          retries++;
+          tryToApply();
+        }
+      }
+    }, 1000);
+  }
+  // load list of ignored users and try to apply them
+  const storedIgnoreList = get_value('ignoredUsers');
+  const comments = document.getElementById('commentContent');
+  let retries = 0;
+  tryToApply();
+}
 
-// show all that fancy stuff
-updatePage();
-
-// mount handler for selecting another length value
-document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
 
 
 /*
