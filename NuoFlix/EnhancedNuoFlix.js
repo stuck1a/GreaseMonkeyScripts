@@ -27,6 +27,7 @@ const MSG_PREFIX = 'Enhanced NuoFlix';
 // Fixed configs
 const highlightedCommentsColor = '#4A4A20';
 const highlightedRepliesColor = '#373434';
+const highlightedHasNewRepliesColor = '#52522a';
 const cssClassNewComments = 'newComment';
 const cssClassHasNewReplies = 'hasNewReply';
 const cssClassNewReplies = 'newReply';
@@ -92,9 +93,9 @@ const i18n = new Map([
     ])
   ],
 ]);
-  
 
-  
+
+
 // ###########################################################
 // ###                      UTILITIES                      ###
 // ###########################################################
@@ -104,9 +105,9 @@ const i18n = new Map([
  * Works like sprintf in PHP. Use {n} as placeholder, where
  * n is zero-indexed. Excepts n additional arguments of
  * any type.
- * 
+ *
  * @param {string} format  - String to format
- * 
+ *
  * @return {string}
  */
 String.sprintf = function(format) {
@@ -133,7 +134,7 @@ String.prototype.parseHTML = function () {
  * Robust and distinct merge of two arrays. The original arrays are not affected.
  * Note, that the distinction only targets the second array! If the first array
  * already included duplicates in itself, these duplicates will appear in the
- * result as well. To avoid this, use a nested call with an empty array: 
+ * result as well. To avoid this, use a nested call with an empty array:
  * mergeArraysDistinct(mergeArraysDistinct([], a), b)
  *
  * @param {Array} a
@@ -154,7 +155,7 @@ const mergeArraysDistinct = (a, b, predicate = (a, b) => a === b) => {
  * Robust JSON parseable checker.
  *
  * @param {any} item  - Object to validate
- * 
+ *
  * @return {boolean}  - True, if parseable to well-formatted JSON
  */
 function isJson(item) {
@@ -285,7 +286,7 @@ function list_values(global = false) {
  *   <li>dialog</li>
  *   <li>fatal</li>
  * </ul>
- * 
+ *
  * <strong>Important:<br />Type <i>fatal</i> will throw an exception and stop the execution!</strong>
  *
  * @param {any} msg  - Log message or object
@@ -580,8 +581,8 @@ function buildCommentBlock(commentData, counter = 1) {
  *
  * @param {string|int} btn_id  - The first server-side comment id
  * @param {string|int} txt_id  - The second serve-side comment id
- * 
- * @return {boolean}  - Value of stored comments "isNew" property 
+ *
+ * @return {boolean}  - Value of stored comments "isNew" property
  */
 function isNewComment(btn_id, txt_id) {
   storedData = storedData || get_value('commentData');
@@ -605,10 +606,10 @@ function isNewComment(btn_id, txt_id) {
 /**
  * Search in the stored comment data for the comment matching
  * both given id's and count its replies, if found.
- * 
+ *
  * <strong>Note: For now, we compare both ids, since its not known what
  * they exactly mean and if both are unique by themself or not.</strong>
- * 
+ *
  * @param {string|int} btn_id  - The first server-side comment id
  * @param {string|int} txt_id  - The second serve-side comment id
  * @return {boolean|int}  - Reply count or 0 if comment not found
@@ -636,7 +637,7 @@ function getReplyCount(btn_id, txt_id) {
 
 /**
  * Count how many comments are filtered overall
- * 
+ *
  * @return {int}
  */
 function getFilteredCount() {
@@ -697,14 +698,14 @@ function applyFilters(commentData) {
     }
     if (!match) return false;
   }
-  
+
   /* show only, if author is NOT in the list of ignored users (replies are checked individually elsewhere) */
   if (commentFilters.get('filterSkipUser').active) {
     for (const author of commentFilters.get('filterSkipUser').value) {
       if (commentData.user === author) return false;
     }
   }
-  
+
   /* show only, if ALL search words are found somewhere in the related properties of the comment */
   if (commentFilters.get('filterTextSearch').active) {
     // collect all string to search in
@@ -734,7 +735,7 @@ function applyFilters(commentData) {
       return false;
     }
   }
-  
+
   return true;
 }
 
@@ -783,11 +784,11 @@ function buildPaginationUi() {
 /**
  * Generates a single page button (a numbered one, none
  * of the jumps buttons like "next" or "first")
- * 
+ *
  * @param {int|string} pageNr  - Becomes Buttons caption
  * @param {int|string} buttonStart  - Id of the first comment to display if this button is clicked
  * @param {boolean} isActivePage  - If true, button will get class "activePage" and attribute "disabled"
- * 
+ *
  * @return {string}  Parseable string representation of the button
  */
 function buildPageButton(pageNr, buttonStart, isActivePage = false) {
@@ -838,7 +839,10 @@ function insertLanguageDropdown() {
       <div id="language_dropdown_menu"></div>
     </div>
   `.parseHTML();
-  enhancedUiContainer.insertBefore(languageContainerHtml, enhancedUiContainer.firstElementChild);
+
+  // insert directly after the section headline
+  const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
+  enhancedUiContainer.insertBefore(languageContainerHtml, headlineHolder.nextElementSibling);
   const languageContainer = document.getElementById('language_container');
   for (const languageDef of languageMapping.entries()) {
     const langEntryHtml = `<div id="lang_${languageDef[0]}" data-lang="${languageDef[0]}">${languageDef[1]}</div>`;
@@ -869,7 +873,7 @@ function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
   currentStart = currentLength * currentPage - currentLength + 1;
-  // This will fix the edge case where filtered total is smaller than current start 
+  // This will fix the edge case where filtered total is smaller than current start
   if (currentStart > totalComments - getFilteredCount()) currentStart = 1;
   updatePage();
 }
@@ -892,7 +896,7 @@ function doChangeMainSwitch(ev) {
   ];
   for (const element of addedCustomElements) {
     this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
-  }  
+  }
   for (const element of disabledOriginalElements) {
     this.checked ? element.classList.add('hidden') : element.classList.remove('hidden');
   }
@@ -920,9 +924,9 @@ function doClickedPagination(ev, clickedBtn) {
  * Transfers the new filter values in to the global variables triggers a page update.
  * The values of each specific filter are transformed as needed through the related handler
  * before passed to this function.
- * 
+ *
  * Currently supported value types: boolean, string, Array
- * 
+ *
  * @param {string} filterName
  * @param {any} newValue
  */
@@ -961,7 +965,7 @@ function updatePaginationUI() {
   if (typeof paginationContainerBottom !== typeof undefined && paginationContainerBottom instanceof HTMLElement) paginationContainerBottom.remove();
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
   paginationContainer = buildPaginationUi().parseHTML();
-  const commentHeadlineElement = document.getElementsByClassName('rowHeadlineHolder')[0];
+  const commentHeadlineElement = document.getElementsByClassName('rowHeadlineHolder')[1];
   commentHeadlineElement.parentElement.insertBefore(paginationContainer, commentHeadlineElement.nextElementSibling);
   paginationContainer = document.getElementById('paginationContainer');
   const paginationButtons = paginationContainer.getElementsByClassName('btn');
@@ -1142,7 +1146,7 @@ function DEBUG_setSomeFakeData() {
     text: "Fake Reply 7",
     isNew: true
   });
-  
+
   commentData[2].txt_id = "3532102";
   commentData[2].btn_id = "265045";
   commentData[2].isNew = true;
@@ -1219,13 +1223,13 @@ let languageMapping;
 
 // Execution path for profile page
 if (onProfilePage()) {
-  
+
   languageMapping = new Map([
     [ 'de', 'Deutsch' ],
     [ 'en', 'English' ],
     [ 'ru', 'Russkiy' ],
   ]);
-  
+
   commentFilters = new Map([
     // currently supported types for property "value" are: boolean, string, array
     [ 'filterOnlyNew', { active: false, value: false } ],
@@ -1233,7 +1237,7 @@ if (onProfilePage()) {
     [ 'filterSkipUser', { active: false, value: [] } ],    // OR logic
     [ 'filterTextSearch', { active: false, value: [] } ],  // AND logic (search input is split into single words)
   ]);
-  
+
   const globalStyles = `
     <style>
       :root {
@@ -1267,14 +1271,24 @@ if (onProfilePage()) {
         position: relative;
         display: flex;
         flex-direction: column;
-        min-width: 0;
+        min-width: 12rem;
         word-wrap: break-word;
         background-clip: border-box;
-        border: 1px solid rgba(0, 0, 0, 0.125);
+        border: 1px solid #949296;
         border-radius: 0.25rem;
+        max-width: 30rem;
+        padding: 0.75rem;
+        width: 30%;
       }
       .card-body { flex: 1 1 auto; padding: 1rem 1rem }
-      .card-group > .card { margin-bottom: 0.75rem }
+      .card-group { margin-block: 1rem; }
+      .card-group > .card { margin-bottom: 1rem; }
+      .card-group > .card ~ .card {
+        margin-left: 1rem;
+      }
+      #ignoredUsers {
+        width: 100%;
+      }
       #paginationContainer .btn.disabled {
         background-color: darkgray !important;
         color: lightgray !important;
@@ -1355,14 +1369,6 @@ if (onProfilePage()) {
       .btn-small {
         font-size: 0.75rem;
         padding: 0.2rem 0.75rem;
-      }
-      .ui-card {
-        padding: 0.75rem;
-        margin-block: 1rem;
-        border: 1px solid #949296;
-        min-width: 12rem;
-        max-width: 30rem;
-        border-radius: 3px;
       }
       .msgNoResults {
         margin-block: 2rem;
@@ -1470,18 +1476,11 @@ if (onProfilePage()) {
         content: var(--svg-flag-ru);
       }
     </style>
-    <style id="style_newComment">
-      .newComment {
-        background-color: ${highlightedCommentsColor};
-      }
-    </style>
-    <style id="style_newReply">
-      .newReply {
-        background-color: ${highlightedRepliesColor};
-      }
-    </style>
+    <style id="style_newComment">.${cssClassNewComments} { background-color: ${highlightedCommentsColor} }</style>
+    <style id="style_hasNewReply">.${cssClassHasNewReplies} { background-color: ${highlightedHasNewRepliesColor} }</style>
+    <style id="style_newReply">.${cssClassNewReplies} { background-color: ${highlightedRepliesColor} }</style>
   `;
-  
+
   const mainSwitchHtml = `
     <div id="mainSwitchContainer">
       <div>
@@ -1574,56 +1573,62 @@ if (onProfilePage()) {
       </style>
     </div>
   `;
-  
+
   const menuBaseHtml = `
-    <div class="rowHeadlineHolder">
-      <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
-      <div class="rowHeadlineHolderItem headerTxt">
-        <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
-      </div>
-      <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
-    </div>
     <div id="enhancedUi" class="container-fluid">
-      <div class="row">
-        <div class="ui-card" style="width: 30%;">
-        <div id="ignoredLabel">${t('Blockierte Benutzer')}:</div>
-        <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
-        <div>
-          <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
-          <a id="deleteIgnoreUser" class="btn btn-small" style="float: right;">${t('Entfernen')}</a>
+      <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
+        <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
+        <div class="rowHeadlineHolderItem headerTxt">
+          <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
+        </div>
+        <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
+      </div>
+      <div class="row card-group">
+        <div class="card">
+          <span id="ignoredLabel">${t('Blockierte Benutzer')}:</span>
+          <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
+          <div class="row">
+            <div class="col-auto">
+              <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
+            </div>
+            <div style="flex-grow: 1;" class="col-1"></div>
+            <div class="col-auto">
+              <a id="deleteIgnoreUser" class="btn btn-small">${t('Entfernen')}</a>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
         </div>
       </div>
-      </div>
-
-      <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
     </div>
   `;
-  
+
   document.body.appendChild(globalStyles.parseHTML());
-  
+
   // add the new UI and store its reference
   addCommentMenuToPage(menuBaseHtml.parseHTML());
   enhancedUiContainer = document.getElementById('enhancedUi');
-  
+
   // hide the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
   // if not found probably not logged in (anymore), so lets stop here
   if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
-  
+
   originalCommentContainer.id = 'originalCommentContainer';
   originalCommentContainer.classList.add('hidden');
-  
+
   // get stored comment data (to identify new comments) and update storage with the new comment data
   storedData = get_value('commentData');
   commentData = generateCommentObject();
   totalComments = commentData.length;
   DEBUG_setSomeFakeData();
   set_value('commentData', commentData);
-  
+
   // add custom comment container
   customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
   originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
-  
+
   // restore list of ignored users
   const storedIgnoreList = get_value('ignoredUsers');
   for (const user of storedIgnoreList) {
@@ -1632,7 +1637,7 @@ if (onProfilePage()) {
     ignoreFilter.value.push(user);
     ignoreFilter.active = true;
   }
-  
+
   // mount handlers for ignore user feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
     const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
@@ -1669,11 +1674,11 @@ if (onProfilePage()) {
       updatePage();
     }
   });
-    
+
   // add fancy switch to turn off all features and restore the original elements instead
   enhancedUiContainer.parentElement.insertBefore(mainSwitchHtml.parseHTML(), enhancedUiContainer);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-  
+
   // mount handler for "new only" filter button
   document.getElementById('btnFilterNew').addEventListener('click', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
@@ -1687,10 +1692,10 @@ if (onProfilePage()) {
       document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
     }
   });
-  
+
   updatePage();
   insertLanguageDropdown();
-  
+
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
 }
