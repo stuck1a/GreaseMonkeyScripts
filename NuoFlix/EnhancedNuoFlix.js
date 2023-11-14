@@ -49,7 +49,7 @@ const i18n = new Map([
       [ 'Antwort abschicken', 'Send reply' ],
       [ 'Deine Antwort zu diesem Kommentar', 'Your reply to this comment' ],
       [ 'antworten', 'answer' ],
-      [ '({1} gefiltert)', '({1} filtered)' ],
+      [ '({0} gefiltert)', '({0} filtered)' ],
       [ 'GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GreaseMonkey function {0}() not found! Add "@grant {0}" in the script header to fix the error.' ],
       [ 'DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.', 'Target DOM element not found. Are you logged in? If yes, maybe the DOM has changed.' ],
       [ 'Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!', 'Warning!\nTried to store non-serializable object!\nThe script will try to store it as plain object, but the data might get corrupted!'],
@@ -61,6 +61,8 @@ const i18n = new Map([
       [ 'Kein Kommentar entspricht den Filterkriterien', 'No comments match the filter criteria' ],
       [ 'Hinzufügen...', 'Add...' ],
       [ 'Entfernen', 'Delete' ],
+      [ 'Blockierte Benutzer', 'Blocked users' ],
+      [ 'NuoFlix 2.0', 'Enhanced NuoFlix' ],
     ])
   ],
   [
@@ -73,7 +75,7 @@ const i18n = new Map([
       [ 'Antwort abschicken', 'Otpravit\' otvet' ],
       [ 'Deine Antwort zu diesem Kommentar', 'Vash otvet na etot kommentariy' ],
       [ 'antworten', 'otvechat\'' ],
-      [ '({1} gefiltert)', '({1} Otfil\'trovano)' ],
+      [ '({0} gefiltert)', '({0} Otfil\'trovano)' ],
       [ 'GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'Funktsiya GreaseMonkey {0}() ne naydena! Dobav\'te «@grant {0}» v zagolovok skripta, chtoby ispravit\' oshibku.' ],
       [ 'DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.', 'Element DOM ne nayden. Ne voshel? Yesli da, to DOM izmenilsya.'],
       [ 'Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!', 'Preduprezhdeniye!\nPytalsya sokhranit\' neserializuyemyy ob"yekt!\nSkript popytayetsya sokhranit\' yego kak prostoy ob"yekt, no dannyye mogut byt\' ' ],
@@ -81,10 +83,12 @@ const i18n = new Map([
       [ 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden', 'Pokhozhe, chto khranyatsya ustarevshiye/nedeystvitel\'nyye/povrezhdennyye dannyye kommentariyev.\nObychno eto dolzhno byt\' ispravleno pri sleduyushchem obnovlenii stranitsy.' ],
       [ 'Folgenden Benutzer zur Ignorieren-Liste hinzufügen:', 'Dobav\'te v spisok ignorirovaniya sleduyushchego pol\'zovatelya:' ],
       [ 'Noch keine Kommentare...', 'Kommentariyev poka net...' ],
-      [ 'Zeige {0} ältere Antworten', 'Показаны {0} старых ответов' ],
+      [ 'Zeige {0} ältere Antworten', 'Pokazany {0} starykh otvetov' ],
       [ 'Kein Kommentar entspricht den Filterkriterien', 'Net kommentariyev, sootvetstvuyushchikh kriteriyam fil\'tra.' ],
       [ 'Hinzufügen...', 'Dobavlyat\'...' ],
       [ 'Entfernen', 'Udalyat\'' ],
+      [ 'Blockierte Benutzer', 'Zablokirovannyye pol\'zovateli' ],
+      [ 'NuoFlix 2.0', 'Uluchshennyy NuoFlix' ],
     ])
   ],
 ]);
@@ -95,6 +99,16 @@ const i18n = new Map([
 // ###                      UTILITIES                      ###
 // ###########################################################
 
+
+/**
+ * Works like sprintf in PHP. Use {n} as placeholder, where
+ * n is zero-indexed. Excepts n additional arguments of
+ * any type.
+ * 
+ * @param {string} format  - String to format
+ * 
+ * @return {string}
+ */
 String.sprintf = function(format) {
   const args = Array.prototype.slice.call(arguments, 1);
   return format.replace(/{(\d+)}/g, function(match, number) {
@@ -318,6 +332,58 @@ function t(string, ...args) {
 // ###                 SCRIPT FUNCTIONS                    ###
 // ###########################################################
 
+
+
+/**
+ * Holds the whole execution flow for any other than the profile page.
+ * Since NuoFlix uses pretty links cms, we have to try if we are on
+ * a page with a comment section. If a comment section is found,
+ * the blocked user filter will be applied on it.
+ */
+function applyBlockedUserGenericPage() {
+  if (document.getElementById('commentContent')) {
+    // function to delete comments and replies of a given user
+    const removeCommentsFrom = function(username) {
+      const allComments = document.querySelectorAll('.profilName');
+      for (let i = allComments.length - 1; i >= 0; i--) {
+        const comment = allComments[i];
+        if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
+          if (comment.id.startsWith('comment_')) {
+            // also remove spacer if its a reply
+            if (comment.previousElementSibling) comment.previousElementSibling.remove();
+          }
+          if (comment.parentElement.classList.contains('commentItem')) {
+            comment.parentElement.remove();
+          } else {
+            comment.remove();
+          }
+        }
+      }
+    }
+    // we need some delay for the comments to load
+    function tryToApply() {
+      setTimeout(function() {
+        if (comments.childElementCount > 0) {
+          for (const user of storedIgnoreList) removeCommentsFrom(user);
+        } else {
+          // retry it up to 3 times after waiting one second after each try
+          if (retries < 2) {
+            retries++;
+            tryToApply();
+          }
+        }
+      }, 1000);
+    }
+    // load list of ignored users and try to apply them
+    const storedIgnoreList = get_value('ignoredUsers');
+    const comments = document.getElementById('commentContent');
+    let retries = 0;
+    tryToApply();
+  }
+}
+
+
+
 /**
  * Adds this scripts central control panel to the DOM.
  *
@@ -461,44 +527,44 @@ function buildCommentBlock(commentData, counter = 1) {
   let repliesBlock = '';
   const ignoreFilter = commentFilters.get('filterSkipUser');
   outer: for (const replyData of commentData.replies) {
-      // skip if reply is from ignored user
-      if (ignoreFilter.active) {
-        for (const ignoredUser of ignoreFilter.value) {
-          if (ignoredUser === replyData.user) continue outer;
-        }
+    // skip if reply is from ignored user
+    if (ignoreFilter.active) {
+      for (const ignoredUser of ignoreFilter.value) {
+        if (ignoredUser === replyData.user) continue outer;
       }
-      repliesBlock += `
-          <div class="replyContainer${replyData.isNew ? ' ' + cssClassNewReplies : ''}">
-              <div class="spacer25" data-reply-id="${++cnt}"></div>
-              <div class="profilPicSmall">
-                  <img src="${replyData.pic}" alt="">
-              </div>
-              <div class="profilName">
-                  <strong>${replyData.user}</strong>&nbsp;<small>am ${replyData.date}</small>
-                  <pre>${replyData.text}</pre>
-              </div>
-          </div>
+    }
+    repliesBlock += `
+      <div class="replyContainer${replyData.isNew ? ' ' + cssClassNewReplies : ''}">
+        <div class="spacer25" data-reply-id="${++cnt}"></div>
+        <div class="profilPicSmall">
+          <img src="${replyData.pic}" alt="">
+        </div>
+        <div class="profilName">
+          <strong>${replyData.user}</strong>&nbsp;<small>am ${replyData.date}</small>
+          <pre>${replyData.text}</pre>
+        </div>
+      </div>
     `;
   }
   // Generate full comment
   const commentBlock = `
-      <div data-comment-id="${counter}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
-          <div><a href="${commentData.video.url}">${commentData.video.title}</a></div>
-          <div class="spacer15"></div>
-          <div class="profilPic"><img src="${commentData.pic}" alt=""></div>
-          <div class="profilName">
-              <strong>${commentData.user}</strong>&nbsp;<small>am ${commentData.date}</small>
-              <pre>${commentData.text}</pre>
-              <div class="allReplys">${repliesBlock}</div>
-              <div class="replyBtnHolder"><div class="replyBtn">${t('antworten')}</div></div>
-              <div class="replyHolder">
-                  <div id="commentTxtHolder">
-                      <textarea id="commentTxt_${commentData.form.txt_id}" placeholder="${t('Deine Antwort zu diesem Kommentar')}"></textarea>
-                      <div data-id="${commentData.form.btn_id}" data-reply="${commentData.form.txt_id}" class="btn sendReplyProfil">${'Antwort abschicken'}</div>
-                  </div>
-              </div>
+    <div data-comment-id="${counter}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
+      <div><a href="${commentData.video.url}">${commentData.video.title}</a></div>
+      <div class="spacer15"></div>
+      <div class="profilPic"><img src="${commentData.pic}" alt=""></div>
+      <div class="profilName">
+        <strong>${commentData.user}</strong>&nbsp;<small>am ${commentData.date}</small>
+        <pre>${commentData.text}</pre>
+        <div class="allReplys">${repliesBlock}</div>
+        <div class="replyBtnHolder"><div class="replyBtn">${t('antworten')}</div></div>
+        <div class="replyHolder">
+          <div id="commentTxtHolder">
+            <textarea id="commentTxt_${commentData.form.txt_id}" placeholder="${t('Deine Antwort zu diesem Kommentar')}"></textarea>
+            <div data-id="${commentData.form.btn_id}" data-reply="${commentData.form.txt_id}" class="btn sendReplyProfil">${'Antwort abschicken'}</div>
           </div>
+        </div>
       </div>
+    </div>
   `;
   return commentBlock.parseHTML();
 }
@@ -529,9 +595,7 @@ function isNewComment(btn_id, txt_id) {
       }
       return false;
     }
-    if (storedComment.form.btn_id === btn_id && storedComment.form.txt_id === txt_id) {
-      return false;
-    }
+    if (storedComment.form.btn_id === btn_id && storedComment.form.txt_id === txt_id) return false;
   }
   return true;
 }
@@ -567,6 +631,7 @@ function getReplyCount(btn_id, txt_id) {
   }
   return true;
 }
+
 
 
 /**
@@ -617,7 +682,6 @@ function applyFilters(commentData) {
   if (commentFilters.get('filterOnlyNew').active) {
     if (!commentData.isNew && !commentData.hasNewReplies) return false;
   }
-  
   /* show only, if one of the comment/replies authors is listed in the username filter list */
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
@@ -679,49 +743,39 @@ function applyFilters(commentData) {
 function buildPaginationUi() {
   // localize globals to adjust values for filter
   let _totalComments = totalComments - filteredCommentsCount;
-  //let _currentStart = currentStart;
-  
-  
-  
   const totalPages = Math.ceil(_totalComments / currentLength);
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
-  
   let firstPageButton = currentPage >= 4 ? currentPage - 2 : 1;
   let highestPageButton = totalPages >= 5 ? firstPageButton + 4 : totalPages;
-
   // adjust if upper bound reached
   if (highestPageButton > totalPages) {
     firstPageButton -= (highestPageButton - totalPages);
     firstPageButton = firstPageButton < 1 ? 1 : firstPageButton;
     highestPageButton = totalPages;
   }
-
   highestPageButton = highestPageButton > totalPages ? totalPages : highestPageButton;
-
   let buttons = '';
   let buttonStart;
   for (let pageNr = firstPageButton; pageNr < highestPageButton + 1; pageNr++) {
     buttonStart = pageNr * currentLength - currentLength + 1;
     buttons += buildPageButton(pageNr, buttonStart, (pageNr === currentPage));
   }
-
   const BtnBack_Start = currentPage * currentLength - 2 * currentLength + 1;
   const BtnNext_Start = currentPage * currentLength + 1;
   const BtnLast_Start = totalPages * currentLength - currentLength + 1;
-
   return `
-      <div id="paginationContainer">
-          <div class="buttonGroup">
-              <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}">1</a>
-              <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}"><</a>
-          </div>
-          <div id="pageNrBtnContainer" class="buttonGroup">${buttons}</div>
-          <div class="buttonGroup">
-              <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}">></a>
-              <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}">${totalPages}</a>
-          </div>
+    <div id="paginationContainer">
+      <div class="buttonGroup">
+        <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}">1</a>
+        <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}"><</a>
       </div>
-    `;
+      <div id="pageNrBtnContainer" class="buttonGroup">${buttons}</div>
+      <div class="buttonGroup">
+        <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}">></a>
+        <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}">${totalPages}</a>
+      </div>
+    </div>
+  `;
 }
 
 
@@ -744,7 +798,6 @@ function buildPageButton(pageNr, buttonStart, isActivePage = false) {
 
 function buildPaginationControl() {
   const _totalComments = totalComments - filteredCommentsCount;
-  
   const to = currentStart + currentLength > _totalComments ? _totalComments : currentStart + currentLength - 1;
   const from = to === 0 ? 0 : currentStart;
   let filtered = '';
@@ -755,23 +808,56 @@ function buildPaginationControl() {
     }
   }
   return `
-      <div id="paginationControl">
-          <div id="commentsFromToContainer">
-              <small>
-                ${t('Kommentare {0} .. {1} von {2}', from, to, _totalComments)}${filtered}</small>
-          </div>
-          <div id="commentsPerPageContainer">
-              <small>${t('Kommentare pro Seite:')}</small>
-              <select id="pageLengthSelect" class="select">
-                  <option value="5"${(currentLength === 5 ? 'selected="selected"' : '')}>5</option>
-                  <option value="25"${(currentLength === 25 ? 'selected="selected"' : '')}>25</option>
-                  <option value="50"${(currentLength === 50 ? 'selected="selected"' : '')}>50</option>
-                  <option value="100"${(currentLength === 100 ? 'selected="selected"' : '')}>100</option>
-                  <option value="${totalComments}"${(currentLength === totalComments ? 'selected="selected"' : '')}>${t('alle')}</option>
-              </select>
-          </div>
+    <div id="paginationControl">
+      <div id="commentsFromToContainer">
+        <small>${t('Kommentare {0} .. {1} von {2}', from, to, _totalComments)}${filtered}</small>
       </div>
+      <div id="commentsPerPageContainer">
+        <small>${t('Kommentare pro Seite:')}</small>
+        <select id="pageLengthSelect" class="select">
+          <option value="5"${(currentLength === 5 ? 'selected="selected"' : '')}>5</option>
+          <option value="25"${(currentLength === 25 ? 'selected="selected"' : '')}>25</option>
+          <option value="50"${(currentLength === 50 ? 'selected="selected"' : '')}>50</option>
+          <option value="100"${(currentLength === 100 ? 'selected="selected"' : '')}>100</option>
+          <option value="${totalComments}"${(currentLength === totalComments ? 'selected="selected"' : '')}>${t('alle')}</option>
+        </select>
+      </div>
+    </div>
   `;
+}
+
+
+
+function insertLanguageDropdown() {
+  const languageContainerHtml = `
+    <div id="language_container" class="row">
+      <div id="language_dropdown_toggler">
+        <span id="activeLanguage">${languageMapping.get(activeLanguage)}</span>
+        <span>&gt;</span>
+      </div>
+      <div id="language_dropdown_menu"></div>
+    </div>
+  `.parseHTML();
+  enhancedUiContainer.insertBefore(languageContainerHtml, enhancedUiContainer.firstElementChild);
+  const languageContainer = document.getElementById('language_container');
+  for (const languageDef of languageMapping.entries()) {
+    const langEntryHtml = `<div id="lang_${languageDef[0]}" data-lang="${languageDef[0]}">${languageDef[1]}</div>`;
+    languageContainer.lastElementChild.appendChild(langEntryHtml.parseHTML());
+  }
+  // mount handler for all language entries
+  for (const langItem of languageContainer.lastElementChild.children) {
+    langItem.addEventListener('click', function(ev) {
+      const langId = this.getAttribute('data-lang');
+      if (languageMapping.has(langId)) {
+        activeLanguage = langId;
+        updatePage();
+      }
+      // rebuild the language menu to so the hover effect stops causing the menu to close
+      languageContainer.remove();
+      insertLanguageDropdown();
+    });
+
+  }
 }
 
 
@@ -804,7 +890,6 @@ function doChangeMainSwitch(ev) {
   const disabledOriginalElements = [
     originalCommentContainer,
   ];
-  
   for (const element of addedCustomElements) {
     this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
   }  
@@ -844,7 +929,6 @@ function doClickedPagination(ev, clickedBtn) {
 function changeFilter(filterName, newValue) {
   // to simplify the calculation we will jump to page 1 if a filter has changed
   currentStart = 1;
-  
   if (commentFilters.has(filterName)) {
     const filter = commentFilters.get(filterName);
     filter.value = newValue;
@@ -852,6 +936,7 @@ function changeFilter(filterName, newValue) {
   }
   updatePage();
 }
+
 
 
 /**
@@ -958,6 +1043,31 @@ function updateComments() {
 }
 
 
+
+/**
+ * This function is responsible for update all strings of elements,
+ * which aren't rebuild when updatePage() is called which applies to
+ * the most elements of the base menu, because those elements are
+ * required for the update process itself. All those elements which
+ * need such a manual update must be registered in the register
+ * inside this function.
+ */
+function updateStaticTranslations() {
+  const staticElementsToUpdate = [
+    { elementId: 'ignoredLabel', text: 'Blockierte Benutzer', args: [] },
+    { elementId: 'addIgnoreUser', text: 'Hinzufügen...', args: [] },
+    { elementId: 'deleteIgnoreUser', text: 'Entfernen', args: [] },
+    { elementId: 'btnFilterNew', text: 'Nur neue Kommentare', args: [] },
+    { elementId: 'pluginHeadline', text: 'NuoFlix 2.0', args: [] },
+  ];
+  for (const element of staticElementsToUpdate) {
+    const target = document.getElementById(element.elementId);
+    if (target) target.innerText = t(element.text, element.args);
+  }
+}
+
+
+
 /**
  * Wrapper which will update all custom stuff
  */
@@ -965,7 +1075,9 @@ function updatePage() {
   filteredCommentsCount = getFilteredCount();
   updateComments();
   updatePaginationUI();
+  updateStaticTranslations();
 }
+
 
 
 /**
@@ -1089,6 +1201,7 @@ function DEBUG_setSomeFakeData() {
 }
 
 
+
 // ###########################################################
 // ###                  EXECUTION FLOW                     ###
 // ###########################################################
@@ -1102,10 +1215,17 @@ let commentData, storedData, totalComments;
 let enhancedUiContainer, commentFilters,
     paginationContainer, paginationContainerBottom, paginationControlContainer,
     customCommentContainer, originalCommentContainer;
-
+let languageMapping;
 
 // Execution path for profile page
 if (onProfilePage()) {
+  
+  languageMapping = new Map([
+    [ 'de', 'Deutsch' ],
+    [ 'en', 'English' ],
+    [ 'ru', 'Russkiy' ],
+  ]);
+  
   commentFilters = new Map([
     // currently supported types for property "value" are: boolean, string, array
     [ 'filterOnlyNew', { active: false, value: false } ],
@@ -1115,236 +1235,368 @@ if (onProfilePage()) {
   ]);
   
   const globalStyles = `
-      <style>
-          :root {
-            --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
-            --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
-          }
-          .hidden {
-            display: none !important;
-          }
-          #paginationContainer .btn.disabled {
-            background-color: darkgray !important;
-            color: lightgray !important;
-            cursor: default !important;
-          }
-          #paginationContainer .btn:not(.disabled):hover {
-            font-weight: bold;
-            background-color: #bd8656;
-          }
-          #paginationContainer, #paginationContainerBottom {
-            text-align: center;
-            margin-block: 0.8rem;
-          }
-          .buttonGroup {
-            display: inline-block;
-          }
-          #paginationNext {
-            margin-inline: 0 !important;
-            padding-inline: 2rem;
-            border-radius: 10% 25% 25% 10%;
-          }
-          #paginationLast {
-            border-radius: 20% 50% 50% 20%;
-            padding-inline: 1rem;
-            padding-block: 0 !important;
-            margin-inline-start: 0 !important;
-          }
-          #paginationBack {
-            margin-inline: 0 !important;
-            padding-inline: 2rem;
-            border-radius: 25% 10% 10% 25%;
-          }
-          #paginationFirst {
-            border-radius: 50% 20% 20% 50%;
-            padding-inline: 1rem;
-            padding-block: 0 !important;
-            margin-inline-start: 0 !important;
-          }
-          .pageNrBtn {
-            padding-inline: max(1.0vw, 10px);
-            margin-inline: 0.25rem !important;
-          }
-          .pageNrBtn.activePage {
-            cursor: default !important;
-            font-weight: bold !important;
-            background-color: #c86852 !important;
-          }
-          #paginationControl {
-            display: flow-root;
-          }
-          #commentsFromToContainer {
-            float: left;
-          }
-          #commentsPerPageContainer {
-            float: right;
-            display: flex;
-          }
-          #commentsPerPageContainer small {
-            align-self: center;
-            white-space: pre;
-            margin-inline-end: 0.75rem;
-          }
-          #commentsPerPageContainer .select {
-            background-color: #eee;
-            margin-block: auto;
-            padding: 0.4rem;
-            font-size: 0.75rem;
-            text-align: center;
-            text-align-last: center;
-          }
-          #btnFilterNew:after {
-            content: "\\00a0\\00a0\\00a0" var(--svg-unchecked);
-            vertical-align: -10%;
-          }
-          #btnFilterNew.filterIsActive:after {
-            content: "\\00a0\\00a0\\00a0" var(--svg-checked);
-          }
-          .btn-small {
-            font-size: 0.75rem;
-            padding: 0.2rem 0.75rem;
-          }
-          .ui-card {
-            padding: 0.75rem;
-            margin-block: 1rem;
-            border: 1px solid #949296;
-            min-width: 12rem;
-            max-width: 30rem;
-            border-radius: 3px;
-          }
-          .msgNoResults {
-            margin-block: 2rem;
-            text-align: center;
-            font-style: italic;
-          }     
-          .repliesCollapsed .replyContainer:nth-last-child(n+${expandedReplyCount + 1}) {
-            display: none;
-          }
-          .expander {
-            cursor: pointer;
-            color: #d53d16;
-          }
-          .expander:hover {
-            font-weight: bold;
-          }
-      </style>
-      <style id="style_newComment">
-          .newComment {
-            background-color: ${highlightedCommentsColor};
-          }
-      </style>
-      <style id="style_newReply">
-          .newReply {
-            background-color: ${highlightedRepliesColor};
-          }
-      </style>
+    <style>
+      :root {
+        --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
+        --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
+        --svg-flag-de: url('data:image/svg+xml;utf8,<svg height="1rem" width="2rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3"><path stroke="%23010101" stroke-width="1" d="M0,.5H6"/><path stroke="%23DD0000" stroke-width="1" d="M0,1.5H6"/><path stroke="%23FFCE00" stroke-width="1" d="M0,2.5H6"/></svg>');
+        --svg-flag-en: url('data:image/svg+xml;utf8,<svg height="1rem" width="2rem" xmlns="http://www.w3.org/2000/svg" viewBox="8 4.5 48 24.5"><path fill="%23012169" d="M0,0V30H60V0Z"/><path stroke="%23FEFEFE" stroke-width="6" d="M1.34,2.68l60,30m0-30-60,30m30-30v30m-30-15h60"/><path stroke="%23C8102E" stroke-width="3" d="M31.34,2.68v30m-30-15h60m-60-15,60,30m0-30-60,30"/></svg>');
+        --svg-flag-ru: url('data:image/svg+xml;utf8,<svg height="1rem" width="2rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3"><path stroke="%23FEFEFE" stroke-width="1" d="M0,.5H6"/><path stroke="%230032A0" stroke-width="1" d="M0,1.5H6"/><path stroke="%23DA291C" stroke-width="1" d="M0,2.5H6"/></svg>');
+      }
+      .container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
+      .container-fluid { box-sizing: border-box; width: 100%; margin-inline: auto; padding: 0 }
+      .row { display: flex; flex-wrap: wrap }
+      .row > * { flex-shrink: 0; max-width: 100%; width: 100% }
+      .col-auto,.col-1,.col-2,.col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9,.col-10,.col-11,.col-12 { flex: 0 0 auto }
+      .col-auto { width: auto }
+      .col { flex: 1 0 0 }
+      .col-1 { width: 8.33333333% }
+      .col-2 { width: 16.66666667% }
+      .col-3 { width: 25% }
+      .col-4 { width: 33.33333333% }
+      .col-5 { width: 41.66666667% }
+      .col-6 { width: 50% }
+      .col-7 { width: 58.33333333% }
+      .col-8 { width: 66.66666667% }
+      .col-9 { width: 75% }
+      .col-10 { width: 83.33333333% }
+      .col-11 { width: 91.66666667% }
+      .col-12 { width: 100% }
+      .hidden { display: none !important }
+      .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        word-wrap: break-word;
+        background-clip: border-box;
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        border-radius: 0.25rem;
+      }
+      .card-body { flex: 1 1 auto; padding: 1rem 1rem }
+      .card-group > .card { margin-bottom: 0.75rem }
+      #paginationContainer .btn.disabled {
+        background-color: darkgray !important;
+        color: lightgray !important;
+        cursor: default !important;
+      }
+      #paginationContainer .btn:not(.disabled):hover {
+        font-weight: bold;
+        background-color: #bd8656;
+      }
+      #paginationContainer, #paginationContainerBottom {
+        text-align: center;
+        margin-block: 0.8rem;
+      }
+      .buttonGroup {
+        display: inline-block;
+      }
+      #paginationNext {
+        margin-inline: 0 !important;
+        padding-inline: 2rem;
+        border-radius: 10% 25% 25% 10%;
+      }
+      #paginationLast {
+        border-radius: 20% 50% 50% 20%;
+        padding-inline: 1rem;
+        padding-block: 0 !important;
+        margin-inline-start: 0 !important;
+      }
+      #paginationBack {
+        margin-inline: 0 !important;
+        padding-inline: 2rem;
+        border-radius: 25% 10% 10% 25%;
+      }
+      #paginationFirst {
+        border-radius: 50% 20% 20% 50%;
+        padding-inline: 1rem;
+        padding-block: 0 !important;
+        margin-inline-start: 0 !important;
+      }
+      .pageNrBtn {
+        padding-inline: max(1.0vw, 10px);
+        margin-inline: 0.25rem !important;
+      }
+      .pageNrBtn.activePage {
+        cursor: default !important;
+        font-weight: bold !important;
+        background-color: #c86852 !important;
+      }
+      #paginationControl {
+        display: flow-root;
+      }
+      #commentsFromToContainer {
+        float: left;
+      }
+      #commentsPerPageContainer {
+        float: right;
+        display: flex;
+      }
+      #commentsPerPageContainer small {
+        align-self: center;
+        white-space: pre;
+        margin-inline-end: 0.75rem;
+      }
+      #commentsPerPageContainer .select {
+        background-color: #eee;
+        margin-block: auto;
+        padding: 0.4rem;
+        font-size: 0.75rem;
+        text-align: center;
+        text-align-last: center;
+      }
+      #btnFilterNew:after {
+        content: "\\00a0\\00a0\\00a0" var(--svg-unchecked);
+        vertical-align: -10%;
+      }
+      #btnFilterNew.filterIsActive:after {
+        content: "\\00a0\\00a0\\00a0" var(--svg-checked);
+      }
+      .btn-small {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.75rem;
+      }
+      .ui-card {
+        padding: 0.75rem;
+        margin-block: 1rem;
+        border: 1px solid #949296;
+        min-width: 12rem;
+        max-width: 30rem;
+        border-radius: 3px;
+      }
+      .msgNoResults {
+        margin-block: 2rem;
+        text-align: center;
+        font-style: italic;
+      }
+      .repliesCollapsed .replyContainer:nth-last-child(n+4) {
+        display: none;
+      }
+      .expander {
+        cursor: pointer;
+        color: #d53d16;
+      }
+      .expander:hover {
+        font-weight: bold;
+      }
+      #language_container {
+        --borderColor: #555555;
+        --borderWidth: 1px;
+        --totalWidth: 8rem;
+        width: var(--totalWidth);
+        height: 2rem;
+        margin-left: auto;
+        color: #d53d16;
+        cursor: pointer;
+        border: var(--borderWidth) solid var(--borderColor);
+        border-top-left-radius: 1px;
+        border-bottom: 0;
+      }
+      #language_container:hover > #language_dropdown_toggler > span:last-of-type  {
+        transform: rotate(90deg);
+      }
+      #language_dropdown_toggler {
+        position: absolute;
+        height: inherit;
+        width: inherit;
+        background: linear-gradient(to left, var(--borderColor) var(--borderWidth), #d53d16 var(--borderWidth), #d53d16 1.75rem, #fcfcfc 1.75rem);
+        font-weight: bold;
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        border-radius: 1px;
+        border-bottom: var(--borderWidth) solid var(--borderColor);
+      }
+      #language_dropdown_toggler:hover + #language_dropdown_menu,
+      #language_dropdown_menu:hover {
+        display: block;
+      }
+      #language_dropdown_toggler > span {
+        width: calc(100% - 1.75rem);
+        display: flex;
+        height: inherit;
+        padding-left: 0.4rem;
+        align-items: center;
+        
+      }
+      #activeLanguage {
+        border: var(--borderWidth) solid var(--borderColor);
+        border-bottom-width: 0;
+      }
+      #language_dropdown_toggler > span:last-of-type {
+        border-radius: 1px 1px 0 0;
+        width: 1.5rem;
+        text-align: center;
+        color: #fcfcfc;
+        transition: transform .15s ease-in-out;
+        position: relative;
+        padding-left: calc(2*var(--borderWidth));
+        justify-content: center;
+      }
+      #language_dropdown_menu {
+        position: relative;
+        top: 100%;
+        border-radius: 0 0 1px 1px;
+        border: var(--borderWidth) solid var(--borderColor);
+        left: calc(0px - var(--borderWidth));
+        max-width: unset;
+        width: calc(100% + 3*var(--borderWidth));
+        display: none;
+      }
+      #language_dropdown_menu > div {
+        background-color: #252525;
+        font-weight: bold;
+        padding-left: 0.4rem;
+        padding-block: 0.2rem;
+        display: flex;
+        align-items: center;
+        padding-top: 0.2rem;
+        border-top: var(--borderWidth) solid var(--borderColor);
+      }
+      #language_dropdown_menu > div:hover {
+        background-color: #f0cbc2;
+      }
+      #language_dropdown_menu > :before {
+        margin-right: 0.6rem;
+        padding-top: 0.2rem;
+      }
+      #lang_de:before {
+        content: var(--svg-flag-de);
+      }
+      #lang_en:before {
+        content: var(--svg-flag-en);
+      }
+      #lang_ru:before {
+        content: var(--svg-flag-ru);
+      }
+    </style>
+    <style id="style_newComment">
+      .newComment {
+        background-color: ${highlightedCommentsColor};
+      }
+    </style>
+    <style id="style_newReply">
+      .newReply {
+        background-color: ${highlightedRepliesColor};
+      }
+    </style>
   `;
   
   const mainSwitchHtml = `
-      <div id="mainSwitchContainer">
-          <div>
-              <input id="mainSwitch" type="checkbox" name="mainSwitch" checked="checked">
-              <label for="mainSwitch" class="mainSwitch"></label>
-          </div>
-          <style>
-              #mainSwitchContainer {
-                height: 89px;
-                width: 158px;
-              }
-              #mainSwitchContainer > div {
-                width: 151px;
-                height: 60px;
-                position: relative;
-                inset-block-start: 31px;
-                left: 3px;
-              }
-              #mainSwitchContainer *, #mainSwitchContainer *:after, #mainSwitchContainer *:before {
-                box-sizing: border-box;
-              }
-              #mainSwitch {
-                visibility: hidden;
-                clip: rect(0 0 0 0);
-                position: absolute;
-                left: 9999px;
-              }
-              .mainSwitch {
-                display: block;
-                width: 65px;
-                height: 30px;
-                margin: 28px 43px;
-                position: relative;
-                background: #ced8da;
-                background: -moz-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
-                background: -webkit-gradient(linear, left top, right top, color-stop(0%, #ced8da), color-stop(29%, #d8e0e3), color-stop(34%, #ccd4d7), color-stop(62%, #d4dcdf), color-stop(68%, #fff9f4), color-stop(74%, #e1e9ec), color-stop(100%, #b7bfc2));
-                background: -webkit-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
-                background: -o-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
-                background: -ms-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
-                background: linear-gradient(to right, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
-                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ced8da', endColorstr='#b7bfc2',GradientType=1 );
-                transition: all 0.2s ease-out;
-                cursor: pointer;
-                border-radius: 0.35em;
-                box-shadow: 0 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 1px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
-              }
-              .mainSwitch:before {
-                display: block;
-                position: absolute;
-                left: -35px;
-                right: -35px;
-                top: -25px;
-                bottom: -25px;
-                z-index: -2;
-                content: "";
-                border-radius: 0.4em;
-                background: #d5dde0;
-                background: linear-gradient(#d7dfe2, #bcc7cd);
-                box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 1px 1px rgba(0, 0, 0, 0.3), 0 0 8px 2px rgba(0, 0, 0, 0.2), 0 2px 4px 2px rgba(0, 0, 0, 0.1);
-                pointer-events: none;
-                transition: all 0.2s ease-out;
-              }
-              .mainSwitch:after {
-                content: "";
-                position: absolute;
-                right: -25px;
-                top: 50%;
-                width: 16px;
-                height: 16px;
-                border-radius: 50%;
-                background: #788b91;
-                margin-top: -8px;
-                z-index: -1;
-                box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -47px 32px 15px 13px rgba(0, 0, 0, 0.25);
-              }
-              #mainSwitch:checked ~ .mainSwitch {
-                background: #b7bfc2;
-                background: -moz-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
-                background: -webkit-gradient(linear, left top, right top, color-stop(0%, #b7bfc2), color-stop(26%, #e1e9ec), color-stop(32%, #fff9f4), color-stop(38%, #d4dcdf), color-stop(66%, #ccd4d7), color-stop(71%, #d8e0e3), color-stop(100%, #ced8da));
-                background: -webkit-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
-                background: -o-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
-                background: -ms-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
-                background: linear-gradient(to right, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
-                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b7bfc2', endColorstr='#ced8da',GradientType=1 );
-              }
-              #mainSwitch:checked ~ .mainSwitch:after {
-                background: #b1ffff;
-                box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -65px 25px 15px 13px rgba(0, 0, 0, 0.25);
-              }
-          </style>
+    <div id="mainSwitchContainer">
+      <div>
+        <input id="mainSwitch" type="checkbox" name="mainSwitch" checked="checked">
+        <label for="mainSwitch" class="mainSwitch"></label>
       </div>
+      <style>
+        #mainSwitchContainer {
+          height: 89px;
+          width: 158px;
+        }
+        #mainSwitchContainer > div {
+          width: 151px;
+          height: 60px;
+          position: relative;
+          inset-block-start: 31px;
+          left: 3px;
+        }
+        #mainSwitchContainer *, #mainSwitchContainer *:after, #mainSwitchContainer *:before {
+          box-sizing: border-box;
+        }
+        #mainSwitch {
+          visibility: hidden;
+          clip: rect(0 0 0 0);
+          position: absolute;
+          left: 9999px;
+        }
+        .mainSwitch {
+          display: block;
+          width: 65px;
+          height: 30px;
+          margin: 28px 43px;
+          position: relative;
+          background: #ced8da;
+          background: -moz-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
+          background: -webkit-gradient(linear, left top, right top, color-stop(0%, #ced8da), color-stop(29%, #d8e0e3), color-stop(34%, #ccd4d7), color-stop(62%, #d4dcdf), color-stop(68%, #fff9f4), color-stop(74%, #e1e9ec), color-stop(100%, #b7bfc2));
+          background: -webkit-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
+          background: -o-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
+          background: -ms-linear-gradient(left, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
+          background: linear-gradient(to right, #ced8da 0%, #d8e0e3 29%, #ccd4d7 34%, #d4dcdf 62%, #fff9f4 68%, #e1e9ec 74%, #b7bfc2 100%);
+          filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ced8da', endColorstr='#b7bfc2',GradientType=1 );
+          transition: all 0.2s ease-out;
+          cursor: pointer;
+          border-radius: 0.35em;
+          box-shadow: 0 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 1px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
+        }
+        .mainSwitch:before {
+          display: block;
+          position: absolute;
+          left: -35px;
+          right: -35px;
+          top: -25px;
+          bottom: -25px;
+          z-index: -2;
+          content: "";
+          border-radius: 0.4em;
+          background: #d5dde0;
+          background: linear-gradient(#d7dfe2, #bcc7cd);
+          box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 1px 1px rgba(0, 0, 0, 0.3), 0 0 8px 2px rgba(0, 0, 0, 0.2), 0 2px 4px 2px rgba(0, 0, 0, 0.1);
+          pointer-events: none;
+          transition: all 0.2s ease-out;
+        }
+        .mainSwitch:after {
+          content: "";
+          position: absolute;
+          right: -25px;
+          top: 50%;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #788b91;
+          margin-top: -8px;
+          z-index: -1;
+          box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -47px 32px 15px 13px rgba(0, 0, 0, 0.25);
+        }
+        #mainSwitch:checked ~ .mainSwitch {
+          background: #b7bfc2;
+          background: -moz-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
+          background: -webkit-gradient(linear, left top, right top, color-stop(0%, #b7bfc2), color-stop(26%, #e1e9ec), color-stop(32%, #fff9f4), color-stop(38%, #d4dcdf), color-stop(66%, #ccd4d7), color-stop(71%, #d8e0e3), color-stop(100%, #ced8da));
+          background: -webkit-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
+          background: -o-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
+          background: -ms-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
+          background: linear-gradient(to right, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
+          filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b7bfc2', endColorstr='#ced8da',GradientType=1 );
+        }
+        #mainSwitch:checked ~ .mainSwitch:after {
+          background: #b1ffff;
+          box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -65px 25px 15px 13px rgba(0, 0, 0, 0.25);
+        }
+      </style>
+    </div>
   `;
   
   const menuBaseHtml = `
-      <div id="enhancedUi">
-          <div class="ui-card" style="width: 30%;">
-              <div>Ignorierte User:</div>
-              <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
-              <div>
-                  <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
-                  <a id="deleteIgnoreUser" class="btn btn-small" style="float: right;">${t('Entfernen')}</a>
-              </div>
-          </div>
-          <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
+    <div class="rowHeadlineHolder">
+      <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
+      <div class="rowHeadlineHolderItem headerTxt">
+        <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
       </div>
+      <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
+    </div>
+    <div id="enhancedUi" class="container-fluid">
+      <div class="row">
+        <div class="ui-card" style="width: 30%;">
+        <div id="ignoredLabel">${t('Blockierte Benutzer')}:</div>
+        <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
+        <div>
+          <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
+          <a id="deleteIgnoreUser" class="btn btn-small" style="float: right;">${t('Entfernen')}</a>
+        </div>
+      </div>
+      </div>
+
+      <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
+    </div>
   `;
   
   document.body.appendChild(globalStyles.parseHTML());
@@ -1436,8 +1688,8 @@ if (onProfilePage()) {
     }
   });
   
-  // show all that fancy stuff
   updatePage();
+  insertLanguageDropdown();
   
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
@@ -1445,46 +1697,13 @@ if (onProfilePage()) {
 
 
 
-// if we are somewhere else, check if there is a comment section and try to apply ignored user list on it
-else if (document.getElementById('commentContent')) {
-  // function to delete comments and replies of a given user
-  const removeCommentsFrom = function(username) {
-    const allComments = document.querySelectorAll('.profilName');
-    for (let i = allComments.length - 1; i >= 0; i--) {
-      const comment = allComments[i];
-      if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
-        if (comment.id.startsWith('comment_')) {
-          // also remove spacer if its a reply
-          if (comment.previousElementSibling) comment.previousElementSibling.remove();
-        }
-        if (comment.parentElement.classList.contains('commentItem')) {
-          comment.parentElement.remove();
-        } else {
-          comment.remove();
-        }
-      }
-    }
-  }
-  // we need some delay for the comments to load
-  function tryToApply() {
-    setTimeout(function() {
-      if (comments.childElementCount > 0) {
-        for (const user of storedIgnoreList) removeCommentsFrom(user);
-      } else {
-        // retry it up to 3 times after waiting one second after each try
-        if (retries < 2) {
-          retries++;
-          tryToApply();
-        }
-      }
-    }, 1000);
-  }
-  // load list of ignored users and try to apply them
-  const storedIgnoreList = get_value('ignoredUsers');
-  const comments = document.getElementById('commentContent');
-  let retries = 0;
-  tryToApply();
+// use blocked user list also on other pages with comment section
+else {
+  applyBlockedUserGenericPage();
 }
+
+
+
 
 
 
