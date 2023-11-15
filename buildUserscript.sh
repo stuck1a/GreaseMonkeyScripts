@@ -1,5 +1,3 @@
-#!/bin/bash
-
 substr_between() {
   printf '%s' "$1" | grep -oP "(?<=${2:-''}).*?(?=${3:-"$2"})"
 }
