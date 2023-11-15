@@ -41,8 +41,21 @@ const defaultLanguage = 'de';
 // Translations
 const i18n = new Map([
   [
-    // Englisch
+    // German (input strings are german already, so we only need metadata for the language menu constructor here)
+    'de', new Map([
+      [ '__metadata__', {
+        displayName: 'Deutsch',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" stroke-width="1" viewBox="0 0 6 3"><path stroke="#010101" d="M0,.5H6"/><path stroke="#DD0000" d="M0,1.5H6"/><path stroke="#FFCE00" d="M0,2.5H6"/></svg>',
+      }],
+    ])
+  ],
+  [
+    // English
     'en', new Map([
+      [ '__metadata__', {
+        displayName: 'English',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 4.5 48 24.5"><path fill="#012169" d="M0,0V30H60V0Z"/><path stroke="#FEFEFE" stroke-width="6" d="M1.34,2.68l60,30m0-30-60,30m30-30v30m-30-15h60"/><path stroke="#C8102E" stroke-width="3" d="M31.34,2.68v30m-30-15h60m-60-15,60,30m0-30-60,30"/></svg>',
+      }],
       [ 'Nur neue Kommentare', 'New comments only' ],
       [ 'Kommentare pro Seite:', 'Comments per Page:' ],
       [ 'alle', 'all' ],
@@ -69,6 +82,10 @@ const i18n = new Map([
   [
     // Russian
     'ru', new Map([
+      [ '__metadata__', {
+        displayName: 'Russkiy',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" stroke-width="1" viewBox="0 0 6 3"><path stroke="#FEFEFE" d="M0,.5H6"/><path stroke="#0032A0" d="M0,1.5H6"/><path stroke="#DA291C" d="M0,2.5H6"/></svg>',
+      }],
       [ 'Nur neue Kommentare', 'Tol\'ko novyye kommentarii' ],
       [ 'Kommentare pro Seite:', 'Kommentarii na stranitse:' ],
       [ 'alle', 'vse' ],
@@ -833,26 +850,27 @@ function insertLanguageDropdown() {
   const languageContainerHtml = `
     <div id="language_container" class="row">
       <div id="language_dropdown_toggler">
-        <span id="activeLanguage">${languageMapping.get(activeLanguage)}</span>
+        <span id="activeLanguage">${i18n.get(activeLanguage).get('__metadata__').displayName}</span>
         <span>&gt;</span>
       </div>
       <div id="language_dropdown_menu"></div>
     </div>
   `.parseHTML();
-
   // insert directly after the section headline
   const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
   enhancedUiContainer.insertBefore(languageContainerHtml, headlineHolder.nextElementSibling);
   const languageContainer = document.getElementById('language_container');
-  for (const languageDef of languageMapping.entries()) {
-    const langEntryHtml = `<div id="lang_${languageDef[0]}" data-lang="${languageDef[0]}">${languageDef[1]}</div>`;
+  // insert all languages which are defined in i18n
+  for (const language of i18n.entries()) {
+    const metadata = language[1].get('__metadata__');
+    const langEntryHtml = `<div id="lang_${language[0]}" data-lang="${language[0]}">${metadata.icon}<span>${metadata.displayName}</span></div>`;
     languageContainer.lastElementChild.appendChild(langEntryHtml.parseHTML());
   }
   // mount handler for all language entries
   for (const langItem of languageContainer.lastElementChild.children) {
     langItem.addEventListener('click', function(ev) {
       const langId = this.getAttribute('data-lang');
-      if (languageMapping.has(langId)) {
+      if (i18n.has(langId)) {
         activeLanguage = langId;
         updatePage();
       }
@@ -860,7 +878,6 @@ function insertLanguageDropdown() {
       languageContainer.remove();
       insertLanguageDropdown();
     });
-
   }
 }
 
@@ -950,8 +967,8 @@ function changeFilter(filterName, newValue) {
  */
 function onProfilePage() {
   return window.location.toString().startsWith('nuoflix.de/profil/')
-      || window.location.toString().startsWith('http://nuoflix.de/profil/')
-      || window.location.toString().startsWith('https://nuoflix.de/profil/')
+         || window.location.toString().startsWith('http://nuoflix.de/profil/')
+         || window.location.toString().startsWith('https://nuoflix.de/profil/')
 }
 
 
@@ -1156,21 +1173,21 @@ function DEBUG_setSomeFakeData() {
   commentData[21].isNew = true;
   commentData[21].hasNewReplies = true;
   commentData[21].replies.push({
-    id: 2,
-    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
-    user: "stuck1a",
-    date: "26.10.2023 02:32",
-    text: "Fake Kommentar A",
-    isNew: true
-  });
+     id: 2,
+     pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+     user: "stuck1a",
+     date: "26.10.2023 02:32",
+     text: "Fake Kommentar A",
+     isNew: true
+   });
   commentData[21].replies.push({
-    id: 3,
-    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
-    user: "stuck1a",
-    date: "27.10.2023 12:47",
-    text: "Fake Kommentar B",
-    isNew: true
-  });
+     id: 3,
+     pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+     user: "stuck1a",
+     date: "27.10.2023 12:47",
+     text: "Fake Kommentar B",
+     isNew: true
+   });
   commentData[57].btn_id = "20070645";
   commentData[57].txt_id = "2092673";
   commentData[57].isNew = true;
@@ -1180,13 +1197,13 @@ function DEBUG_setSomeFakeData() {
   commentData[58].isNew = true;
   commentData[58].hasNewReplies = true;
   commentData[58].replies.push({
-    id: 3,
-    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
-    user: "stuck1a",
-    date: "03.01.2023 21:15",
-    text: "Fake Kommentar C",
-    isNew: true
-  });
+     id: 3,
+     pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+     user: "stuck1a",
+     date: "03.01.2023 21:15",
+     text: "Fake Kommentar C",
+     isNew: true
+   });
   commentData[69].btn_id = "17036547";
   commentData[69].txt_id = "1904231";
   commentData[69].isNew = true;
@@ -1195,13 +1212,13 @@ function DEBUG_setSomeFakeData() {
   commentData[70].isNew = true;
   commentData[70].hasNewReplies = true;
   commentData[70].replies.push({
-    id: 1,
-    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
-    user: "stuck1a",
-    date: "11.10.2023 15:01",
-    text: "Fake Kommentar D (hatte davor keine Replies)",
-    isNew: true
- });
+     id: 1,
+     pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+     user: "stuck1a",
+     date: "11.10.2023 15:01",
+     text: "Fake Kommentar D (hatte davor keine Replies)",
+     isNew: true
+   });
 }
 
 
@@ -1217,19 +1234,12 @@ let activeLanguage = defaultLanguage;
 let filteredCommentsCount = 0;
 let commentData, storedData, totalComments;
 let enhancedUiContainer, commentFilters,
-    paginationContainer, paginationContainerBottom, paginationControlContainer,
-    customCommentContainer, originalCommentContainer;
-let languageMapping;
+  paginationContainer, paginationContainerBottom, paginationControlContainer,
+  customCommentContainer, originalCommentContainer;
 
 // Execution path for profile page
 if (onProfilePage()) {
-
-  languageMapping = new Map([
-    [ 'de', 'Deutsch' ],
-    [ 'en', 'English' ],
-    [ 'ru', 'Russkiy' ],
-  ]);
-
+  
   commentFilters = new Map([
     // currently supported types for property "value" are: boolean, string, array
     [ 'filterOnlyNew', { active: false, value: false } ],
@@ -1243,9 +1253,6 @@ if (onProfilePage()) {
       :root {
         --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
         --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
-        --svg-flag-de: url('data:image/svg+xml;utf8,<svg height="1rem" width="2rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3"><path stroke="%23010101" stroke-width="1" d="M0,.5H6"/><path stroke="%23DD0000" stroke-width="1" d="M0,1.5H6"/><path stroke="%23FFCE00" stroke-width="1" d="M0,2.5H6"/></svg>');
-        --svg-flag-en: url('data:image/svg+xml;utf8,<svg height="1rem" width="2rem" xmlns="http://www.w3.org/2000/svg" viewBox="8 4.5 48 24.5"><path fill="%23012169" d="M0,0V30H60V0Z"/><path stroke="%23FEFEFE" stroke-width="6" d="M1.34,2.68l60,30m0-30-60,30m30-30v30m-30-15h60"/><path stroke="%23C8102E" stroke-width="3" d="M31.34,2.68v30m-30-15h60m-60-15,60,30m0-30-60,30"/></svg>');
-        --svg-flag-ru: url('data:image/svg+xml;utf8,<svg height="1rem" width="2rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 3"><path stroke="%23FEFEFE" stroke-width="1" d="M0,.5H6"/><path stroke="%230032A0" stroke-width="1" d="M0,1.5H6"/><path stroke="%23DA291C" stroke-width="1" d="M0,2.5H6"/></svg>');
       }
       .container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
       .container-fluid { box-sizing: border-box; width: 100%; margin-inline: auto; padding: 0 }
@@ -1462,18 +1469,10 @@ if (onProfilePage()) {
       #language_dropdown_menu > div:hover {
         background-color: #f0cbc2;
       }
-      #language_dropdown_menu > :before {
+      #language_dropdown_menu svg {
         margin-right: 0.6rem;
-        padding-top: 0.2rem;
-      }
-      #lang_de:before {
-        content: var(--svg-flag-de);
-      }
-      #lang_en:before {
-        content: var(--svg-flag-en);
-      }
-      #lang_ru:before {
-        content: var(--svg-flag-ru);
+        height: 1rem;
+        width: 2rem;
       }
     </style>
     <style id="style_newComment">.${cssClassNewComments} { background-color: ${highlightedCommentsColor} }</style>
@@ -1722,4 +1721,3 @@ function getOriginalCommentIds(which) {
 }
 getOriginalCommentIds(3);
 */
-
