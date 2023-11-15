@@ -36,7 +36,7 @@ const expandedReplyCount = 3;
 // Defaults
 const defaultStart = 1;
 const defaultLength = 5;
-const defaultLanguage = 'de';
+const defaultLanguage = 'de';
 
 // Translations
 const i18n = new Map([
@@ -110,7 +110,7 @@ const i18n = new Map([
       [ 'NuoFlix 2.0', 'Uluchshennyy NuoFlix' ],
     ])
   ],
-]);
+]);
 
 
 // ###########################################################
@@ -341,7 +341,7 @@ function t(string, ...args) {
   const lang = activeLanguage || defaultLanguage;
   if (!i18n.has(lang) || !i18n.get(lang).has(string)) return String.sprintf(string, ...args);
   return String.sprintf(i18n.get(lang).get(string), ...args);
-}
+}
 
 // ###########################################################
 // ###                 SCRIPT FUNCTIONS                    ###
@@ -356,7 +356,7 @@ function onProfilePage() {
   return window.location.toString().startsWith('nuoflix.de/profil/')
       || window.location.toString().startsWith('http://nuoflix.de/profil/')
       || window.location.toString().startsWith('https://nuoflix.de/profil/')
-}
+}
 
 
 /**
@@ -492,7 +492,7 @@ function getOriginalCommentIds(which) {
     const btn_id = elem.getAttribute('data-id');
     const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
-}
+}
 
 /**
  * Adds this scripts central control panel to the DOM.
@@ -1176,7 +1176,7 @@ function updatePage() {
   updateComments();
   updatePaginationUI();
   updateStaticTranslations();
-}
+}
 
 /**
  * Holds the whole execution flow for any other than the profile page.
@@ -1224,7 +1224,7 @@ function applyBlockedUserGenericPage() {
     let retries = 0;
     tryToApply();
   }
-}
+}
 
 
 // ###########################################################
@@ -1475,7 +1475,7 @@ if (onProfilePage()) {
   <style id="style_newComment">.${cssClassNewComments} { background-color: ${highlightedCommentsColor} }</style>
   <style id="style_hasNewReply">.${cssClassHasNewReplies} { background-color: ${highlightedHasNewRepliesColor} }</style>
   <style id="style_newReply">.${cssClassNewReplies} { background-color: ${highlightedRepliesColor} }</style>
-`;
+`;
 
   const mainSwitchHtml = `
   <div id="mainSwitchContainer">
@@ -1569,7 +1569,7 @@ if (onProfilePage()) {
       }
     </style>
   </div>
-`;
+`;
 
   
 commentFilters = new Map([
@@ -1703,7 +1703,7 @@ updatePage();
 insertLanguageDropdown();
 
 // mount handler for selecting another length value
-document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
 }
 
 // execution path for generic pages (will search for comment sections and apply block list on it, if found)
