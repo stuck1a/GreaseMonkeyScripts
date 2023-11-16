@@ -67,8 +67,9 @@ const pageRoutes = new Map([
 ]);
   // Translations
 const i18n = new Map([
+  
   [
-    // German (input strings are german already, so we only need metadata for the language menu constructor here)
+    // German (base strings are german, so we need only the metadata here)
     'de', new Map([
       [ '__metadata__', {
         displayName: 'Deutsch',
@@ -84,29 +85,10 @@ const i18n = new Map([
         displayName: 'English',
         icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 4.5 48 24.5"><path fill="#012169" d="M0,0V30H60V0Z"/><path stroke="#FEFEFE" stroke-width="6" d="M1.34,2.68l60,30m0-30-60,30m30-30v30m-30-15h60"/><path stroke="#C8102E" stroke-width="3" d="M31.34,2.68v30m-30-15h60m-60-15,60,30m0-30-60,30"/></svg>',
       }],
-      [ 'Nur neue Kommentare', 'New comments only' ],
-      [ 'Kommentare pro Seite:', 'Comments per Page:' ],
-      [ 'alle', 'all' ],
-      [ 'Kommentare {0} .. {1} von {2}', 'Comments {0} .. {1} of {2}' ],
-      [ 'Antwort abschicken', 'Send reply' ],
-      [ 'Deine Antwort zu diesem Kommentar', 'Your reply to this comment' ],
-      [ 'antworten', 'answer' ],
-      [ '({0} gefiltert)', '({0} filtered)' ],
-      [ 'GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GreaseMonkey function {0}() not found! Add "@grant {0}" in the script header to fix the error.' ],
-      [ 'DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.', 'Target DOM element not found. Are you logged in? If yes, maybe the DOM has changed.' ],
-      [ 'Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!', 'Warning!\nTried to store non-serializable object!\nThe script will try to store it as plain object, but the data might get corrupted!'],
-      [ 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden', 'It seems like there is deprecated/invalid/corrupted comment data stored.\nUsually this should be fixed with the next page refresh.' ],
-      [ 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'Failed to gather "{0}" data - maybe the DOM has changed?' ],
-      [ 'Folgenden Benutzer zur Ignorieren-Liste hinzufügen:', 'Add the following user to the ignore list:' ],
-      [ 'Noch keine Kommentare...', 'No comments yet...' ],
-      [ 'Zeige {0} ältere Antworten', 'Show {0} old replies' ],
-      [ 'Kein Kommentar entspricht den Filterkriterien', 'No comments match the filter criteria' ],
-      [ 'Hinzufügen...', 'Add...' ],
-      [ 'Entfernen', 'Delete' ],
-      [ 'Blockierte Benutzer', 'Blocked users' ],
-      [ 'NuoFlix 2.0', 'Enhanced NuoFlix' ],
+      /*% Translations/en.txt %*/
     ])
   ],
+  
   [
     // Russian
     'ru', new Map([
@@ -114,29 +96,10 @@ const i18n = new Map([
         displayName: 'Russkiy',
         icon: '<svg xmlns="http://www.w3.org/2000/svg" stroke-width="1" viewBox="0 0 6 3"><path stroke="#FEFEFE" d="M0,.5H6"/><path stroke="#0032A0" d="M0,1.5H6"/><path stroke="#DA291C" d="M0,2.5H6"/></svg>',
       }],
-      [ 'Nur neue Kommentare', 'Tol\'ko novyye kommentarii' ],
-      [ 'Kommentare pro Seite:', 'Kommentarii na stranitse:' ],
-      [ 'alle', 'vse' ],
-      [ 'Kommentare {0} .. {1} von {2}', 'Kommentarii {0} .. {1} ot {2}' ],
-      [ 'Antwort abschicken', 'Otpravit\' otvet' ],
-      [ 'Deine Antwort zu diesem Kommentar', 'Vash otvet na etot kommentariy' ],
-      [ 'antworten', 'otvechat\'' ],
-      [ '({0} gefiltert)', '({0} Otfil\'trovano)' ],
-      [ 'GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'Funktsiya GreaseMonkey {0}() ne naydena! Dobav\'te «@grant {0}» v zagolovok skripta, chtoby ispravit\' oshibku.' ],
-      [ 'DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.', 'Element DOM ne nayden. Ne voshel? Yesli da, to DOM izmenilsya.'],
-      [ 'Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!', 'Preduprezhdeniye!\nPytalsya sokhranit\' neserializuyemyy ob"yekt!\nSkript popytayetsya sokhranit\' yego kak prostoy ob"yekt, no dannyye mogut byt\' ' ],
-      [ 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'Ne udalos\' sobrat\' dannyye "{0}". Vozmozhno, izmenilsya DOM?' ],
-      [ 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden', 'Pokhozhe, chto khranyatsya ustarevshiye/nedeystvitel\'nyye/povrezhdennyye dannyye kommentariyev.\nObychno eto dolzhno byt\' ispravleno pri sleduyushchem obnovlenii stranitsy.' ],
-      [ 'Folgenden Benutzer zur Ignorieren-Liste hinzufügen:', 'Dobav\'te v spisok ignorirovaniya sleduyushchego pol\'zovatelya:' ],
-      [ 'Noch keine Kommentare...', 'Kommentariyev poka net...' ],
-      [ 'Zeige {0} ältere Antworten', 'Pokazany {0} starykh otvetov' ],
-      [ 'Kein Kommentar entspricht den Filterkriterien', 'Net kommentariyev, sootvetstvuyushchikh kriteriyam fil\'tra.' ],
-      [ 'Hinzufügen...', 'Dobavlyat\'...' ],
-      [ 'Entfernen', 'Udalyat\'' ],
-      [ 'Blockierte Benutzer', 'Zablokirovannyye pol\'zovateli' ],
-      [ 'NuoFlix 2.0', 'Uluchshennyy NuoFlix' ],
+      /*% Translations/ru.txt %*/
     ])
   ],
+  
 ]);
   /**
  * Works like sprintf in PHP. Use {n} as placeholder, where
@@ -241,8 +204,8 @@ function set_value(key, value, global = false) {
     try {
       value = JSON.stringify(value);
     } catch (e) {
-      const msg = t('Warning!\nTried to store non-serializable object!\nThe script will try to store it as plain object, but the data might get corrupted!');
-      log(msg, 'warn', ['Occurred in set_value()', this]);
+      const msg = t('Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!');
+      log(msg, 'warn', [t('Occurred in {0}', 'set_value()'), this]);
     }
   }
   GM_setValue(key, value);
@@ -375,6 +338,143 @@ function getActiveRoute() {
     if (window.location.pathname.match(new RegExp(`^${route[0]}/*$`, 'i'))) return route[1];
   }
   return '';
+}
+  
+/**
+ * Marks some comments as new and inserts some fake replies here and there
+ */
+function DEBUG_setSomeFakeData(commentData) {
+  commentData[0].hasNewReplies = true;
+  commentData[0].reply_cnt = 7;
+  commentData[0].replies.push({
+    id: 1,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:32",
+    text: "Fake Reply 1",
+    isNew: false
+  });
+  commentData[0].replies.push({
+    id: 2,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:33",
+    text: "Fake Reply 2",
+    isNew: false
+  });
+  commentData[0].replies.push({
+    id: 3,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:35",
+    text: "Fake Reply 3",
+    isNew: false
+  });
+  commentData[0].replies.push({
+    id: 4,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:37",
+    text: "Fake Reply 4",
+    isNew: false
+  });
+  commentData[0].replies.push({
+    id: 5,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:42",
+    text: "Fake Reply 5",
+    isNew: false
+  });
+  commentData[0].replies.push({
+    id: 6,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:51",
+    text: "Fake Reply 6",
+    isNew: true
+  });
+  commentData[0].replies.push({
+    id: 7,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:59",
+    text: "Fake Reply 7",
+    isNew: true
+  });
+  commentData[2].txt_id = "3532102";
+  commentData[2].btn_id = "265045";
+  commentData[2].isNew = true;
+  commentData[21].btn_id = "34384351";
+  commentData[21].txt_id = "2628524";
+  commentData[21].reply_cnt = 3;
+  commentData[21].isNew = true;
+  commentData[21].hasNewReplies = true;
+  commentData[21].replies.push({
+    id: 2,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "26.10.2023 02:32",
+    text: "Fake Kommentar A",
+    isNew: true
+  });
+  commentData[21].replies.push({
+    id: 3,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "27.10.2023 12:47",
+    text: "Fake Kommentar B",
+    isNew: true
+  });
+  commentData[57].btn_id = "20070645";
+  commentData[57].txt_id = "2092673";
+  commentData[57].isNew = true;
+  commentData[58].btn_id = "19916547";
+  commentData[58].txt_id = "2110215";
+  commentData[58].reply_cnt = 3;
+  commentData[58].isNew = true;
+  commentData[58].hasNewReplies = true;
+  commentData[58].replies.push({
+    id: 3,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "03.01.2023 21:15",
+    text: "Fake Kommentar C",
+    isNew: true
+  });
+  commentData[69].btn_id = "17036547";
+  commentData[69].txt_id = "1904231";
+  commentData[69].isNew = true;
+  commentData[70].btn_id = "16984123";
+  commentData[70].txt_id = "1921871";
+  commentData[70].isNew = true;
+  commentData[70].hasNewReplies = true;
+  commentData[70].replies.push({
+    id: 1,
+    pic: "/userpic/631291d3504cf631291cad646drosenkreuzer559x5571.png",
+    user: "stuck1a",
+    date: "11.10.2023 15:01",
+    text: "Fake Kommentar D (hatte davor keine Replies)",
+    isNew: true
+  });
+  
+  return commentData;
+}
+
+
+
+/**
+ * Get txt_id, btn_id and the text from an original comment block
+ *
+ * @param {int} which  - One-indexed id of the target comment (positive integer)
+ * @returns {{commentNr, txt_id: string, text: string, btn_id: string}}  - The two server-side ids which describe each comment/reply uniquely
+ */
+function getOriginalCommentIds(which) {
+    const elem = document.getElementById('originalCommentContainer').children[which-1].lastElementChild.lastElementChild.lastElementChild.lastElementChild;
+    const txt_id = elem.getAttribute('data-reply');
+    const btn_id = elem.getAttribute('data-id');
+    const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
+    return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
   
 /**
@@ -1014,26 +1114,26 @@ input[type="date"] {
       </fieldset>
       
       <fieldset class="card col">
-        <legend>Kommentare filtern</legend>
+        <legend>${t('Kommentare filtern')}</legend>
         <div class="row">
-          <label class="col-auto" style="margin-right: 2rem;">Suchtext:</label>
+          <label class="col-auto" style="margin-right: 2rem;">${t('Suche')}&colon;</label>
           <input id="filterUser" type="text" name="filterUser" class="col" />
         </div>
         <details id="moreFilter">
-          <summary id="moreFilterTrigger" style="text-align: right;">Erweiterte Filteroption</summary>
+          <summary id="moreFilterTrigger" style="text-align: right;">${t('Erweiterte Filteroptionen')}</summary>
           <ul id="moreFilterMenu" style="list-style-type: none;">
             <li>
-              <label>Muss alle Wörter enthalten</label>
+              <label>${t('Muss alle Wörter enthalten')}</label>
               <input type="checkbox" />
             </li>
             <li class="row">
-              <label class="col-4">nach Benutzer:</label>
+              <label class="col-4">${t('nach Benutzer')}&colon;</label>
               <div class="col">
                 <input id="filterUser" type="text" name="filterUser" />
               </div>
             </li>
             <li class="row">
-              <label class="row col-4">nach Datum:</label>
+              <label class="row col-4">${t('nach Datum')}&colon;</label>
               <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: 0.4rem;">
                 <input id="filterUser" name="filterUser" type="date" />
                 <label style="padding-block: .75rem;">-</label>
@@ -1051,21 +1151,7 @@ input[type="date"] {
     
     
   </div>
-`.parseHTML();
-
-
-
-/*
-TRANSLATIONS TODO
-
-Kommentare filtern
-Suchtext:
-Erweiterte Filteroption
-Muss alle Wörter enthalten              
-nach Datum:
-nach Benutzer:
-
- */
+`.parseHTML();
 
   // insert the style sheet for this route
   document.body.appendChild(globalStyles.parseHTML());

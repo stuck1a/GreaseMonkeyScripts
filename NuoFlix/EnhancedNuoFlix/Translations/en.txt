@@ -1,0 +1,167 @@
+[
+'Nur neue Kommentare',
+'New comments only',
+],
+
+
+[
+'Kommentare pro Seite:',
+'Comments per Page:',
+],
+
+
+[
+'alle',
+'all'
+],
+
+
+[
+'Kommentare {0} .. {1} von {2}',
+'Comments {0} .. {1} of {2}',
+],
+
+
+[
+'Antwort abschicken',
+'Send reply',
+],
+
+
+[
+'Deine Antwort zu diesem Kommentar',
+'Your reply to this comment',
+],
+
+
+[
+'antworten',
+'answer',
+],
+
+
+[
+'({0} gefiltert)',
+'({0} filtered)',
+],
+
+
+[
+'GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.',
+'GreaseMonkey function {0}() not found! Add "@grant {0}" in the script header to fix the error.',
+],
+
+
+[
+'DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.',
+'Target DOM element not found. Are you logged in? If yes, maybe the DOM has changed.',
+],
+
+
+[
+'Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!',
+'Warning!\nTried to store non-serializable object!\nThe script will try to store it as plain object, but the data might get corrupted!',
+],
+
+
+[
+'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden',
+'It seems like there is deprecated/invalid/corrupted comment data stored.\nUsually this should be fixed with the next page refresh.',
+],
+
+
+[
+'Aufgetreten in {0}',
+'Occurred in {0}',
+],
+
+
+[
+'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?',
+'Failed to gather "{0}" data - maybe the DOM has changed?',
+],
+
+
+[
+'Folgenden Benutzer zur Ignorieren-Liste hinzufügen:',
+'Add the following user to the ignore list:',
+],
+
+
+[
+'Noch keine Kommentare...',
+'No comments yet...',
+],
+
+
+[
+'Zeige {0} ältere Antworten',
+'Show {0} old replies',
+],
+
+
+[
+'Kein Kommentar entspricht den Filterkriterien',
+'No comments match the filter criteria',
+],
+
+
+[
+'Hinzufügen...',
+'Add...',
+],
+
+
+[
+'Entfernen',
+'Delete',
+],
+
+
+[
+'Blockierte Benutzer',
+'Blocked users',
+],
+
+
+[
+'NuoFlix 2.0',
+'Enhanced NuoFlix',
+],
+
+
+[
+'Kommentare filtern',
+'Filter comments',
+],
+
+
+[
+'Suche',
+'Search',
+],
+
+
+[
+'Erweiterte Filteroptionen',
+'Advanced filter options',
+],
+
+
+[
+'Muss alle Wörter enthalten',
+'Must contain all words',
+],
+
+
+[
+'nach Datum',
+'By date',
+],
+
+
+[
+'nach Benutzer',
+'By user',
+],
+

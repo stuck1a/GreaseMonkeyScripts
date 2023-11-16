@@ -41,7 +41,8 @@
   /*%% Global/configs.js %%*/
   /*%% Global/translations.js %%*/
   /*%% Global/utilFunctions.js %%*/
-  /*%% Global/functions_allPages.js %%*/
+  /*%% Global/functions_global.js %%*/
+  /*%% Global/functions_debug.js %%*/
   /*%% Global/functions_debug.js %%*/
   /*%% Global/html_mainSwitch.js %%*/
   

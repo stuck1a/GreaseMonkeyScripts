@@ -26,26 +26,26 @@ var mainUI = `
       </fieldset>
       
       <fieldset class="card col">
-        <legend>Kommentare filtern</legend>
+        <legend>${t('Kommentare filtern')}</legend>
         <div class="row">
-          <label class="col-auto" style="margin-right: 2rem;">Suchtext:</label>
+          <label class="col-auto" style="margin-right: 2rem;">${t('Suche')}&colon;</label>
           <input id="filterUser" type="text" name="filterUser" class="col" />
         </div>
         <details id="moreFilter">
-          <summary id="moreFilterTrigger" style="text-align: right;">Erweiterte Filteroption</summary>
+          <summary id="moreFilterTrigger" style="text-align: right;">${t('Erweiterte Filteroptionen')}</summary>
           <ul id="moreFilterMenu" style="list-style-type: none;">
             <li>
-              <label>Muss alle Wörter enthalten</label>
+              <label>${t('Muss alle Wörter enthalten')}</label>
               <input type="checkbox" />
             </li>
             <li class="row">
-              <label class="col-4">nach Benutzer:</label>
+              <label class="col-4">${t('nach Benutzer')}&colon;</label>
               <div class="col">
                 <input id="filterUser" type="text" name="filterUser" />
               </div>
             </li>
             <li class="row">
-              <label class="row col-4">nach Datum:</label>
+              <label class="row col-4">${t('nach Datum')}&colon;</label>
               <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: 0.4rem;">
                 <input id="filterUser" name="filterUser" type="date" />
                 <label style="padding-block: .75rem;">-</label>
@@ -64,17 +64,3 @@ var mainUI = `
     
   </div>
 `.parseHTML();
-
-
-
-/*
-TRANSLATIONS TODO
-
-Kommentare filtern
-Suchtext:
-Erweiterte Filteroption
-Muss alle Wörter enthalten              
-nach Datum:
-nach Benutzer:
-
- */
