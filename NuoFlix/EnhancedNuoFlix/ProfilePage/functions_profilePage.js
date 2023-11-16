@@ -801,6 +801,12 @@ function updateStaticTranslations() {
     { elementId: 'deleteIgnoreUser', text: 'Entfernen', args: [] },
     { elementId: 'btnFilterNew', text: 'Nur neue Kommentare', args: [] },
     { elementId: 'pluginHeadline', text: 'NuoFlix 2.0', args: [] },
+    { elementId: 'filterLabel', text: 'Kommentare filtern', args: [] },
+    { elementId: 'searchInputLabel', text: 'Suche', args: [] },
+    { elementId: 'moreFilterTrigger', text: 'Erweiterte Filteroptionen', args: [] },
+    { elementId: 'useAndLogicLabel', text: 'Muss alle Wörter enthalten', args: [] },
+    { elementId: 'searchByUserLabel', text: 'nach Benutzer', args: [] },
+    { elementId: 'searchByDateLabel', text: 'nach Datum', args: [] },
   ];
   for (const element of staticElementsToUpdate) {
     const target = document.getElementById(element.elementId);
