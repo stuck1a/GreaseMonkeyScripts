@@ -1,4 +1,4 @@
-mainSwitchContainer = `
+const mainSwitchContainer = `
   <div id="mainSwitchContainer">
     <div>
       <input id="mainSwitch" type="checkbox" name="mainSwitch" checked="checked">

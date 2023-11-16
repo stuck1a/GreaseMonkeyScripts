@@ -1,3 +1,4 @@
+
 /**
  * Holds the whole execution flow for any other than the profile page.
  * Since NuoFlix uses pretty links cms, we have to try if we are on

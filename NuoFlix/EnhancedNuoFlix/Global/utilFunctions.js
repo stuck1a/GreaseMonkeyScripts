@@ -74,7 +74,7 @@ function isJson(item) {
  * @param {string} key  - Target storage key
  * @param {boolean} [global=false]  - Omit script specific cache key
  *
- * @return {boolean}  - Value stored under given key
+ * @return {any}  - Value stored under given key
  */
 function get_value(key, global = false) {
   if (typeof GM_setValue !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_setValue'), 'fatal');

@@ -1,3 +1,20 @@
+/*<SKIP>*/
+/** @var {DocumentFragment|HTMLElement} enhancedUiContainer  ### Global */
+/** @var {DocumentFragment|HTMLElement} customCommentContainer  ### Global */
+/** @var {DocumentFragment|HTMLElement} originalCommentContainer  ### Global */
+/** @var {any} paginationContainer  ### Global */
+/** @var {any} paginationContainerBottom  ### Global */
+/** @var {any} paginationControlContainer  ### Global */
+/** @var {int} filteredCommentsCount  ### Global */
+/** @var {any} storedData  ### Global */
+/** @var {any} commentData  ### Global */
+/** @var {Map} commentFilters  ### Global */
+/** @var {string} activeLanguage  ### Global */
+/** @var {int} totalComments  ### Global */
+/** @var {int} currentStart  ### Global */
+/** @var {int} currentLength  ### Global */
+/*</SKIP>*/
+
 
 /**
  * Function which receives the main execution flow
@@ -5,6 +22,8 @@
  */
 function execute_profilePage() {
 
+  /*%% ProfilePage/styles_profilePage.js %%*/
+  /*%% ProfilePage/html_mainUI.js %%*/
 
   document.body.appendChild(globalStyles.parseHTML());
 
@@ -49,7 +68,7 @@ function execute_profilePage() {
     set_value('ignoredUsers', ignoreFilter.value);
     updatePage();
   });
-  
+
   document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
     const selectElement = document.getElementById('ignoredUsers');
     if (selectElement.selectedOptions.length > 0) {
@@ -152,7 +171,7 @@ function generateCommentObject() {
   let RawData = document.getElementsByClassName('profilContentInner')[0];
   if (!RawData) return [];
   let commentBlocksRaw = RawData.getElementsByClassName('commentItem');
-  
+
   // generate data array for each raw comment
   let commentDataCollection = [];
   let counter = 0;
@@ -160,7 +179,7 @@ function generateCommentObject() {
   for (const commentRaw of commentBlocksRaw) {
     let commentItemData = {};
     commentItemData.id = ++counter;
-    
+
     // section 'form'
     commentItemData.form = {};
     tmp = commentRaw.getElementsByClassName('sendReplyProfil')[0];
@@ -205,12 +224,12 @@ function generateCommentObject() {
       replyData.isNew = replyCounter > storedReplyCount;
       commentItemData.replies.push(replyData);
     }
-    
+
     commentItemData.reply_cnt = replyCounter;
     commentItemData.hasNewReplies = replyCounter > storedReplyCount;
     commentDataCollection.push(commentItemData);
   }
-  
+
   return commentDataCollection;
 }
 
@@ -219,7 +238,7 @@ function generateCommentObject() {
 
 /**
  * Uses the data of a single comment including all
- * its replies to generate a HTML comment with
+ * its replies to generate an HTML comment with
  * the original structure which can be appended
  * to the page's comment blocks section.
  *
@@ -230,7 +249,7 @@ function generateCommentObject() {
  */
 function buildCommentBlock(commentData, counter = 1) {
   if (!commentData) return;
-  
+
   // generate replies
   let cnt = 0;
   let repliesBlock = '';
@@ -243,7 +262,7 @@ function buildCommentBlock(commentData, counter = 1) {
         if (ignoredUser === replyData.user) continue outer;
       }
     }
-    
+
     repliesBlock += `
       <div class="replyContainer${replyData.isNew ? ' ' + cssClassNewReplies : ''}">
         <div class="spacer25" data-reply-id="${++cnt}"></div>
@@ -257,7 +276,7 @@ function buildCommentBlock(commentData, counter = 1) {
       </div>
     `;
   }
-  
+
   // generate comment including the pre-generated replies
   const commentBlock = `
     <div data-comment-id="${counter}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
@@ -272,13 +291,13 @@ function buildCommentBlock(commentData, counter = 1) {
         <div class="replyHolder">
           <div id="commentTxtHolder">
             <textarea id="commentTxt_${commentData.form.txt_id}" placeholder="${t('Deine Antwort zu diesem Kommentar')}"></textarea>
-            <div data-id="${commentData.form.btn_id}" data-reply="${commentData.form.txt_id}" class="btn sendReplyProfil">${'Antwort abschicken'}</div>
+            <div data-id="${commentData.form.btn_id}" data-reply="${commentData.form.txt_id}" class="btn sendReplyProfil">${t('Antwort abschicken')}</div>
           </div>
         </div>
       </div>
     </div>
   `;
-  
+
   return commentBlock.parseHTML();
 }
 
@@ -287,10 +306,10 @@ function buildCommentBlock(commentData, counter = 1) {
 
 /**
  * Search in the stored comment data for the comment matching
- * both given id's checks, whether its a new comment or not.
+ * both given id's checks, whether it's a new comment or not.
  *
- * <strong>Note: For now, we compare both ids, since its not known what
- * they exactly mean and if both are unique by themself or not.</strong>
+ * <strong>Note: For now, we compare both ids, since it's not known what
+ * they exactly mean and if both are unique by themselves or not.</strong>
  *
  * @param {string|int} btn_id  - The first server-side comment id
  * @param {string|int} txt_id  - The second serve-side comment id
@@ -320,8 +339,8 @@ function isNewComment(btn_id, txt_id) {
  * Search in the stored comment data for the comment matching
  * both given id's and count its replies, if found.
  *
- * <strong>Note: For now, we compare both ids, since its not known what
- * they exactly mean and if both are unique by themself or not.</strong>
+ * <strong>Note: For now, we compare both ids, since it's not known what
+ * they exactly mean and if both are unique by themselves or not.</strong>
  *
  * @param {string|int} btn_id  - The first server-side comment id
  * @param {string|int} txt_id  - The second serve-side comment id
@@ -374,7 +393,7 @@ function insertPaginatedComments() {
     if (applyFilters(comment)) filteredComments.push(comment);
   }
   while (insertedComments < currentLength) {
-    // stop if we have filtered as much comments as we even have in total
+    // stop if we have filtered as many comments as we even have in total
     if (counter > totalComments || counter / currentPage > filteredComments.length) break;
     // add comment to page
     commentItemElement = buildCommentBlock(filteredComments[currentStart + insertedComments - 1], insertedComments);
@@ -392,13 +411,13 @@ function insertPaginatedComments() {
  * @return {boolean} True, if the comment shall be displayed, false if not
  */
 function applyFilters(commentData) {
-  
+
   /* show only, if the comment is new or has new replies */
   if (commentFilters.get('filterOnlyNew').active) {
     if (!commentData.isNew && !commentData.hasNewReplies) return false;
   }
-  
-  
+
+
   /* show only, if one of the comment/replies authors is listed in the username filter list */
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
@@ -406,7 +425,7 @@ function applyFilters(commentData) {
       // get a list of all related users (comment author and all replies authors)
       const usersFromReplies = commentData.replies.map(function (item) { return item.user || ''; });
       const relatedUsers = mergeArraysDistinct([author], usersFromReplies);
-      // check if the the current user from filter list is in the author list
+      // check if the current user from filter list is in the author list
       if (relatedUsers.indexOf(commentData.user) > -1) {
         match = true;
         break;
@@ -415,7 +434,7 @@ function applyFilters(commentData) {
     if (!match) return false;
   }
 
-  
+
   /* show only, if author is NOT in the list of ignored users (replies are checked individually elsewhere) */
   if (commentFilters.get('filterSkipUser').active) {
     for (const author of commentFilters.get('filterSkipUser').value) {
@@ -423,7 +442,7 @@ function applyFilters(commentData) {
     }
   }
 
-  
+
   /* show only, if ALL search words are found somewhere in the related properties of the comment */
   if (commentFilters.get('filterTextSearch').active) {
     // collect all string to search in
@@ -465,14 +484,14 @@ function buildPaginationUi() {
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let firstPageButton = currentPage >= 4 ? currentPage - 2 : 1;
   let highestPageButton = totalPages >= 5 ? firstPageButton + 4 : totalPages;
-  
+
   // adjust if upper bound reached
   if (highestPageButton > totalPages) {
     firstPageButton -= (highestPageButton - totalPages);
     firstPageButton = firstPageButton < 1 ? 1 : firstPageButton;
     highestPageButton = totalPages;
   }
-  
+
   highestPageButton = highestPageButton > totalPages ? totalPages : highestPageButton;
   let buttons = '';
   let buttonStart;
@@ -506,7 +525,7 @@ function buildPaginationUi() {
  * of the jumps buttons like "next" or "first")
  *
  * @param {int|string} pageNr  - Becomes Buttons caption
- * @param {int|string} buttonStart  - Id of the first comment to display if this button is clicked
+ * @param {int|string} buttonStart  - ID of the first comment to display if this button is clicked
  * @param {boolean} isActivePage  - If true, button will get class "activePage" and attribute "disabled"
  *
  * @return {string}  Parseable string representation of the button
@@ -561,12 +580,12 @@ function insertLanguageDropdown() {
       <div id="language_dropdown_menu"></div>
     </div>
   `.parseHTML();
-  
+
   // insert as first element after the section headline
   const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
   enhancedUiContainer.insertBefore(languageContainerHtml, headlineHolder.nextElementSibling);
   const languageContainer = document.getElementById('language_container');
-  
+
   // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
     const metadata = language[1].get('__metadata__');
@@ -581,7 +600,7 @@ function insertLanguageDropdown() {
         activeLanguage = langId;
         updatePage();
       }
-      
+
       // rebuild the language menu so the hover effect loses its effect causing the menu to close
       languageContainer.remove();
       insertLanguageDropdown();
@@ -595,17 +614,17 @@ function insertLanguageDropdown() {
 /**
  * Click event handler for the "comments per page"
  * select box of the pagination control.
- * 
+ *
  * @param {MouseEvent} ev
  */
 function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
   currentStart = currentLength * currentPage - currentLength + 1;
-  
+
   // This will fix the edge case where filtered total is smaller than current start
   if (currentStart > totalComments - getFilteredCount()) currentStart = 1;
-  
+
   updatePage();
 }
 
@@ -613,13 +632,13 @@ function doChangeLength(ev) {
 
 
 /**
- * TODO: Build a fascade for inserting elements to the dom, then we can auto-generate
+ * TODO: Build a facade for inserting elements to the dom, then we can auto-generate
  *       those lists and generalize this function. We will need it at every route if
  *       the switch were moved to the header
- * 
+ *
  * Click event handler for the global switch which
  * turns all of this UserScripts features on/off.
- * 
+ *
  * @param {Event} ev
  */
 function doChangeMainSwitch(ev) {
@@ -647,7 +666,7 @@ function doChangeMainSwitch(ev) {
 /**
  * Event handler for all buttons within the pagination.
  * Excepts attributes 'data-start' and 'data-length' in the received element.
- * 
+ *
  * @param {Event} ev  - Left click event
  * @param {HTMLElement} clickedBtn  - Clicked button
  */

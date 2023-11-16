@@ -23,52 +23,47 @@
 (function() {
   /*%% Global/configs.js %%*/
   /*%% Global/translations.js %%*/
-  
+
   // ###########################################################
   // ###                      UTILITIES                      ###
   // ###########################################################
-  
+
   /*%% Global/utilFunctions.js %%*/
-  
+
   // ###########################################################
   // ###                 SCRIPT FUNCTIONS                    ###
   // ###########################################################
-  
+
   /*%% Global/functions_allPages.js %%*/
   /*%% Global/functions_debug.js %%*/
-  /*%% StartPage/functions_startPage.js %%*/
-  /*%% ProfilePage/functions_profilePage.js %%*/
-  /*%% VideoPage/functions_videoPage.js %%*/
-  
+
   // ###########################################################
   // ###                  EXECUTION FLOW                     ###
   // ###########################################################
-  
+
   // declare global variables
   let commentData;
   let storedData;
   let totalComments;
   let enhancedUiContainer;
-  let commentFilters;
   let paginationContainer, paginationContainerBottom, paginationControlContainer;
   let customCommentContainer, originalCommentContainer;
-  let globalStyles;
-  let mainSwitchContainer;
-  
+  /*%% Global/html_mainSwitch.js %%*/
+
   // initialization
   let currentStart = defaultStart;
   let currentLength = defaultLength;
   let activeLanguage = defaultLanguage;
   let filteredCommentsCount = 0;
-  
-  commentFilters = new Map([
+
+  let commentFilters = new Map([
     // currently supported types for property "value" are: boolean, string, array
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
     [ 'filterTextSearch', { active: false, value: [] } ],
   ]);
-  
+
   // restore list of ignored users
   const storedIgnoreList = get_value('ignoredUsers');
   for (const user of storedIgnoreList) {
@@ -77,23 +72,17 @@
     ignoreFilter.value.push(user);
     ignoreFilter.active = true;
   }
-  
+
   // hand over execution flow depending on which page we are
   const route = getActiveRoute();
   if (route === 'index') {
-    
+    /*%% StartPage/functions_startPage.js %%*/
     execute_startPage();
-    
   } else if (route === 'profile') {
-
-    /*%% Global/html_mainSwitch.js %%*/
-    /*%% ProfilePage/styles_profilePage.js %%*/
-    /*%% ProfilePage/html_mainUI.js %%*/
+    /*%% ProfilePage/functions_profilePage.js %%*/
     execute_profilePage();
-    
   } else if (route === 'video') {
-    
+    /*%% VideoPage/functions_videoPage.js %%*/
     execute_genericPage();
-    
   }
 })();
