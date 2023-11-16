@@ -2,7 +2,7 @@
 /**
  * Marks some comments as new and inserts some fake replies here and there
  */
-function DEBUG_setSomeFakeData() {
+function DEBUG_setSomeFakeData(commentData) {
   commentData[0].hasNewReplies = true;
   commentData[0].reply_cnt = 7;
   commentData[0].replies.push({
@@ -116,6 +116,8 @@ function DEBUG_setSomeFakeData() {
     text: "Fake Kommentar D (hatte davor keine Replies)",
     isNew: true
   });
+  
+  return commentData;
 }
 
 

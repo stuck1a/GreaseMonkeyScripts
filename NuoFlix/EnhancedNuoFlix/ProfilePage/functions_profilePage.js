@@ -1,56 +1,47 @@
-/*<SKIP>*/
-/** @var {DocumentFragment|HTMLElement} enhancedUiContainer  ### Global */
-/** @var {DocumentFragment|HTMLElement} customCommentContainer  ### Global */
-/** @var {DocumentFragment|HTMLElement} originalCommentContainer  ### Global */
-/** @var {any} paginationContainer  ### Global */
-/** @var {any} paginationContainerBottom  ### Global */
-/** @var {any} paginationControlContainer  ### Global */
-/** @var {int} filteredCommentsCount  ### Global */
-/** @var {any} storedData  ### Global */
-/** @var {any} commentData  ### Global */
-/** @var {Map} commentFilters  ### Global */
-/** @var {string} activeLanguage  ### Global */
-/** @var {int} totalComments  ### Global */
-/** @var {int} currentStart  ### Global */
-/** @var {int} currentLength  ### Global */
-/*</SKIP>*/
+
+// set up route-scoped fields and start the execution flow fo this route
+let commentData;
+let storedCommentData;
+let enhancedUiContainer;
+
+execute_profilePage();
+
 
 
 /**
- * Function which receives the main execution flow
- * if we are on the profile page.
+ * Main function of this route
  */
 function execute_profilePage() {
-
   /*%% ProfilePage/styles_profilePage.js %%*/
   /*%% ProfilePage/html_mainUI.js %%*/
 
+  // insert the style sheet for this route
   document.body.appendChild(globalStyles.parseHTML());
 
-  // add the new UI and store its reference
+  // insert the additional UI section
   addCommentMenuToPage(mainUI);
   enhancedUiContainer = document.getElementById('enhancedUi');
 
-  // hide the original comment container
+  // search and disable the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
-  // if not found probably not logged in (anymore), so lets stop here
   if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
-
   originalCommentContainer.id = 'originalCommentContainer';
   originalCommentContainer.classList.add('hidden');
-
-  // get stored comment data (to identify new comments) and update storage with the new comment data
-  storedData = get_value('commentData');
+  
+  // get last state of stored comments (to identify new comments), then update the storage
+  storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
-  totalComments = commentData.length;
-  DEBUG_setSomeFakeData();
+  commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
   set_value('commentData', commentData);
 
-  // add custom comment container
+  // count comments
+  totalComments = commentData.length;
+  
+  // build and insert our own comment container
   customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
   originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
 
-  // mount handlers for ignore user feature
+  // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
     const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
     if (user === null || user === '') return;
@@ -88,13 +79,13 @@ function execute_profilePage() {
     }
   });
 
-  // add fancy switch to turn off all features and restore the original elements instead
-  // TODO: Replace with something which works on all pages, like somewhere in the header
-  //       Then store the state in the GM storage
+  // insert the main switch to disable EnhancedNuoFlix
+  // TODO: Replace with something which works on all pages, somewhere in the header
+  //       Then store its current state in the GM storage to restore when go on another route/page
   enhancedUiContainer.parentElement.insertBefore(mainSwitchContainer, enhancedUiContainer);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
-  // mount handler for "new only" filter button
+  // mount handler for the "new only" filter button
   // TODO: Will be replaced by checkbox
   document.getElementById('btnFilterNew').addEventListener('click', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
@@ -109,8 +100,9 @@ function execute_profilePage() {
     }
   });
 
+  // initially generate and insert all dynamic components
   updatePage();
-  insertLanguageDropdown();
+  insertLanguageDropdown();  // TODO: Can we move this into updatePage, too ?
 
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
@@ -317,9 +309,9 @@ function buildCommentBlock(commentData, counter = 1) {
  * @return {boolean}  - Value of stored comments "isNew" property
  */
 function isNewComment(btn_id, txt_id) {
-  storedData = storedData || get_value('commentData');
+  storedCommentData = storedCommentData || get_value('commentData');
   let msgPrinted = false;
-  for (const storedComment of storedData) {
+  for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
         const msg = 'It seems like there is deprecated/invalid/corrupted comment data stored.\nUsually this should be fixed with the next page refresh.';
@@ -344,12 +336,12 @@ function isNewComment(btn_id, txt_id) {
  *
  * @param {string|int} btn_id  - The first server-side comment id
  * @param {string|int} txt_id  - The second serve-side comment id
- * @return {boolean|int}  - Reply count or 0 if comment not found
+ * @return {int}  - Reply count (0 if comment not found)
  */
 function getReplyCount(btn_id, txt_id) {
-  storedData = storedData || get_value('commentData');
+  storedCommentData = storedCommentData || get_value('commentData');
   let msgPrinted = false;
-  for (const storedComment of storedData) {
+  for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
         const msg = 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden';
@@ -827,3 +819,5 @@ function updatePage() {
   updatePaginationUI();
   updateStaticTranslations();
 }
+
+

@@ -1,9 +1,15 @@
 
+// set up route-scoped fields and start the execution flow fo this route
+
+execute_genericPage()
+
+
+// TODO: Innere Funktionen rausholen, jetzt wo alles schön scoped ist :-)
+
+
+
 /**
- * Holds the whole execution flow for any other than the profile page.
- * Since NuoFlix uses pretty links cms, we have to try if we are on
- * a page with a comment section. If a comment section is found,
- * the blocked user filter will be applied on it.
+ * Main function of this route
  */
 function execute_genericPage() {
   if (document.getElementById('commentContent')) {

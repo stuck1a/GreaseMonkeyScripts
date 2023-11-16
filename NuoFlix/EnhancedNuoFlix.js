@@ -20,6 +20,23 @@
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 
+
+  /*
+   * TODO: Implement wrapper fnc addToDOM(element, refElement, method, isCustomElement = true) which facades appendChild() and insertBefore().
+   *       method value       placement
+   *       'asLastChild'      refElement.appendChild(element)
+   *       'asFirstChild'     refElement.prependChild(element)
+   *       'after'            refElement.parentElement.insertAfter(element, refElement)
+   *       'before'           refElement.parentElement.insertBefore(element, refElement)
+   *       Additionally, the wrapper will maintain a global list of custom elements, so that we know which elements to hide when
+   *       we turn off the script with the main switch.
+   *       
+   * TODO: Implement wrapper fnc hideOriginElement(element, restoreId) which will also maintain such a list, just for
+   *       original page elements we disabled because we replaced them with custom ones or so. Will be used to restore the
+   *       original page state when we turn off the script with the main switch. But we also store a object reference, so
+   *       we can use it to gather infos about it and such.
+   */
+
 (function() {
   // Unique key used for the GM data storage to avoid naming conflicts across scripts
 const CACHE_KEY = 's1a/enhancednuoflix';
@@ -47,7 +64,7 @@ const pageRoutes = new Map([
   [ '/',        'start'   ],
   [ '/profil',  'profile' ],
   [ '/.+',      'video'   ],
-]);
+]);
   // Translations
 const i18n = new Map([
   [
@@ -120,12 +137,7 @@ const i18n = new Map([
       [ 'NuoFlix 2.0', 'Uluchshennyy NuoFlix' ],
     ])
   ],
-]);
-
-  // ###########################################################
-  // ###                      UTILITIES                      ###
-  // ###########################################################
-
+]);
   /**
  * Works like sprintf in PHP. Use {n} as placeholder, where
  * n is zero-indexed. Excepts n additional arguments of
@@ -350,12 +362,7 @@ function t(string, ...args) {
   const lang = activeLanguage || defaultLanguage;
   if (!i18n.has(lang) || !i18n.get(lang).has(string)) return String.sprintf(string, ...args);
   return String.sprintf(i18n.get(lang).get(string), ...args);
-}
-
-  // ###########################################################
-  // ###                 SCRIPT FUNCTIONS                    ###
-  // ###########################################################
-
+}
   
 /**
  * Uses the predefined route mappings to determine the route name
@@ -368,12 +375,12 @@ function getActiveRoute() {
     if (window.location.pathname.match(new RegExp(`^${route[0]}/*$`, 'i'))) return route[1];
   }
   return '';
-}
+}
   
 /**
  * Marks some comments as new and inserts some fake replies here and there
  */
-function DEBUG_setSomeFakeData() {
+function DEBUG_setSomeFakeData(commentData) {
   commentData[0].hasNewReplies = true;
   commentData[0].reply_cnt = 7;
   commentData[0].replies.push({
@@ -487,6 +494,8 @@ function DEBUG_setSomeFakeData() {
     text: "Fake Kommentar D (hatte davor keine Replies)",
     isNew: true
   });
+  
+  return commentData;
 }
 
 
@@ -503,76 +512,7 @@ function getOriginalCommentIds(which) {
     const btn_id = elem.getAttribute('data-id');
     const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
-}
-  
-/**
- * Function which receives the main execution flow
- * if we are on the start page.
- */
-function execute_startPage() {
-  
-}
-
-  
-/**
- * Holds the whole execution flow for any other than the profile page.
- * Since NuoFlix uses pretty links cms, we have to try if we are on
- * a page with a comment section. If a comment section is found,
- * the blocked user filter will be applied on it.
- */
-function execute_genericPage() {
-  if (document.getElementById('commentContent')) {
-    // function to delete comments and replies of a given user
-    const removeCommentsFrom = function(username) {
-      const allComments = document.querySelectorAll('.profilName');
-      for (let i = allComments.length - 1; i >= 0; i--) {
-        const comment = allComments[i];
-        if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
-          if (comment.id.startsWith('comment_')) {
-            // also remove spacer if its a reply
-            if (comment.previousElementSibling) comment.previousElementSibling.remove();
-          }
-          if (comment.parentElement.classList.contains('commentItem')) {
-            comment.parentElement.remove();
-          } else {
-            comment.remove();
-          }
-        }
-      }
-    }
-    // we need some delay for the comments to load
-    function tryToApply() {
-      setTimeout(function() {
-        if (comments.childElementCount > 0) {
-          for (const user of storedIgnoreList) removeCommentsFrom(user);
-        } else {
-          // retry it up to 3 times after waiting one second after each try
-          if (retries < 2) {
-            retries++;
-            tryToApply();
-          }
-        }
-      }, 1000);
-    }
-    // load list of ignored users and try to apply them
-    const storedIgnoreList = get_value('ignoredUsers');
-    const comments = document.getElementById('commentContent');
-    let retries = 0;
-    tryToApply();
-  }
-}
-
-  // ###########################################################
-  // ###                  EXECUTION FLOW                     ###
-  // ###########################################################
-
-  // declare global variables
-  let commentData;
-  let storedData;
-  let totalComments;
-  let enhancedUiContainer;
-  let paginationContainer, paginationContainerBottom, paginationControlContainer;
-  let customCommentContainer, originalCommentContainer;
+}
   const mainSwitchContainer = `
   <div id="mainSwitchContainer">
     <div>
@@ -673,60 +613,64 @@ function execute_genericPage() {
       }
     </style>
   </div>
-`.parseHTML();
-
-  // initialization
+`.parseHTML();
+  
+  let totalComments;
+  let paginationContainer, paginationContainerBottom, paginationControlContainer;
+  let customCommentContainer, originalCommentContainer;
+  
   let currentStart = defaultStart;
   let currentLength = defaultLength;
   let activeLanguage = defaultLanguage;
   let filteredCommentsCount = 0;
-
+  
   let commentFilters = new Map([
-    // currently supported types for property "value" are: boolean, string, array
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
     [ 'filterTextSearch', { active: false, value: [] } ],
   ]);
 
-  // restore list of ignored users
-  const storedIgnoreList = get_value('ignoredUsers');
-  for (const user of storedIgnoreList) {
+  // set up blocked user filter
+  for (const user of get_value('ignoredUsers')) {
     document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
     const ignoreFilter = commentFilters.get('filterSkipUser');
     ignoreFilter.value.push(user);
     ignoreFilter.active = true;
   }
 
-  // hand over execution flow depending on which page we are
+  
+  // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'index') {
-    execute_startPage();
-  } else if (route === 'profile') {
-    /*<SKIP>*/
-/** @var {DocumentFragment|HTMLElement} enhancedUiContainer  ### Global */
-/** @var {DocumentFragment|HTMLElement} customCommentContainer  ### Global */
-/** @var {DocumentFragment|HTMLElement} originalCommentContainer  ### Global */
-/** @var {any} paginationContainer  ### Global */
-/** @var {any} paginationContainerBottom  ### Global */
-/** @var {any} paginationControlContainer  ### Global */
-/** @var {int} filteredCommentsCount  ### Global */
-/** @var {any} storedData  ### Global */
-/** @var {any} commentData  ### Global */
-/** @var {Map} commentFilters  ### Global */
-/** @var {string} activeLanguage  ### Global */
-/** @var {int} totalComments  ### Global */
-/** @var {int} currentStart  ### Global */
-/** @var {int} currentLength  ### Global */
-/*</SKIP>*/
+    (function() { 
+// set up route-scoped fields and start the execution flow fo this route
+
+execute_startPage();
+
 
 
 /**
- * Function which receives the main execution flow
- * if we are on the profile page.
+ * Main function of this route
+ */
+function execute_startPage() {
+  
+} })();
+  } else if (route === 'profile') {
+    (function() { 
+// set up route-scoped fields and start the execution flow fo this route
+let commentData;
+let storedCommentData;
+let enhancedUiContainer;
+
+execute_profilePage();
+
+
+
+/**
+ * Main function of this route
  */
 function execute_profilePage() {
-
   const globalStyles = `<style>
 
 :root {
@@ -1041,7 +985,7 @@ input[type="date"] {
     background-color: ${highlightedRepliesColor};
   }
 </style>
-`;
+`;
   var mainUI = `
   <div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
@@ -1121,34 +1065,35 @@ Muss alle Wörter enthalten
 nach Datum:
 nach Benutzer:
 
- */
+ */
 
+  // insert the style sheet for this route
   document.body.appendChild(globalStyles.parseHTML());
 
-  // add the new UI and store its reference
+  // insert the additional UI section
   addCommentMenuToPage(mainUI);
   enhancedUiContainer = document.getElementById('enhancedUi');
 
-  // hide the original comment container
+  // search and disable the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
-  // if not found probably not logged in (anymore), so lets stop here
   if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
-
   originalCommentContainer.id = 'originalCommentContainer';
   originalCommentContainer.classList.add('hidden');
-
-  // get stored comment data (to identify new comments) and update storage with the new comment data
-  storedData = get_value('commentData');
+  
+  // get last state of stored comments (to identify new comments), then update the storage
+  storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
-  totalComments = commentData.length;
-  DEBUG_setSomeFakeData();
+  commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
   set_value('commentData', commentData);
 
-  // add custom comment container
+  // count comments
+  totalComments = commentData.length;
+  
+  // build and insert our own comment container
   customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
   originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
 
-  // mount handlers for ignore user feature
+  // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
     const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
     if (user === null || user === '') return;
@@ -1186,13 +1131,13 @@ nach Benutzer:
     }
   });
 
-  // add fancy switch to turn off all features and restore the original elements instead
-  // TODO: Replace with something which works on all pages, like somewhere in the header
-  //       Then store the state in the GM storage
+  // insert the main switch to disable EnhancedNuoFlix
+  // TODO: Replace with something which works on all pages, somewhere in the header
+  //       Then store its current state in the GM storage to restore when go on another route/page
   enhancedUiContainer.parentElement.insertBefore(mainSwitchContainer, enhancedUiContainer);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
-  // mount handler for "new only" filter button
+  // mount handler for the "new only" filter button
   // TODO: Will be replaced by checkbox
   document.getElementById('btnFilterNew').addEventListener('click', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
@@ -1207,8 +1152,9 @@ nach Benutzer:
     }
   });
 
+  // initially generate and insert all dynamic components
   updatePage();
-  insertLanguageDropdown();
+  insertLanguageDropdown();  // TODO: Can we move this into updatePage, too ?
 
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
@@ -1415,9 +1361,9 @@ function buildCommentBlock(commentData, counter = 1) {
  * @return {boolean}  - Value of stored comments "isNew" property
  */
 function isNewComment(btn_id, txt_id) {
-  storedData = storedData || get_value('commentData');
+  storedCommentData = storedCommentData || get_value('commentData');
   let msgPrinted = false;
-  for (const storedComment of storedData) {
+  for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
         const msg = 'It seems like there is deprecated/invalid/corrupted comment data stored.\nUsually this should be fixed with the next page refresh.';
@@ -1442,12 +1388,12 @@ function isNewComment(btn_id, txt_id) {
  *
  * @param {string|int} btn_id  - The first server-side comment id
  * @param {string|int} txt_id  - The second serve-side comment id
- * @return {boolean|int}  - Reply count or 0 if comment not found
+ * @return {int}  - Reply count (0 if comment not found)
  */
 function getReplyCount(btn_id, txt_id) {
-  storedData = storedData || get_value('commentData');
+  storedCommentData = storedCommentData || get_value('commentData');
   let msgPrinted = false;
-  for (const storedComment of storedData) {
+  for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
         const msg = 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden';
@@ -1925,8 +1871,62 @@ function updatePage() {
   updatePaginationUI();
   updateStaticTranslations();
 }
-    execute_profilePage();
+
+ })();
   } else if (route === 'video') {
-    execute_genericPage();
+    (function() { 
+// set up route-scoped fields and start the execution flow fo this route
+
+execute_genericPage()
+
+
+// TODO: Innere Funktionen rausholen, jetzt wo alles schön scoped ist :-)
+
+
+
+/**
+ * Main function of this route
+ */
+function execute_genericPage() {
+  if (document.getElementById('commentContent')) {
+    // function to delete comments and replies of a given user
+    const removeCommentsFrom = function(username) {
+      const allComments = document.querySelectorAll('.profilName');
+      for (let i = allComments.length - 1; i >= 0; i--) {
+        const comment = allComments[i];
+        if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
+          if (comment.id.startsWith('comment_')) {
+            // also remove spacer if its a reply
+            if (comment.previousElementSibling) comment.previousElementSibling.remove();
+          }
+          if (comment.parentElement.classList.contains('commentItem')) {
+            comment.parentElement.remove();
+          } else {
+            comment.remove();
+          }
+        }
+      }
+    }
+    // we need some delay for the comments to load
+    function tryToApply() {
+      setTimeout(function() {
+        if (comments.childElementCount > 0) {
+          for (const user of storedIgnoreList) removeCommentsFrom(user);
+        } else {
+          // retry it up to 3 times after waiting one second after each try
+          if (retries < 2) {
+            retries++;
+            tryToApply();
+          }
+        }
+      }, 1000);
+    }
+    // load list of ignored users and try to apply them
+    const storedIgnoreList = get_value('ignoredUsers');
+    const comments = document.getElementById('commentContent');
+    let retries = 0;
+    tryToApply();
+  }
+} })();
   }
 })();

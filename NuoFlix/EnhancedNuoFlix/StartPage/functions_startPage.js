@@ -1,7 +1,12 @@
 
+// set up route-scoped fields and start the execution flow fo this route
+
+execute_startPage();
+
+
+
 /**
- * Function which receives the main execution flow
- * if we are on the start page.
+ * Main function of this route
  */
 function execute_startPage() {
   
