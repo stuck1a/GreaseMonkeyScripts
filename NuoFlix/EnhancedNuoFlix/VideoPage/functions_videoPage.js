@@ -4,7 +4,7 @@
  * a page with a comment section. If a comment section is found,
  * the blocked user filter will be applied on it.
  */
-function applyBlockedUserGenericPage() {
+function execute_genericPage() {
   if (document.getElementById('commentContent')) {
     // function to delete comments and replies of a given user
     const removeCommentsFrom = function(username) {

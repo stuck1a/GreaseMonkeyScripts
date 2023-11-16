@@ -1,5 +1,107 @@
+
 /**
- * Adds this scripts central control panel to the DOM.
+ * Function which receives the main execution flow
+ * if we are on the profile page.
+ */
+function execute_profilePage() {
+
+
+  document.body.appendChild(globalStyles.parseHTML());
+
+  // add the new UI and store its reference
+  addCommentMenuToPage(mainUI);
+  enhancedUiContainer = document.getElementById('enhancedUi');
+
+  // hide the original comment container
+  originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+  // if not found probably not logged in (anymore), so lets stop here
+  if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
+
+  originalCommentContainer.id = 'originalCommentContainer';
+  originalCommentContainer.classList.add('hidden');
+
+  // get stored comment data (to identify new comments) and update storage with the new comment data
+  storedData = get_value('commentData');
+  commentData = generateCommentObject();
+  totalComments = commentData.length;
+  DEBUG_setSomeFakeData();
+  set_value('commentData', commentData);
+
+  // add custom comment container
+  customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
+  originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
+
+  // mount handlers for ignore user feature
+  document.getElementById('addIgnoreUser').addEventListener('click', function() {
+    const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
+    if (user === null || user === '') return;
+    const selectElement = document.getElementById('ignoredUsers');
+    for (const option of selectElement.children) {
+      if (option.innerText === user) return;
+    }
+    const option = `<option>${user}</option>`.parseHTML();
+    document.getElementById('ignoredUsers').appendChild(option);
+    // update filter
+    const ignoreFilter = commentFilters.get('filterSkipUser');
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
+    // update storage
+    set_value('ignoredUsers', ignoreFilter.value);
+    updatePage();
+  });
+  
+  document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
+    const selectElement = document.getElementById('ignoredUsers');
+    if (selectElement.selectedOptions.length > 0) {
+      const user = selectElement.selectedOptions[0].innerText.trim();
+      selectElement.selectedOptions[0].remove();
+      const ignoreFilter = commentFilters.get('filterSkipUser');
+      // update filter
+      const oldIgnoreList = ignoreFilter.value;
+      ignoreFilter.value = [];
+      for (const entry of oldIgnoreList) {
+        if (entry !== user) ignoreFilter.value.push(entry);
+      }
+      if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
+      // update storage
+      set_value('ignoredUsers', ignoreFilter.value);
+      updatePage();
+    }
+  });
+
+  // add fancy switch to turn off all features and restore the original elements instead
+  // TODO: Replace with something which works on all pages, like somewhere in the header
+  //       Then store the state in the GM storage
+  enhancedUiContainer.parentElement.insertBefore(mainSwitchContainer, enhancedUiContainer);
+  document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
+
+  // mount handler for "new only" filter button
+  // TODO: Will be replaced by checkbox
+  document.getElementById('btnFilterNew').addEventListener('click', function() {
+    changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
+    if (commentFilters.get('filterOnlyNew').active) {
+      // this will change the cross to a hook in the filter button
+      this.classList.add('filterIsActive');
+      // no need to highlight new comments if we filter all not new
+      document.getElementById('style_newComment').innerText = '';
+    } else {
+      this.classList.remove('filterIsActive');
+      document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
+    }
+  });
+
+  updatePage();
+  insertLanguageDropdown();
+
+  // mount handler for selecting another length value
+  document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+}
+
+
+
+
+/**
+ * Adds this scripts UI section to the DOM.
  *
  * @param {any} menu
  */
@@ -13,6 +115,7 @@ function addCommentMenuToPage(menu) {
   }
   targetParent.insertBefore(menu, targetParent.firstChild);
 }
+
 
 
 
@@ -36,6 +139,7 @@ function addCommentToPage(obj, parent = null, addClasses = []) {
 
 
 
+
 /**
  * Generates the data object for storing existing comments
  * by parsing the container holding which contains all the
@@ -48,15 +152,16 @@ function generateCommentObject() {
   let RawData = document.getElementsByClassName('profilContentInner')[0];
   if (!RawData) return [];
   let commentBlocksRaw = RawData.getElementsByClassName('commentItem');
+  
   // generate data array for each raw comment
   let commentDataCollection = [];
   let counter = 0;
   let tmp;
   for (const commentRaw of commentBlocksRaw) {
     let commentItemData = {};
-    // id
     commentItemData.id = ++counter;
-    // section "form"
+    
+    // section 'form'
     commentItemData.form = {};
     tmp = commentRaw.getElementsByClassName('sendReplyProfil')[0];
     if (tmp) {
@@ -64,10 +169,10 @@ function generateCommentObject() {
       commentItemData.form.btn_id = tmp.getAttribute('data-id').toString();
       tmp = null;
     } else {
-      log(t('Failed to gather "{0}" data - maybe the DOM has changed?', 'form'), 'error', this);
+      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'form'), 'error', this);
       return [];
     }
-    // section "video"
+    // section 'video'
     commentItemData.video = {};
     tmp = commentRaw.children[0].children[0];
     if (tmp) {
@@ -75,51 +180,40 @@ function generateCommentObject() {
       commentItemData.video.title = tmp.innerText;
       tmp = null;
     } else {
-      log(t('Failed to gather "{0}" data - maybe the DOM has changed?', 'video'), 'error', this);
+      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'video'), 'error', this);
       return [];
     }
-    // isNew
     commentItemData.isNew = isNewComment(commentItemData.form.btn_id, commentItemData.form.txt_id);
-    // pic
     commentItemData.pic = commentRaw.children[2].children[0].getAttribute('src');
-    // user
     commentItemData.user = commentRaw.children[3].children[0].innerText;
-    // date
     commentItemData.date = commentRaw.children[3].children[1].innerText.substring(3);
-    // text
     commentItemData.text = commentRaw.children[3].children[2].innerText;
-    // section "replies"
     let storedReplyCount = getReplyCount(commentItemData.form.btn_id, commentItemData.form.txt_id);
     let replyCounter = 0;
+
+    // section 'replies'
     commentItemData.replies = [];
     tmp = commentRaw.children[3].children[3];
     let repliesTotal = tmp.getElementsByClassName('spacer25').length;
     for (let i = 1; i < repliesTotal * 3; i = i + 3) {
       let replyData = {};
-      // reply id
       replyData.id = ++replyCounter;
-      // reply pic
       replyData.pic = tmp.children[i].children[0].getAttribute('src');
-      // reply user
       replyData.user = tmp.children[i + 1].children[0].innerText;
-      // reply date
       replyData.date = tmp.children[i + 1].children[1].innerText.substring(3);
-      // reply text
       replyData.text = tmp.children[i + 1].children[2].innerText;
-      // reply isNew
       replyData.isNew = replyCounter > storedReplyCount;
-      // add reply to the comment object
       commentItemData.replies.push(replyData);
     }
-    // reply_cnt
+    
     commentItemData.reply_cnt = replyCounter;
-    // hasNewReplies
     commentItemData.hasNewReplies = replyCounter > storedReplyCount;
-    // add to collection
     commentDataCollection.push(commentItemData);
   }
+  
   return commentDataCollection;
 }
+
 
 
 
@@ -136,17 +230,20 @@ function generateCommentObject() {
  */
 function buildCommentBlock(commentData, counter = 1) {
   if (!commentData) return;
-  // Generate replies
+  
+  // generate replies
   let cnt = 0;
   let repliesBlock = '';
   const ignoreFilter = commentFilters.get('filterSkipUser');
   outer: for (const replyData of commentData.replies) {
-    // skip if reply is from ignored user
+    // skip if reply is from an ignored user
+    // TODO: Really skip instead of just hiding them? Hide would allow to outsource this logic to applyFilter
     if (ignoreFilter.active) {
       for (const ignoredUser of ignoreFilter.value) {
         if (ignoredUser === replyData.user) continue outer;
       }
     }
+    
     repliesBlock += `
       <div class="replyContainer${replyData.isNew ? ' ' + cssClassNewReplies : ''}">
         <div class="spacer25" data-reply-id="${++cnt}"></div>
@@ -160,7 +257,8 @@ function buildCommentBlock(commentData, counter = 1) {
       </div>
     `;
   }
-  // Generate full comment
+  
+  // generate comment including the pre-generated replies
   const commentBlock = `
     <div data-comment-id="${counter}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
       <div><a href="${commentData.video.url}">${commentData.video.title}</a></div>
@@ -180,8 +278,10 @@ function buildCommentBlock(commentData, counter = 1) {
       </div>
     </div>
   `;
+  
   return commentBlock.parseHTML();
 }
+
 
 
 
@@ -292,10 +392,13 @@ function insertPaginatedComments() {
  * @return {boolean} True, if the comment shall be displayed, false if not
  */
 function applyFilters(commentData) {
+  
   /* show only, if the comment is new or has new replies */
   if (commentFilters.get('filterOnlyNew').active) {
     if (!commentData.isNew && !commentData.hasNewReplies) return false;
   }
+  
+  
   /* show only, if one of the comment/replies authors is listed in the username filter list */
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
@@ -312,6 +415,7 @@ function applyFilters(commentData) {
     if (!match) return false;
   }
 
+  
   /* show only, if author is NOT in the list of ignored users (replies are checked individually elsewhere) */
   if (commentFilters.get('filterSkipUser').active) {
     for (const author of commentFilters.get('filterSkipUser').value) {
@@ -319,6 +423,7 @@ function applyFilters(commentData) {
     }
   }
 
+  
   /* show only, if ALL search words are found somewhere in the related properties of the comment */
   if (commentFilters.get('filterTextSearch').active) {
     // collect all string to search in
@@ -344,9 +449,7 @@ function applyFilters(commentData) {
       }
     }
     // do we have a match for each given word?
-    if (wordsFound < commentFilters.get('filterTextSearch').value.length) {
-      return false;
-    }
+    if (wordsFound < commentFilters.get('filterTextSearch').value.length) return false;
   }
 
   return true;
@@ -354,19 +457,22 @@ function applyFilters(commentData) {
 
 
 
+
 function buildPaginationUi() {
-  // localize globals to adjust values for filter
+  // use local copy to adjust the value after filter were applied
   let _totalComments = totalComments - filteredCommentsCount;
   const totalPages = Math.ceil(_totalComments / currentLength);
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let firstPageButton = currentPage >= 4 ? currentPage - 2 : 1;
   let highestPageButton = totalPages >= 5 ? firstPageButton + 4 : totalPages;
+  
   // adjust if upper bound reached
   if (highestPageButton > totalPages) {
     firstPageButton -= (highestPageButton - totalPages);
     firstPageButton = firstPageButton < 1 ? 1 : firstPageButton;
     highestPageButton = totalPages;
   }
+  
   highestPageButton = highestPageButton > totalPages ? totalPages : highestPageButton;
   let buttons = '';
   let buttonStart;
@@ -394,6 +500,7 @@ function buildPaginationUi() {
 
 
 
+
 /**
  * Generates a single page button (a numbered one, none
  * of the jumps buttons like "next" or "first")
@@ -407,6 +514,7 @@ function buildPaginationUi() {
 function buildPageButton(pageNr, buttonStart, isActivePage = false) {
   return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}">${pageNr}</a>`;
 }
+
 
 
 
@@ -442,6 +550,7 @@ function buildPaginationControl() {
 
 
 
+
 function insertLanguageDropdown() {
   const languageContainerHtml = `
     <div id="language_container" class="row">
@@ -452,11 +561,13 @@ function insertLanguageDropdown() {
       <div id="language_dropdown_menu"></div>
     </div>
   `.parseHTML();
-  // insert directly after the section headline
+  
+  // insert as first element after the section headline
   const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
   enhancedUiContainer.insertBefore(languageContainerHtml, headlineHolder.nextElementSibling);
   const languageContainer = document.getElementById('language_container');
-  // insert all languages which are defined in i18n
+  
+  // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
     const metadata = language[1].get('__metadata__');
     const langEntryHtml = `<div id="lang_${language[0]}" data-lang="${language[0]}">${metadata.icon}<span>${metadata.displayName}</span></div>`;
@@ -470,7 +581,8 @@ function insertLanguageDropdown() {
         activeLanguage = langId;
         updatePage();
       }
-      // rebuild the language menu to so the hover effect stops causing the menu to close
+      
+      // rebuild the language menu so the hover effect loses its effect causing the menu to close
       languageContainer.remove();
       insertLanguageDropdown();
     });
@@ -479,21 +591,35 @@ function insertLanguageDropdown() {
 
 
 
+
 /**
+ * Click event handler for the "comments per page"
+ * select box of the pagination control.
+ * 
  * @param {MouseEvent} ev
  */
 function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
   currentStart = currentLength * currentPage - currentLength + 1;
+  
   // This will fix the edge case where filtered total is smaller than current start
   if (currentStart > totalComments - getFilteredCount()) currentStart = 1;
+  
   updatePage();
 }
 
 
 
+
 /**
+ * TODO: Build a fascade for inserting elements to the dom, then we can auto-generate
+ *       those lists and generalize this function. We will need it at every route if
+ *       the switch were moved to the header
+ * 
+ * Click event handler for the global switch which
+ * turns all of this UserScripts features on/off.
+ * 
  * @param {Event} ev
  */
 function doChangeMainSwitch(ev) {
@@ -517,8 +643,11 @@ function doChangeMainSwitch(ev) {
 
 
 
+
 /**
- * Event handler for all buttons of the pagination
+ * Event handler for all buttons within the pagination.
+ * Excepts attributes 'data-start' and 'data-length' in the received element.
+ * 
  * @param {Event} ev  - Left click event
  * @param {HTMLElement} clickedBtn  - Clicked button
  */
@@ -532,16 +661,13 @@ function doClickedPagination(ev, clickedBtn) {
 
 
 
+
 /**
- * Sub function used by all filter event handler.
- * Transfers the new filter values in to the global variables triggers a page update.
- * The values of each specific filter are transformed as needed through the related handler
- * before passed to this function.
- *
- * Currently supported value types: boolean, string, Array
+ * Transformer for values from filter UI elements to filter data.
+ * Used by all event handlers invoked through changing a filter value.
  *
  * @param {string} filterName
- * @param {any} newValue
+ * @param {boolean|string|Array} newValue
  */
 function changeFilter(filterName, newValue) {
   // to simplify the calculation we will jump to page 1 if a filter has changed
@@ -556,9 +682,10 @@ function changeFilter(filterName, newValue) {
 
 
 
+
 /**
- * Deletes the pagination UI from DOM, if exists and rebuild + insert it
- * again based on the values from the global variables currentStart and currentLength.
+ * Deletes the pagination UI from DOM, if exists. Then rebuild + insert it again,
+ * based on the values from the global variables currentStart and currentLength.
  */
 function updatePaginationUI() {
   if (typeof paginationContainer !== typeof undefined && paginationContainer instanceof HTMLElement) paginationContainer.remove();

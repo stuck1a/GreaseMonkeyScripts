@@ -20,56 +20,80 @@
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 
-/*%% configs.js %%*/
+(function() {
+  /*%% Global/configs.js %%*/
+  /*%% Global/translations.js %%*/
+  
+  // ###########################################################
+  // ###                      UTILITIES                      ###
+  // ###########################################################
+  
+  /*%% Global/utilFunctions.js %%*/
+  
+  // ###########################################################
+  // ###                 SCRIPT FUNCTIONS                    ###
+  // ###########################################################
+  
+  /*%% Global/functions_allPages.js %%*/
+  /*%% Global/functions_debug.js %%*/
+  /*%% StartPage/functions_startPage.js %%*/
+  /*%% ProfilePage/functions_profilePage.js %%*/
+  /*%% VideoPage/functions_videoPage.js %%*/
+  
+  // ###########################################################
+  // ###                  EXECUTION FLOW                     ###
+  // ###########################################################
+  
+  // declare global variables
+  let commentData;
+  let storedData;
+  let totalComments;
+  let enhancedUiContainer;
+  let commentFilters;
+  let paginationContainer, paginationContainerBottom, paginationControlContainer;
+  let customCommentContainer, originalCommentContainer;
+  let globalStyles;
+  let mainSwitchContainer;
+  
+  // initialization
+  let currentStart = defaultStart;
+  let currentLength = defaultLength;
+  let activeLanguage = defaultLanguage;
+  let filteredCommentsCount = 0;
+  
+  commentFilters = new Map([
+    // currently supported types for property "value" are: boolean, string, array
+    [ 'filterOnlyNew', { active: false, value: false } ],
+    [ 'filterOnlyUser', { active: false, value: [] } ],
+    [ 'filterSkipUser', { active: false, value: [] } ],
+    [ 'filterTextSearch', { active: false, value: [] } ],
+  ]);
+  
+  // restore list of ignored users
+  const storedIgnoreList = get_value('ignoredUsers');
+  for (const user of storedIgnoreList) {
+    document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
+    const ignoreFilter = commentFilters.get('filterSkipUser');
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
+  }
+  
+  // hand over execution flow depending on which page we are
+  const route = getActiveRoute();
+  if (route === 'index') {
+    
+    execute_startPage();
+    
+  } else if (route === 'profile') {
 
-/*%% translations.js %%*/
-
-
-// ###########################################################
-// ###                      UTILITIES                      ###
-// ###########################################################
-
-/*%% utilFunctions.js %%*/
-
-// ###########################################################
-// ###                 SCRIPT FUNCTIONS                    ###
-// ###########################################################
-
-/*%% functions_allPages.js %%*/
-
-/*%% functions_debug.js %%*/
-
-/*%% functions_profile.js %%*/
-
-/*%% functions_videos.js %%*/
-
-
-// ###########################################################
-// ###                  EXECUTION FLOW                     ###
-// ###########################################################
-
-// declare global variables
-let currentStart = defaultStart;
-let currentLength = defaultLength;
-let activeLanguage = defaultLanguage;
-let filteredCommentsCount = 0;
-
-let commentData, storedData, totalComments;
-let enhancedUiContainer, commentFilters,
-    paginationContainer, paginationContainerBottom, paginationControlContainer,
-    customCommentContainer, originalCommentContainer;
-
-// execution path for profile page
-if (onProfilePage()) {
-
-  /*%% globalStyles.js %%*/
-
-  /*%% mainSwitch.js %%*/
-
-  /*%% executionflow_profile.js %%*/
-}
-
-// execution path for generic pages (will search for comment sections and apply block list on it, if found)
-else {
-  applyBlockedUserGenericPage();
-}
+    /*%% Global/html_mainSwitch.js %%*/
+    /*%% ProfilePage/styles_profilePage.js %%*/
+    /*%% ProfilePage/html_mainUI.js %%*/
+    execute_profilePage();
+    
+  } else if (route === 'video') {
+    
+    execute_genericPage();
+    
+  }
+})();

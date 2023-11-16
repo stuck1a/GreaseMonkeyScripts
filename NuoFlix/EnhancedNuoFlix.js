@@ -20,8 +20,11 @@
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 
-// Unique key uses in the GM data storage to avoid naming conflicts across scripts
+(function() {
+  // Unique key used for the GM data storage to avoid naming conflicts across scripts
 const CACHE_KEY = 's1a/enhancednuoflix';
+
+// Logger prefix
 const MSG_PREFIX = 'Enhanced NuoFlix';
 
 // Fixed configs
@@ -36,9 +39,16 @@ const expandedReplyCount = 3;
 // Defaults
 const defaultStart = 1;
 const defaultLength = 5;
-const defaultLanguage = 'de';
+const defaultLanguage = 'de';
 
-// Translations
+// Map execution flows to pages
+const pageRoutes = new Map([
+  // path       route name
+  [ '/',        'start'   ],
+  [ '/profil',  'profile' ],
+  [ '/.+',      'video'   ],
+]);
+  // Translations
 const i18n = new Map([
   [
     // German (input strings are german already, so we only need metadata for the language menu constructor here)
@@ -111,13 +121,12 @@ const i18n = new Map([
     ])
   ],
 ]);
-
-
-// ###########################################################
-// ###                      UTILITIES                      ###
-// ###########################################################
-
-/**
+  
+  // ###########################################################
+  // ###                      UTILITIES                      ###
+  // ###########################################################
+  
+  /**
  * Works like sprintf in PHP. Use {n} as placeholder, where
  * n is zero-indexed. Excepts n additional arguments of
  * any type.
@@ -342,23 +351,25 @@ function t(string, ...args) {
   if (!i18n.has(lang) || !i18n.get(lang).has(string)) return String.sprintf(string, ...args);
   return String.sprintf(i18n.get(lang).get(string), ...args);
 }
-
-// ###########################################################
-// ###                 SCRIPT FUNCTIONS                    ###
-// ###########################################################
-
+  
+  // ###########################################################
+  // ###                 SCRIPT FUNCTIONS                    ###
+  // ###########################################################
+  
+  
 /**
- * Checks, whether we are currently on the page "My Profile" or not.
- *
- * @return {boolean}
+ * Uses the predefined route mappings to determine the route name
+ * to decide the path of the further execution flow.
+ * 
+ * @return {string}  - Route name
  */
-function onProfilePage() {
-  return window.location.toString().startsWith('nuoflix.de/profil/')
-      || window.location.toString().startsWith('http://nuoflix.de/profil/')
-      || window.location.toString().startsWith('https://nuoflix.de/profil/')
+function getActiveRoute() {
+  for (const route of pageRoutes.entries()) {
+    if (window.location.pathname.match(new RegExp(`^${route[0]}/*$`, 'i'))) return route[1];
+  }
+  return '';
 }
-
-
+  
 /**
  * Marks some comments as new and inserts some fake replies here and there
  */
@@ -493,9 +504,118 @@ function getOriginalCommentIds(which) {
     const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
+  
+/**
+ * Function which receives the main execution flow
+ * if we are on the start page.
+ */
+function execute_startPage() {
+  
+}
+  
+/**
+ * Function which receives the main execution flow
+ * if we are on the profile page.
+ */
+function execute_profilePage() {
+
+
+  document.body.appendChild(globalStyles.parseHTML());
+
+  // add the new UI and store its reference
+  addCommentMenuToPage(mainUI);
+  enhancedUiContainer = document.getElementById('enhancedUi');
+
+  // hide the original comment container
+  originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+  // if not found probably not logged in (anymore), so lets stop here
+  if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
+
+  originalCommentContainer.id = 'originalCommentContainer';
+  originalCommentContainer.classList.add('hidden');
+
+  // get stored comment data (to identify new comments) and update storage with the new comment data
+  storedData = get_value('commentData');
+  commentData = generateCommentObject();
+  totalComments = commentData.length;
+  DEBUG_setSomeFakeData();
+  set_value('commentData', commentData);
+
+  // add custom comment container
+  customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
+  originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
+
+  // mount handlers for ignore user feature
+  document.getElementById('addIgnoreUser').addEventListener('click', function() {
+    const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
+    if (user === null || user === '') return;
+    const selectElement = document.getElementById('ignoredUsers');
+    for (const option of selectElement.children) {
+      if (option.innerText === user) return;
+    }
+    const option = `<option>${user}</option>`.parseHTML();
+    document.getElementById('ignoredUsers').appendChild(option);
+    // update filter
+    const ignoreFilter = commentFilters.get('filterSkipUser');
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
+    // update storage
+    set_value('ignoredUsers', ignoreFilter.value);
+    updatePage();
+  });
+  
+  document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
+    const selectElement = document.getElementById('ignoredUsers');
+    if (selectElement.selectedOptions.length > 0) {
+      const user = selectElement.selectedOptions[0].innerText.trim();
+      selectElement.selectedOptions[0].remove();
+      const ignoreFilter = commentFilters.get('filterSkipUser');
+      // update filter
+      const oldIgnoreList = ignoreFilter.value;
+      ignoreFilter.value = [];
+      for (const entry of oldIgnoreList) {
+        if (entry !== user) ignoreFilter.value.push(entry);
+      }
+      if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
+      // update storage
+      set_value('ignoredUsers', ignoreFilter.value);
+      updatePage();
+    }
+  });
+
+  // add fancy switch to turn off all features and restore the original elements instead
+  // TODO: Replace with something which works on all pages, like somewhere in the header
+  //       Then store the state in the GM storage
+  enhancedUiContainer.parentElement.insertBefore(mainSwitchContainer, enhancedUiContainer);
+  document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
+
+  // mount handler for "new only" filter button
+  // TODO: Will be replaced by checkbox
+  document.getElementById('btnFilterNew').addEventListener('click', function() {
+    changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
+    if (commentFilters.get('filterOnlyNew').active) {
+      // this will change the cross to a hook in the filter button
+      this.classList.add('filterIsActive');
+      // no need to highlight new comments if we filter all not new
+      document.getElementById('style_newComment').innerText = '';
+    } else {
+      this.classList.remove('filterIsActive');
+      document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
+    }
+  });
+
+  updatePage();
+  insertLanguageDropdown();
+
+  // mount handler for selecting another length value
+  document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+}
+
+
+
 
 /**
- * Adds this scripts central control panel to the DOM.
+ * Adds this scripts UI section to the DOM.
  *
  * @param {any} menu
  */
@@ -509,6 +629,7 @@ function addCommentMenuToPage(menu) {
   }
   targetParent.insertBefore(menu, targetParent.firstChild);
 }
+
 
 
 
@@ -532,6 +653,7 @@ function addCommentToPage(obj, parent = null, addClasses = []) {
 
 
 
+
 /**
  * Generates the data object for storing existing comments
  * by parsing the container holding which contains all the
@@ -544,15 +666,16 @@ function generateCommentObject() {
   let RawData = document.getElementsByClassName('profilContentInner')[0];
   if (!RawData) return [];
   let commentBlocksRaw = RawData.getElementsByClassName('commentItem');
+  
   // generate data array for each raw comment
   let commentDataCollection = [];
   let counter = 0;
   let tmp;
   for (const commentRaw of commentBlocksRaw) {
     let commentItemData = {};
-    // id
     commentItemData.id = ++counter;
-    // section "form"
+    
+    // section 'form'
     commentItemData.form = {};
     tmp = commentRaw.getElementsByClassName('sendReplyProfil')[0];
     if (tmp) {
@@ -560,10 +683,10 @@ function generateCommentObject() {
       commentItemData.form.btn_id = tmp.getAttribute('data-id').toString();
       tmp = null;
     } else {
-      log(t('Failed to gather "{0}" data - maybe the DOM has changed?', 'form'), 'error', this);
+      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'form'), 'error', this);
       return [];
     }
-    // section "video"
+    // section 'video'
     commentItemData.video = {};
     tmp = commentRaw.children[0].children[0];
     if (tmp) {
@@ -571,51 +694,40 @@ function generateCommentObject() {
       commentItemData.video.title = tmp.innerText;
       tmp = null;
     } else {
-      log(t('Failed to gather "{0}" data - maybe the DOM has changed?', 'video'), 'error', this);
+      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'video'), 'error', this);
       return [];
     }
-    // isNew
     commentItemData.isNew = isNewComment(commentItemData.form.btn_id, commentItemData.form.txt_id);
-    // pic
     commentItemData.pic = commentRaw.children[2].children[0].getAttribute('src');
-    // user
     commentItemData.user = commentRaw.children[3].children[0].innerText;
-    // date
     commentItemData.date = commentRaw.children[3].children[1].innerText.substring(3);
-    // text
     commentItemData.text = commentRaw.children[3].children[2].innerText;
-    // section "replies"
     let storedReplyCount = getReplyCount(commentItemData.form.btn_id, commentItemData.form.txt_id);
     let replyCounter = 0;
+
+    // section 'replies'
     commentItemData.replies = [];
     tmp = commentRaw.children[3].children[3];
     let repliesTotal = tmp.getElementsByClassName('spacer25').length;
     for (let i = 1; i < repliesTotal * 3; i = i + 3) {
       let replyData = {};
-      // reply id
       replyData.id = ++replyCounter;
-      // reply pic
       replyData.pic = tmp.children[i].children[0].getAttribute('src');
-      // reply user
       replyData.user = tmp.children[i + 1].children[0].innerText;
-      // reply date
       replyData.date = tmp.children[i + 1].children[1].innerText.substring(3);
-      // reply text
       replyData.text = tmp.children[i + 1].children[2].innerText;
-      // reply isNew
       replyData.isNew = replyCounter > storedReplyCount;
-      // add reply to the comment object
       commentItemData.replies.push(replyData);
     }
-    // reply_cnt
+    
     commentItemData.reply_cnt = replyCounter;
-    // hasNewReplies
     commentItemData.hasNewReplies = replyCounter > storedReplyCount;
-    // add to collection
     commentDataCollection.push(commentItemData);
   }
+  
   return commentDataCollection;
 }
+
 
 
 
@@ -632,17 +744,20 @@ function generateCommentObject() {
  */
 function buildCommentBlock(commentData, counter = 1) {
   if (!commentData) return;
-  // Generate replies
+  
+  // generate replies
   let cnt = 0;
   let repliesBlock = '';
   const ignoreFilter = commentFilters.get('filterSkipUser');
   outer: for (const replyData of commentData.replies) {
-    // skip if reply is from ignored user
+    // skip if reply is from an ignored user
+    // TODO: Really skip instead of just hiding them? Hide would allow to outsource this logic to applyFilter
     if (ignoreFilter.active) {
       for (const ignoredUser of ignoreFilter.value) {
         if (ignoredUser === replyData.user) continue outer;
       }
     }
+    
     repliesBlock += `
       <div class="replyContainer${replyData.isNew ? ' ' + cssClassNewReplies : ''}">
         <div class="spacer25" data-reply-id="${++cnt}"></div>
@@ -656,7 +771,8 @@ function buildCommentBlock(commentData, counter = 1) {
       </div>
     `;
   }
-  // Generate full comment
+  
+  // generate comment including the pre-generated replies
   const commentBlock = `
     <div data-comment-id="${counter}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
       <div><a href="${commentData.video.url}">${commentData.video.title}</a></div>
@@ -676,8 +792,10 @@ function buildCommentBlock(commentData, counter = 1) {
       </div>
     </div>
   `;
+  
   return commentBlock.parseHTML();
 }
+
 
 
 
@@ -788,10 +906,13 @@ function insertPaginatedComments() {
  * @return {boolean} True, if the comment shall be displayed, false if not
  */
 function applyFilters(commentData) {
+  
   /* show only, if the comment is new or has new replies */
   if (commentFilters.get('filterOnlyNew').active) {
     if (!commentData.isNew && !commentData.hasNewReplies) return false;
   }
+  
+  
   /* show only, if one of the comment/replies authors is listed in the username filter list */
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
@@ -808,6 +929,7 @@ function applyFilters(commentData) {
     if (!match) return false;
   }
 
+  
   /* show only, if author is NOT in the list of ignored users (replies are checked individually elsewhere) */
   if (commentFilters.get('filterSkipUser').active) {
     for (const author of commentFilters.get('filterSkipUser').value) {
@@ -815,6 +937,7 @@ function applyFilters(commentData) {
     }
   }
 
+  
   /* show only, if ALL search words are found somewhere in the related properties of the comment */
   if (commentFilters.get('filterTextSearch').active) {
     // collect all string to search in
@@ -840,9 +963,7 @@ function applyFilters(commentData) {
       }
     }
     // do we have a match for each given word?
-    if (wordsFound < commentFilters.get('filterTextSearch').value.length) {
-      return false;
-    }
+    if (wordsFound < commentFilters.get('filterTextSearch').value.length) return false;
   }
 
   return true;
@@ -850,19 +971,22 @@ function applyFilters(commentData) {
 
 
 
+
 function buildPaginationUi() {
-  // localize globals to adjust values for filter
+  // use local copy to adjust the value after filter were applied
   let _totalComments = totalComments - filteredCommentsCount;
   const totalPages = Math.ceil(_totalComments / currentLength);
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let firstPageButton = currentPage >= 4 ? currentPage - 2 : 1;
   let highestPageButton = totalPages >= 5 ? firstPageButton + 4 : totalPages;
+  
   // adjust if upper bound reached
   if (highestPageButton > totalPages) {
     firstPageButton -= (highestPageButton - totalPages);
     firstPageButton = firstPageButton < 1 ? 1 : firstPageButton;
     highestPageButton = totalPages;
   }
+  
   highestPageButton = highestPageButton > totalPages ? totalPages : highestPageButton;
   let buttons = '';
   let buttonStart;
@@ -890,6 +1014,7 @@ function buildPaginationUi() {
 
 
 
+
 /**
  * Generates a single page button (a numbered one, none
  * of the jumps buttons like "next" or "first")
@@ -903,6 +1028,7 @@ function buildPaginationUi() {
 function buildPageButton(pageNr, buttonStart, isActivePage = false) {
   return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}">${pageNr}</a>`;
 }
+
 
 
 
@@ -938,6 +1064,7 @@ function buildPaginationControl() {
 
 
 
+
 function insertLanguageDropdown() {
   const languageContainerHtml = `
     <div id="language_container" class="row">
@@ -948,11 +1075,13 @@ function insertLanguageDropdown() {
       <div id="language_dropdown_menu"></div>
     </div>
   `.parseHTML();
-  // insert directly after the section headline
+  
+  // insert as first element after the section headline
   const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
   enhancedUiContainer.insertBefore(languageContainerHtml, headlineHolder.nextElementSibling);
   const languageContainer = document.getElementById('language_container');
-  // insert all languages which are defined in i18n
+  
+  // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
     const metadata = language[1].get('__metadata__');
     const langEntryHtml = `<div id="lang_${language[0]}" data-lang="${language[0]}">${metadata.icon}<span>${metadata.displayName}</span></div>`;
@@ -966,7 +1095,8 @@ function insertLanguageDropdown() {
         activeLanguage = langId;
         updatePage();
       }
-      // rebuild the language menu to so the hover effect stops causing the menu to close
+      
+      // rebuild the language menu so the hover effect loses its effect causing the menu to close
       languageContainer.remove();
       insertLanguageDropdown();
     });
@@ -975,21 +1105,35 @@ function insertLanguageDropdown() {
 
 
 
+
 /**
+ * Click event handler for the "comments per page"
+ * select box of the pagination control.
+ * 
  * @param {MouseEvent} ev
  */
 function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
   currentStart = currentLength * currentPage - currentLength + 1;
+  
   // This will fix the edge case where filtered total is smaller than current start
   if (currentStart > totalComments - getFilteredCount()) currentStart = 1;
+  
   updatePage();
 }
 
 
 
+
 /**
+ * TODO: Build a fascade for inserting elements to the dom, then we can auto-generate
+ *       those lists and generalize this function. We will need it at every route if
+ *       the switch were moved to the header
+ * 
+ * Click event handler for the global switch which
+ * turns all of this UserScripts features on/off.
+ * 
  * @param {Event} ev
  */
 function doChangeMainSwitch(ev) {
@@ -1013,8 +1157,11 @@ function doChangeMainSwitch(ev) {
 
 
 
+
 /**
- * Event handler for all buttons of the pagination
+ * Event handler for all buttons within the pagination.
+ * Excepts attributes 'data-start' and 'data-length' in the received element.
+ * 
  * @param {Event} ev  - Left click event
  * @param {HTMLElement} clickedBtn  - Clicked button
  */
@@ -1028,16 +1175,13 @@ function doClickedPagination(ev, clickedBtn) {
 
 
 
+
 /**
- * Sub function used by all filter event handler.
- * Transfers the new filter values in to the global variables triggers a page update.
- * The values of each specific filter are transformed as needed through the related handler
- * before passed to this function.
- *
- * Currently supported value types: boolean, string, Array
+ * Transformer for values from filter UI elements to filter data.
+ * Used by all event handlers invoked through changing a filter value.
  *
  * @param {string} filterName
- * @param {any} newValue
+ * @param {boolean|string|Array} newValue
  */
 function changeFilter(filterName, newValue) {
   // to simplify the calculation we will jump to page 1 if a filter has changed
@@ -1052,9 +1196,10 @@ function changeFilter(filterName, newValue) {
 
 
 
+
 /**
- * Deletes the pagination UI from DOM, if exists and rebuild + insert it
- * again based on the values from the global variables currentStart and currentLength.
+ * Deletes the pagination UI from DOM, if exists. Then rebuild + insert it again,
+ * based on the values from the global variables currentStart and currentLength.
  */
 function updatePaginationUI() {
   if (typeof paginationContainer !== typeof undefined && paginationContainer instanceof HTMLElement) paginationContainer.remove();
@@ -1177,14 +1322,13 @@ function updatePage() {
   updatePaginationUI();
   updateStaticTranslations();
 }
-
-/**
+  /**
  * Holds the whole execution flow for any other than the profile page.
  * Since NuoFlix uses pretty links cms, we have to try if we are on
  * a page with a comment section. If a comment section is found,
  * the blocked user filter will be applied on it.
  */
-function applyBlockedUserGenericPage() {
+function execute_genericPage() {
   if (document.getElementById('commentContent')) {
     // function to delete comments and replies of a given user
     const removeCommentsFrom = function(username) {
@@ -1225,259 +1369,54 @@ function applyBlockedUserGenericPage() {
     tryToApply();
   }
 }
+  
+  // ###########################################################
+  // ###                  EXECUTION FLOW                     ###
+  // ###########################################################
+  
+  // declare global variables
+  let commentData;
+  let storedData;
+  let totalComments;
+  let enhancedUiContainer;
+  let commentFilters;
+  let paginationContainer, paginationContainerBottom, paginationControlContainer;
+  let customCommentContainer, originalCommentContainer;
+  let globalStyles;
+  let mainSwitchContainer;
+  
+  // initialization
+  let currentStart = defaultStart;
+  let currentLength = defaultLength;
+  let activeLanguage = defaultLanguage;
+  let filteredCommentsCount = 0;
+  
+  commentFilters = new Map([
+    // currently supported types for property "value" are: boolean, string, array
+    [ 'filterOnlyNew', { active: false, value: false } ],
+    [ 'filterOnlyUser', { active: false, value: [] } ],
+    [ 'filterSkipUser', { active: false, value: [] } ],
+    [ 'filterTextSearch', { active: false, value: [] } ],
+  ]);
+  
+  // restore list of ignored users
+  const storedIgnoreList = get_value('ignoredUsers');
+  for (const user of storedIgnoreList) {
+    document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
+    const ignoreFilter = commentFilters.get('filterSkipUser');
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
+  }
+  
+  // hand over execution flow depending on which page we are
+  const route = getActiveRoute();
+  if (route === 'index') {
+    
+    execute_startPage();
+    
+  } else if (route === 'profile') {
 
-
-// ###########################################################
-// ###                  EXECUTION FLOW                     ###
-// ###########################################################
-
-// declare global variables
-let currentStart = defaultStart;
-let currentLength = defaultLength;
-let activeLanguage = defaultLanguage;
-let filteredCommentsCount = 0;
-
-let commentData, storedData, totalComments;
-let enhancedUiContainer, commentFilters,
-    paginationContainer, paginationContainerBottom, paginationControlContainer,
-    customCommentContainer, originalCommentContainer;
-
-// execution path for profile page
-if (onProfilePage()) {
-
-  const globalStyles = `
-  <style>
-    :root {
-      --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
-      --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
-    }
-    .container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
-    .container-fluid { box-sizing: border-box; width: 100%; margin-inline: auto; padding: 0 }
-    .row { display: flex; flex-wrap: wrap }
-    .row > * { flex-shrink: 0; max-width: 100%; width: 100% }
-    .col-auto,.col-1,.col-2,.col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9,.col-10,.col-11,.col-12 { flex: 0 0 auto }
-    .col-auto { width: auto }
-    .col { flex: 1 0 0 }
-    .col-1 { width: 8.33333333% }
-    .col-2 { width: 16.66666667% }
-    .col-3 { width: 25% }
-    .col-4 { width: 33.33333333% }
-    .col-5 { width: 41.66666667% }
-    .col-6 { width: 50% }
-    .col-7 { width: 58.33333333% }
-    .col-8 { width: 66.66666667% }
-    .col-9 { width: 75% }
-    .col-10 { width: 83.33333333% }
-    .col-11 { width: 91.66666667% }
-    .col-12 { width: 100% }
-    .hidden { display: none !important }
-    .card {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      min-width: 12rem;
-      word-wrap: break-word;
-      background-clip: border-box;
-      border: 1px solid #949296;
-      border-radius: 0.25rem;
-      max-width: 30rem;
-      padding: 0.75rem;
-      width: 30%;
-    }
-    .card-body { flex: 1 1 auto; padding: 1rem 1rem }
-    .card-group { margin-block: 1rem; }
-    .card-group > .card { margin-bottom: 1rem; }
-    .card-group > .card ~ .card {
-      margin-left: 1rem;
-    }
-    #ignoredUsers {
-      width: 100%;
-    }
-    #paginationContainer .btn.disabled {
-      background-color: darkgray !important;
-      color: lightgray !important;
-      cursor: default !important;
-    }
-    #paginationContainer .btn:not(.disabled):hover {
-      font-weight: bold;
-      background-color: #bd8656;
-    }
-    #paginationContainer, #paginationContainerBottom {
-      text-align: center;
-      margin-block: 0.8rem;
-    }
-    .buttonGroup {
-      display: inline-block;
-    }
-    #paginationNext {
-      margin-inline: 0 !important;
-      padding-inline: 2rem;
-      border-radius: 10% 25% 25% 10%;
-    }
-    #paginationLast {
-      border-radius: 20% 50% 50% 20%;
-      padding-inline: 1rem;
-      padding-block: 0 !important;
-      margin-inline-start: 0 !important;
-    }
-    #paginationBack {
-      margin-inline: 0 !important;
-      padding-inline: 2rem;
-      border-radius: 25% 10% 10% 25%;
-    }
-    #paginationFirst {
-      border-radius: 50% 20% 20% 50%;
-      padding-inline: 1rem;
-      padding-block: 0 !important;
-      margin-inline-start: 0 !important;
-    }
-    .pageNrBtn {
-      padding-inline: max(1.0vw, 10px);
-      margin-inline: 0.25rem !important;
-    }
-    .pageNrBtn.activePage {
-      cursor: default !important;
-      font-weight: bold !important;
-      background-color: #c86852 !important;
-    }
-    #paginationControl {
-      display: flow-root;
-    }
-    #commentsFromToContainer {
-      float: left;
-    }
-    #commentsPerPageContainer {
-      float: right;
-      display: flex;
-    }
-    #commentsPerPageContainer small {
-      align-self: center;
-      white-space: pre;
-      margin-inline-end: 0.75rem;
-    }
-    #commentsPerPageContainer .select {
-      background-color: #eee;
-      margin-block: auto;
-      padding: 0.4rem;
-      font-size: 0.75rem;
-      text-align: center;
-      text-align-last: center;
-    }
-    #btnFilterNew:after {
-      content: "\\00a0\\00a0\\00a0" var(--svg-unchecked);
-      vertical-align: -10%;
-    }
-    #btnFilterNew.filterIsActive:after {
-      content: "\\00a0\\00a0\\00a0" var(--svg-checked);
-    }
-    .btn-small {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.75rem;
-    }
-    .msgNoResults {
-      margin-block: 2rem;
-      text-align: center;
-      font-style: italic;
-    }
-    .repliesCollapsed .replyContainer:nth-last-child(n+4) {
-      display: none;
-    }
-    .expander {
-      cursor: pointer;
-      color: #d53d16;
-    }
-    .expander:hover {
-      font-weight: bold;
-    }
-    #language_container {
-      --borderColor: #555555;
-      --borderWidth: 1px;
-      --totalWidth: 8rem;
-      width: var(--totalWidth);
-      height: 2rem;
-      margin-left: auto;
-      color: #d53d16;
-      cursor: pointer;
-      border: var(--borderWidth) solid var(--borderColor);
-      border-top-left-radius: 1px;
-      border-bottom: 0;
-    }
-    #language_container:hover > #language_dropdown_toggler > span:last-of-type  {
-      transform: rotate(90deg);
-    }
-    #language_dropdown_toggler {
-      position: absolute;
-      height: inherit;
-      width: inherit;
-      background: linear-gradient(to left, var(--borderColor) var(--borderWidth), #d53d16 var(--borderWidth), #d53d16 1.75rem, #fcfcfc 1.75rem);
-      font-weight: bold;
-      display: flex;
-      flex-wrap: nowrap;
-      align-items: center;
-      border-radius: 1px;
-      border-bottom: var(--borderWidth) solid var(--borderColor);
-    }
-    #language_dropdown_toggler:hover + #language_dropdown_menu,
-    #language_dropdown_menu:hover {
-      display: block;
-    }
-    #language_dropdown_toggler > span {
-      width: calc(100% - 1.75rem);
-      display: flex;
-      height: inherit;
-      padding-left: 0.4rem;
-      align-items: center;
-      
-    }
-    #activeLanguage {
-      border: var(--borderWidth) solid var(--borderColor);
-      border-bottom-width: 0;
-    }
-    #language_dropdown_toggler > span:last-of-type {
-      border-radius: 1px 1px 0 0;
-      width: 1.5rem;
-      text-align: center;
-      color: #fcfcfc;
-      transition: transform .15s ease-in-out;
-      position: relative;
-      padding-left: calc(2*var(--borderWidth));
-      justify-content: center;
-    }
-    #language_dropdown_menu {
-      position: relative;
-      top: 100%;
-      border-radius: 0 0 1px 1px;
-      border: var(--borderWidth) solid var(--borderColor);
-      left: calc(0px - var(--borderWidth));
-      max-width: unset;
-      width: calc(100% + 3*var(--borderWidth));
-      display: none;
-    }
-    #language_dropdown_menu > div {
-      background-color: #252525;
-      font-weight: bold;
-      padding-left: 0.4rem;
-      padding-block: 0.2rem;
-      display: flex;
-      align-items: center;
-      padding-top: 0.2rem;
-      border-top: var(--borderWidth) solid var(--borderColor);
-    }
-    #language_dropdown_menu > div:hover {
-      background-color: #f0cbc2;
-    }
-    #language_dropdown_menu svg {
-      margin-right: 0.6rem;
-      height: 1rem;
-      width: 2rem;
-    }
-  </style>
-  <style id="style_newComment">.${cssClassNewComments} { background-color: ${highlightedCommentsColor} }</style>
-  <style id="style_hasNewReply">.${cssClassHasNewReplies} { background-color: ${highlightedHasNewRepliesColor} }</style>
-  <style id="style_newReply">.${cssClassNewReplies} { background-color: ${highlightedRepliesColor} }</style>
-`;
-
-  const mainSwitchHtml = `
+    mainSwitchContainer = `
   <div id="mainSwitchContainer">
     <div>
       <input id="mainSwitch" type="checkbox" name="mainSwitch" checked="checked">
@@ -1489,6 +1428,7 @@ if (onProfilePage()) {
         height: 89px;
         width: 158px;
       }
+      
       #mainSwitchContainer > div {
         width: 151px;
         height: 60px;
@@ -1496,15 +1436,18 @@ if (onProfilePage()) {
         inset-block-start: 31px;
         left: 3px;
       }
+      
       #mainSwitchContainer *, #mainSwitchContainer *:after, #mainSwitchContainer *:before {
         box-sizing: border-box;
       }
+      
       #mainSwitch {
         visibility: hidden;
         clip: rect(0 0 0 0);
         position: absolute;
         left: 9999px;
       }
+      
       .mainSwitch {
         display: block;
         width: 65px;
@@ -1524,6 +1467,7 @@ if (onProfilePage()) {
         border-radius: 0.35em;
         box-shadow: 0 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 1px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
       }
+      
       .mainSwitch:before {
         display: block;
         position: absolute;
@@ -1540,6 +1484,7 @@ if (onProfilePage()) {
         pointer-events: none;
         transition: all 0.2s ease-out;
       }
+      
       .mainSwitch:after {
         content: "";
         position: absolute;
@@ -1553,6 +1498,7 @@ if (onProfilePage()) {
         z-index: -1;
         box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -47px 32px 15px 13px rgba(0, 0, 0, 0.25);
       }
+      
       #mainSwitch:checked ~ .mainSwitch {
         background: #b7bfc2;
         background: -moz-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
@@ -1563,150 +1509,414 @@ if (onProfilePage()) {
         background: linear-gradient(to right, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
         filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b7bfc2', endColorstr='#ced8da',GradientType=1 );
       }
+      
       #mainSwitch:checked ~ .mainSwitch:after {
         background: #b1ffff;
         box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -65px 25px 15px 13px rgba(0, 0, 0, 0.25);
       }
     </style>
   </div>
+`.parseHTML();
+    globalStyles = `<style>
+
+:root {
+  --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
+  --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
+}
+
+.container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
+.container-fluid { box-sizing: border-box; width: 100%; margin-inline: auto; padding: 0 }
+
+.row { display: flex; flex-wrap: wrap }
+.row > * { flex-shrink: 0; max-width: 100%; width: 100% }
+
+.col-auto,.col-1,.col-2,.col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9,.col-10,.col-11,.col-12 { flex: 0 0 auto }
+.col-auto { width: auto }
+.col { flex: 1 0 0 }
+.col-1 { width: 8.33333333% }
+.col-2 { width: 16.66666667% }
+.col-3 { width: 25% }
+.col-4 { width: 33.33333333% }
+.col-5 { width: 41.66666667% }
+.col-6 { width: 50% }
+.col-7 { width: 58.33333333% }
+.col-8 { width: 66.66666667% }
+.col-9 { width: 75% }
+.col-10 { width: 83.33333333% }
+.col-11 { width: 91.66666667% }
+.col-12 { width: 100% }
+
+.hidden { display: none !important }
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  word-wrap: break-word;
+  background-clip: border-box;
+  border: 1px solid #949296;
+  border-radius: 0.25rem;
+  max-width: 30rem;
+  padding: 0.75rem;
+  width: 30%;
+}
+
+.card-body { flex: 1 1 auto; padding: 1rem 1rem }
+.card-group { margin-block: 1rem; }
+.card-group > .card { margin-bottom: 1rem; }
+.card-group > .card ~ .card {
+  margin-left: 1rem;
+}
+
+#ignoredUsers {
+  width: 100%;
+}
+
+#paginationContainer .btn.disabled {
+  background-color: darkgray !important;
+  color: lightgray !important;
+  cursor: default !important;
+}
+
+#paginationContainer .btn:not(.disabled):hover {
+  font-weight: bold;
+  background-color: #bd8656;
+}
+
+#paginationContainer, #paginationContainerBottom {
+  text-align: center;
+  margin-block: 0.8rem;
+}
+
+.buttonGroup {
+  display: inline-block;
+}
+
+#paginationNext {
+  margin-inline: 0 !important;
+  padding-inline: 2rem;
+  border-radius: 10% 25% 25% 10%;
+}
+
+#paginationLast {
+  border-radius: 20% 50% 50% 20%;
+  padding-inline: 1rem;
+  padding-block: 0 !important;
+  margin-inline-start: 0 !important;
+}
+
+#paginationBack {
+  margin-inline: 0 !important;
+  padding-inline: 2rem;
+  border-radius: 25% 10% 10% 25%;
+}
+
+#paginationFirst {
+  border-radius: 50% 20% 20% 50%;
+  padding-inline: 1rem;
+  padding-block: 0 !important;
+  margin-inline-start: 0 !important;
+}
+
+.pageNrBtn {
+  padding-inline: max(1.0vw, 10px);
+  margin-inline: 0.25rem !important;
+}
+
+.pageNrBtn.activePage {
+  cursor: default !important;
+  font-weight: bold !important;
+  background-color: #c86852 !important;
+}
+
+#paginationControl {
+  display: flow-root;
+}
+
+#commentsFromToContainer {
+  float: left;
+}
+
+#commentsPerPageContainer {
+  float: right;
+  display: flex;
+}
+
+#commentsPerPageContainer small {
+  align-self: center;
+  white-space: pre;
+  margin-inline-end: 0.75rem;
+}
+
+#commentsPerPageContainer .select {
+  background-color: #eee;
+  margin-block: auto;
+  padding: 0.4rem;
+  font-size: 0.75rem;
+  text-align: center;
+  text-align-last: center;
+}
+
+#btnFilterNew:after {
+  content: "\\00a0\\00a0\\00a0" var(--svg-unchecked);
+  vertical-align: -10%;
+}
+
+#btnFilterNew.filterIsActive:after {
+  content: "\\00a0\\00a0\\00a0" var(--svg-checked);
+}
+
+.btn-small {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.75rem;
+}
+
+.msgNoResults {
+  margin-block: 2rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.repliesCollapsed .replyContainer:nth-last-child(n+4) {
+  display: none;
+}
+
+.expander {
+  cursor: pointer;
+  color: #d53d16;
+}
+
+.expander:hover {
+  font-weight: bold;
+}
+
+#language_container {
+  --borderColor: #555555;
+  --borderWidth: 1px;
+  --totalWidth: 8rem;
+  width: var(--totalWidth);
+  height: 2rem;
+  margin-left: auto;
+  color: #d53d16;
+  cursor: pointer;
+  border: var(--borderWidth) solid var(--borderColor);
+  border-top-left-radius: 1px;
+  border-bottom: 0;
+}
+
+#language_container:hover > #language_dropdown_toggler > span:last-of-type  {
+  transform: rotate(90deg);
+}
+
+#language_dropdown_toggler {
+  position: absolute;
+  height: inherit;
+  width: inherit;
+  background: linear-gradient(to left, var(--borderColor) var(--borderWidth), #d53d16 var(--borderWidth), #d53d16 1.75rem, #fcfcfc 1.75rem);
+  font-weight: bold;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  border-radius: 1px;
+  border-bottom: var(--borderWidth) solid var(--borderColor);
+}
+
+#language_dropdown_toggler:hover + #language_dropdown_menu,
+#language_dropdown_menu:hover {
+  display: block;
+}
+
+#language_dropdown_toggler > span {
+  width: calc(100% - 1.75rem);
+  display: flex;
+  height: inherit;
+  padding-left: 0.4rem;
+  align-items: center;
+}
+
+#activeLanguage {
+  border: var(--borderWidth) solid var(--borderColor);
+  border-bottom-width: 0;
+}
+
+#language_dropdown_toggler > span:last-of-type {
+  border-radius: 1px 1px 0 0;
+  width: 1.5rem;
+  text-align: center;
+  color: #fcfcfc;
+  transition: transform .15s ease-in-out;
+  position: relative;
+  padding-left: calc(2*var(--borderWidth));
+  justify-content: center;
+}
+
+#language_dropdown_menu {
+  position: relative;
+  top: 100%;
+  border-radius: 0 0 1px 1px;
+  border: var(--borderWidth) solid var(--borderColor);
+  left: calc(0px - var(--borderWidth));
+  max-width: unset;
+  width: calc(100% + 3*var(--borderWidth));
+  display: none;
+}
+
+#language_dropdown_menu > div {
+  background-color: #252525;
+  font-weight: bold;
+  padding-left: 0.4rem;
+  padding-block: 0.2rem;
+  display: flex;
+  align-items: center;
+  padding-top: 0.2rem;
+  border-top: var(--borderWidth) solid var(--borderColor);
+}
+
+#language_dropdown_menu > div:hover {
+  background-color: #f0cbc2;
+}
+
+#language_dropdown_menu svg {
+  margin-right: 0.6rem;
+  height: 1rem;
+  width: 2rem;
+}
+
+#moreFilterTrigger:hover {
+  font-weight: bold;
+}
+
+#moreFilterMenu {
+  margin-inline-start: 1rem;
+}
+
+.card legend {
+  padding-inline: .5rem;
+  text-align: center;
+}
+
+#enhancedUi label {
+  padding-block: .75rem;
+}
+
+input[type="date"] {
+    display: inline-block;
+    margin: 7px 0px 15px 0px;
+    padding: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+}
+</style>
+
+
+
+<style id="style_newComment">
+  .${cssClassNewComments} {
+    background-color: ${highlightedCommentsColor};
+  }
+</style>
+
+
+<style id="style_hasNewReply">
+  .${cssClassHasNewReplies} {
+    background-color: ${highlightedHasNewRepliesColor};
+  }
+</style>
+
+
+<style id="style_newReply">
+  .${cssClassNewReplies} {
+    background-color: ${highlightedRepliesColor};
+  }
+</style>
 `;
-
-  
-commentFilters = new Map([
-  // currently supported types for property "value" are: boolean, string, array
-  [ 'filterOnlyNew', { active: false, value: false } ],
-  [ 'filterOnlyUser', { active: false, value: [] } ],    // OR logic
-  [ 'filterSkipUser', { active: false, value: [] } ],    // OR logic
-  [ 'filterTextSearch', { active: false, value: [] } ],  // AND logic (search input is split into single words)
-]);
-
-const menuBaseHtml = `
-    <div id="enhancedUi" class="container-fluid">
-      <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
-        <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
-        <div class="rowHeadlineHolderItem headerTxt">
-          <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
-        </div>
-        <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
+    var mainUI = `
+  <div id="enhancedUi" class="container-fluid">
+    <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
+      <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
+      <div class="rowHeadlineHolderItem headerTxt">
+        <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
       </div>
-      <div class="row card-group">
-        <div class="card">
-          <span id="ignoredLabel">${t('Blockierte Benutzer')}:</span>
-          <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
-          <div class="row">
-            <div class="col-auto">
-              <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
-            </div>
-            <div style="flex-grow: 1;" class="col-1"></div>
-            <div class="col-auto">
-              <a id="deleteIgnoreUser" class="btn btn-small">${t('Entfernen')}</a>
-            </div>
+      <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
+    </div>
+    
+    
+    <div class="row card-group">
+    
+      <fieldset class="card">
+        <legend id="ignoredLabel">${t('Blockierte Benutzer')}:</legend>
+        <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
+        <div class="row">
+          <div class="col-auto">
+            <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
+          </div>
+          <div class="col-1" style="flex-grow: 1;"></div>
+          <div class="col-auto">
+            <a id="deleteIgnoreUser" class="btn btn-small">${t('Entfernen')}</a>
           </div>
         </div>
-        <div class="card">
-          <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
+      </fieldset>
+      
+      <fieldset class="card col">
+        <legend>Kommentare filtern</legend>
+        <div class="row">
+          <label class="col-auto" style="margin-right: 2rem;">Suchtext:</label>
+          <input id="filterUser" type="text" name="filterUser" class="col" />
         </div>
-      </div>
+        <details id="moreFilter">
+          <summary id="moreFilterTrigger" style="text-align: right;">Erweiterte Filteroption</summary>
+          <ul id="moreFilterMenu" style="list-style-type: none;">
+            <li>
+              <label>Muss alle Wörter enthalten</label>
+              <input type="checkbox" />
+            </li>
+            <li class="row">
+              <label class="col-4">nach Benutzer:</label>
+              <div class="col">
+                <input id="filterUser" type="text" name="filterUser" />
+              </div>
+            </li>
+            <li class="row">
+              <label class="row col-4">nach Datum:</label>
+              <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: 0.4rem;">
+                <input id="filterUser" name="filterUser" type="date" />
+                <label style="padding-block: .75rem;">-</label>
+                <input id="filterUser" name="filterUser" type="date" />
+              </div>
+            </li>
+            <li>
+              <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
+            </li>   
+          </ul>
+        </details>
+      </fieldset>
+      
     </div>
-  `;
+    
+    
+  </div>
+`.parseHTML();
 
-document.body.appendChild(globalStyles.parseHTML());
 
-// add the new UI and store its reference
-addCommentMenuToPage(menuBaseHtml.parseHTML());
-enhancedUiContainer = document.getElementById('enhancedUi');
 
-// hide the original comment container
-originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
-// if not found probably not logged in (anymore), so lets stop here
-if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
+/*
+TRANSLATIONS TODO
 
-originalCommentContainer.id = 'originalCommentContainer';
-originalCommentContainer.classList.add('hidden');
+Kommentare filtern
+Suchtext:
+Erweiterte Filteroption
+Muss alle Wörter enthalten              
+nach Datum:
+nach Benutzer:
 
-// get stored comment data (to identify new comments) and update storage with the new comment data
-storedData = get_value('commentData');
-commentData = generateCommentObject();
-totalComments = commentData.length;
-DEBUG_setSomeFakeData();
-set_value('commentData', commentData);
-
-// add custom comment container
-customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
-originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
-
-// restore list of ignored users
-const storedIgnoreList = get_value('ignoredUsers');
-for (const user of storedIgnoreList) {
-  document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
-  const ignoreFilter = commentFilters.get('filterSkipUser');
-  ignoreFilter.value.push(user);
-  ignoreFilter.active = true;
-}
-
-// mount handlers for ignore user feature
-document.getElementById('addIgnoreUser').addEventListener('click', function() {
-  const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
-  if (user === null || user === '') return;
-  const selectElement = document.getElementById('ignoredUsers');
-  for (const option of selectElement.children) {
-    if (option.innerText === user) return;
+ */
+    execute_profilePage();
+    
+  } else if (route === 'video') {
+    
+    execute_genericPage();
+    
   }
-  const option = `<option>${user}</option>`.parseHTML();
-  document.getElementById('ignoredUsers').appendChild(option);
-  // update filter
-  const ignoreFilter = commentFilters.get('filterSkipUser');
-  ignoreFilter.value.push(user);
-  ignoreFilter.active = true;
-  // update storage
-  set_value('ignoredUsers', ignoreFilter.value);
-  updatePage();
-});
-document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
-  const selectElement = document.getElementById('ignoredUsers');
-  if (selectElement.selectedOptions.length > 0) {
-    const user = selectElement.selectedOptions[0].innerText.trim();
-    selectElement.selectedOptions[0].remove();
-    const ignoreFilter = commentFilters.get('filterSkipUser');
-    // update filter
-    const oldIgnoreList = ignoreFilter.value;
-    ignoreFilter.value = [];
-    for (const entry of oldIgnoreList) {
-      if (entry !== user) ignoreFilter.value.push(entry);
-    }
-    if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
-    // update storage
-    set_value('ignoredUsers', ignoreFilter.value);
-    updatePage();
-  }
-});
-
-// add fancy switch to turn off all features and restore the original elements instead
-enhancedUiContainer.parentElement.insertBefore(mainSwitchHtml.parseHTML(), enhancedUiContainer);
-document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-
-// mount handler for "new only" filter button
-document.getElementById('btnFilterNew').addEventListener('click', function() {
-  changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
-  if (commentFilters.get('filterOnlyNew').active) {
-    // this will change the cross to a hook in the filter button
-    this.classList.add('filterIsActive');
-    // no need to highlight new comments if we filter all not new
-    document.getElementById('style_newComment').innerText = '';
-  } else {
-    this.classList.remove('filterIsActive');
-    document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
-  }
-});
-
-updatePage();
-insertLanguageDropdown();
-
-// mount handler for selecting another length value
-document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
-}
-
-// execution path for generic pages (will search for comment sections and apply block list on it, if found)
-else {
-  applyBlockedUserGenericPage();
-}
+})();

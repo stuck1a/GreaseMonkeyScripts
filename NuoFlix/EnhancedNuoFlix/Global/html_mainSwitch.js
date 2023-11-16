@@ -1,4 +1,4 @@
-const mainSwitchHtml = `
+mainSwitchContainer = `
   <div id="mainSwitchContainer">
     <div>
       <input id="mainSwitch" type="checkbox" name="mainSwitch" checked="checked">
@@ -10,6 +10,7 @@ const mainSwitchHtml = `
         height: 89px;
         width: 158px;
       }
+      
       #mainSwitchContainer > div {
         width: 151px;
         height: 60px;
@@ -17,15 +18,18 @@ const mainSwitchHtml = `
         inset-block-start: 31px;
         left: 3px;
       }
+      
       #mainSwitchContainer *, #mainSwitchContainer *:after, #mainSwitchContainer *:before {
         box-sizing: border-box;
       }
+      
       #mainSwitch {
         visibility: hidden;
         clip: rect(0 0 0 0);
         position: absolute;
         left: 9999px;
       }
+      
       .mainSwitch {
         display: block;
         width: 65px;
@@ -45,6 +49,7 @@ const mainSwitchHtml = `
         border-radius: 0.35em;
         box-shadow: 0 0 1px 2px rgba(0, 0, 0, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 1px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
       }
+      
       .mainSwitch:before {
         display: block;
         position: absolute;
@@ -61,6 +66,7 @@ const mainSwitchHtml = `
         pointer-events: none;
         transition: all 0.2s ease-out;
       }
+      
       .mainSwitch:after {
         content: "";
         position: absolute;
@@ -74,6 +80,7 @@ const mainSwitchHtml = `
         z-index: -1;
         box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -47px 32px 15px 13px rgba(0, 0, 0, 0.25);
       }
+      
       #mainSwitch:checked ~ .mainSwitch {
         background: #b7bfc2;
         background: -moz-linear-gradient(left, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
@@ -84,10 +91,11 @@ const mainSwitchHtml = `
         background: linear-gradient(to right, #b7bfc2 0%, #e1e9ec 26%, #fff9f4 32%, #d4dcdf 38%, #ccd4d7 66%, #d8e0e3 71%, #ced8da 100%);
         filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b7bfc2', endColorstr='#ced8da',GradientType=1 );
       }
+      
       #mainSwitch:checked ~ .mainSwitch:after {
         background: #b1ffff;
         box-shadow: inset 0 -1px 8px rgba(0, 0, 0, 0.7), inset 0 -2px 2px rgba(0, 0, 0, 0.2), 0 1px 0 white, 0 -1px 0 rgba(0, 0, 0, 0.5), -65px 25px 15px 13px rgba(0, 0, 0, 0.25);
       }
     </style>
   </div>
-`;
+`.parseHTML();
