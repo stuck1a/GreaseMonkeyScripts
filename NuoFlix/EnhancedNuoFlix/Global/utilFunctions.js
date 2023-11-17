@@ -158,7 +158,7 @@ function set_value(key, value, global = false) {
       value = JSON.stringify(value);
     } catch (e) {
       const msg = t('Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!');
-      log(msg, 'warn', [t('Occurred in {0}', 'set_value()'), this]);
+      log(msg, 'warn', [t('Aufgetreten in {0}', 'set_value()'), this]);
     }
   }
   GM_setValue(key, value);

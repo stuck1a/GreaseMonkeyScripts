@@ -42,9 +42,9 @@ class InsertionService {
   static insert(element, refElement, method) {
     const buildLogContext = function() {
       return [
-        'Element to insert:', element,
-        'Reference Element:', refElement,
-        'Used method:', method.name
+        t('Einzufügendes Element:'), element,
+        t('Referenz-Element:'), refElement,
+        t('Verwendete Methode:'), method.name
       ];
     }
     
@@ -67,7 +67,7 @@ class InsertionService {
           refElement.parentElement.insertBefore(element, refElement);
           break;
         }
-        log('Cannot insert before an element without parent!', 'error', buildLogContext());
+        log(t('Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!'), 'error', buildLogContext());
         break;
      // after
       case this.After:
@@ -77,10 +77,10 @@ class InsertionService {
             : refElement.parentElement.appendChild(element);
           break;
         }
-        log('Cannot insert after an element without parent!', 'error', buildLogContext());
+        log(t('Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!'), 'error', buildLogContext());
         break;
       default:
-        log('Received unknown insertion method.', 'error', buildLogContext());
+        log(t('Unbekannte Einfüge-Methode angefordert.'), 'error', buildLogContext());
     }
   }
 }
@@ -125,7 +125,7 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
   if (register) {
     if (!registerId) registerId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     if (!customElementsRegister) {
-      log('Injected custom element before initialization of the global register.\nThe element was therefore not registered!', 'warn', [ element ]);
+      log(t('Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.'), 'warn', [ element ]);
       return insertedElements;
     }
     customElementsRegister.set(registerId, insertedElements);

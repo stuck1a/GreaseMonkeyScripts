@@ -48,15 +48,6 @@
     [ 'filterTextSearch', { active: false, value: [] } ],
   ]);
 
-  // set up blocked user filter
-  for (const user of get_value('ignoredUsers')) {
-    document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
-    const ignoreFilter = commentFilters.get('filterSkipUser');
-    ignoreFilter.value.push(user);
-    ignoreFilter.active = true;
-  }
-
-  
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'index') {

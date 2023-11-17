@@ -65,7 +65,7 @@
 
 
 [
-'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden',
+'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.',
 'It seems like there is deprecated/invalid/corrupted comment data stored.\nUsually this should be fixed with the next page refresh.',
 ],
 
@@ -165,3 +165,44 @@
 'By user',
 ],
 
+
+[
+'Einzufügendes Element:',
+'Element to insert:',
+],
+
+
+[
+'Referenz-Element:',
+'Reference Element:',
+],
+
+
+[
+'Verwendete Methode:',
+'Used method:',
+],
+
+
+[
+'Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
+'Cannot insert before an element without parent!',
+],
+
+
+[
+'Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
+'Cannot insert after an element without parent!',
+],
+
+
+[
+'Unbekannte Einfüge-Methode angefordert.',
+'Received unknown insertion method.',
+],
+
+
+[
+'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
+'Injected custom element before initialization of the global register.\nThe element was therefore not registered!',
+],

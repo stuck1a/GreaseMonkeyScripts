@@ -22,7 +22,6 @@ function execute_profilePage() {
   
   // insert the additional UI section
   addCommentMenuToPage(enhancedUiContainer);
-  enhancedUiContainer = document.getElementById('enhancedUi');
 
   // search and disable the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
@@ -131,7 +130,7 @@ function execute_profilePage() {
 
 
 /**
- * Adds this scripts UI section to the DOM.
+ * Add the custom UI section to the DOM.
  *
  * @param {any} menu
  */
@@ -140,10 +139,20 @@ function addCommentMenuToPage(menu) {
   if (targetParent && targetParent[0] && targetParent[0].firstElementChild) {
     targetParent = targetParent[0].firstElementChild;
   } else {
-    log(t('Target DOM element not found. Are you logged in? If yes, maybe the DOM has changed.'), 'error', this);
+    log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'error', this);
     return;
   }
+  
   targetParent.insertBefore(menu, targetParent.firstChild);
+  enhancedUiContainer = document.getElementById('enhancedUi');
+  
+  // restore the list of blocked users
+  for (const user of get_value('ignoredUsers')) {
+    document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
+    const ignoreFilter = commentFilters.get('filterSkipUser');
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
+  }
 }
 
 
@@ -333,8 +342,8 @@ function isNewComment(btn_id, txt_id) {
   for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
-        const msg = 'It seems like there is deprecated/invalid/corrupted comment data stored.\nUsually this should be fixed with the next page refresh.';
-        log(msg, 'warn', ['Occurred in isNewComment()', 'storedComment = \n' + storedComment]);
+        const msg = t('Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.');
+        log(msg, 'error', [t('Aufgetreten in {0}', 'isNewComment') + '()', 'storedComment:', storedComment]);
         msgPrinted = true;
       }
       return false;
@@ -363,8 +372,8 @@ function getReplyCount(btn_id, txt_id) {
   for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
-        const msg = 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden';
-        log(msg, 'warn', ['Occurred in getReplyCount()', 'storedComment = \n' + storedComment]);
+        const msg = 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.';
+        log(msg, 'error', [t('Aufgetreten in {0}', 'getReplyCount') + '()', 'storedComment:', storedComment]);
         msgPrinted = true;
       }
       return 0;

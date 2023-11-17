@@ -77,7 +77,7 @@
 
 
 [
-'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden',
+'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.',
 'Pokhozhe, chto khranyatsya ustarevshiye/nedeystvitel\'nyye/povrezhdennyye dannyye kommentariyev.\nObychno eto dolzhno byt\' ispravleno pri sleduyushchem obnovlenii stranitsy.',
 ],
 
@@ -163,4 +163,46 @@
 [
 'nach Benutzer',
 'pol\'zovatelem',
+],
+
+
+[
+'Einzufügendes Element:',
+'Element dlya vstavki:',
+],
+
+
+[
+'Referenz-Element:',
+'Spravochnyy element:',
+],
+
+
+[
+'Verwendete Methode:',
+'Ispol\'zuyemyy metod',
+],
+
+
+[
+'Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
+'Element ne mozhet byt\' vstavlen pered ssylochnym elementom, yesli u nego net roditel\'skogo elementa!',
+],
+
+
+[
+'Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
+'Element nel\'zya vstavit\' posle ssylochnogo elementa, yesli u nego net roditel\'skogo elementa!',
+],
+
+
+[
+'Unbekannte Einfüge-Methode angefordert.',
+'Zaproshen neizvestnyy metod vstavki.',
+],
+
+
+[
+'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
+'Pol\'zovatel\'skiy element byl vstavlen do initsializatsii global\'nogo registra.\nPoetomu element ne udalos\' zaregistrirovat\'.',
 ],
