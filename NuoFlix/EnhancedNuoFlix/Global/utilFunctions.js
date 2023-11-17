@@ -19,10 +19,66 @@ String.sprintf = function(format) {
 /**
  * @return {DocumentFragment}
  */
-String.prototype.parseHTML = function () {
+String.prototype.parseHTML = function() {
   let t = document.createElement('template');
   t.innerHTML = this;
   return t.content;
+};
+
+
+
+/**
+ * Delete entries with a given value.
+ * 
+ * @param {any} value  - Target value
+ * @param {?int|string} [limit=null]  - Limit amount of deleted entries, if multiple matches
+ * 
+ * @return {int}  - Amount of deleted entries
+ */
+Map.prototype.deleteByValue = function(value, limit = null) {
+  let deleted = 0;
+  limit = parseInt(limit);
+  for (const entry of this.entries()) {
+    if (value === entry[1]) {
+      if (typeof limit === 'number' && deleted >= limit ) return deleted;
+      this.delete(entry[0]);
+      deleted++;
+    }
+  }
+  return deleted;
+};
+
+
+
+/**
+ * Search the Map for an given value.
+ * 
+ * @param {any} value  - Target value
+ * 
+ * @return {boolean}  - True, if the value was found at least once.
+ */
+Map.prototype.hasValue = function(value) {
+  for (const entry of this.entries()) {
+    if (value === entry[1]) return true;
+  }
+  return false;
+};
+
+
+
+/**
+ * Returns an array of keys whose values equals the target value.
+ * 
+ * @param {any} value  - Target value
+ * 
+ * @return {any[]}
+ */
+Map.prototype.getKeysByValue = function(value) {
+  let keys = [];
+  for (const entry of this.entries()) {
+    if (value === entry[1]) keys.push(entry[0]);
+  }
+  return keys;
 };
 
 

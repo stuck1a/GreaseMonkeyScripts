@@ -1,4 +1,4 @@
-var mainUI = `
+let enhancedUiContainer = `
   <div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
       <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
@@ -6,9 +6,7 @@ var mainUI = `
         <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
       </div>
       <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
-    </div>
-    
-    
+    </div>  
     <div class="row card-group">
     
       <fieldset class="card">
@@ -28,28 +26,30 @@ var mainUI = `
       <fieldset class="card col">
         <legend id="filterLabel">${t('Kommentare filtern')}</legend>
         <div class="row">
-          <label id="searchInputLabel" class="col-auto" style="margin-right: 2rem;">${t('Suche')}&colon;</label>
-          <input id="filterUser" type="text" name="filterUser" class="col" />
+          <label id="searchInputLabel" class="col-auto" for="filterByText" style="margin-right: 2rem;">${t('Suche')}&colon;</label>
+          <input id="filterByText" type="text" name="filterByText" class="col" />
         </div>
         <details id="moreFilter">
           <summary id="moreFilterTrigger" style="text-align: right;">${t('Erweiterte Filteroptionen')}</summary>
           <ul id="moreFilterMenu" style="list-style-type: none;">
             <li>
-              <label id="useAndLogicLabel">${t('Muss alle Wörter enthalten')}</label>
-              <input type="checkbox" />
+              <div class="flipflop" style="--color-on: #e86344;">
+                <span id="useAndLogicLabel">${t('Muss alle Wörter enthalten')}</span>
+                <label><input id="filterNewOnly" type="checkbox" checked="checked" /><span></span></label>
+              </div> 
             </li>
             <li class="row">
-              <label id="searchByUserLabel" class="col-4">${t('nach Benutzer')}&colon;</label>
+              <label id="searchByUserLabel" class="col-4" for="filterByUser">${t('nach Benutzer')}&colon;</label>
               <div class="col">
-                <input id="filterUser" type="text" name="filterUser" />
+                <input id="filterByUser" type="text" name="filterByUser" />
               </div>
             </li>
             <li class="row">
-              <label id="searchByDateLabel" class="row col-4">${t('nach Datum')}&colon;</label>
+              <label id="searchByDateLabel" class="row col-4" for="filterByDateFrom">${t('nach Datum')}&colon;</label>
               <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: 0.4rem;">
-                <input id="filterUser" name="filterUser" type="date" />
-                <label style="padding-block: .75rem;">-</label>
-                <input id="filterUser" name="filterUser" type="date" />
+                <input id="filterByDateFrom" name="filterByDateFrom" type="date" />
+                <label style="padding-block: .75rem;" for="filterByDateTo">-</label>
+                <input id="filterByDateTo" name="filterByDateTo" type="date" />
               </div>
             </li>
             <li>
@@ -60,7 +60,5 @@ var mainUI = `
       </fieldset>
       
     </div>
-    
-    
   </div>
 `.parseHTML();

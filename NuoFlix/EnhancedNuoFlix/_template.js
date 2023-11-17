@@ -20,35 +20,21 @@
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 
-
-  /*
-   * TODO: Implement wrapper fnc addToDOM(element, refElement, method, isCustomElement = true) which facades appendChild() and insertBefore().
-   *       method value       placement
-   *       'asLastChild'      refElement.appendChild(element)
-   *       'asFirstChild'     refElement.prependChild(element)
-   *       'after'            refElement.parentElement.insertAfter(element, refElement)
-   *       'before'           refElement.parentElement.insertBefore(element, refElement)
-   *       Additionally, the wrapper will maintain a global list of custom elements, so that we know which elements to hide when
-   *       we turn off the script with the main switch.
-   *       
-   * TODO: Implement wrapper fnc hideOriginElement(element, restoreId) which will also maintain such a list, just for
-   *       original page elements we disabled because we replaced them with custom ones or so. Will be used to restore the
-   *       original page state when we turn off the script with the main switch. But we also store a object reference, so
-   *       we can use it to gather infos about it and such.
-   */
-
 (function() {
   /*%% Global/configs.js %%*/
   /*%% Global/translations.js %%*/
   /*%% Global/utilFunctions.js %%*/
   /*%% Global/functions_global.js %%*/
   /*%% Global/functions_debug.js %%*/
-  /*%% Global/functions_debug.js %%*/
-  /*%% Global/html_mainSwitch.js %%*/
+
+  document.body.appendChild(`<style>/*%% Global/mainSwitch.css %%*/</style>`.parseHTML());
   
   let totalComments;
   let paginationContainer, paginationContainerBottom, paginationControlContainer;
   let customCommentContainer, originalCommentContainer;
+
+  let customElementsRegister = new Map();
+  let disabledPrimalElementsRegister = new Map();
   
   let currentStart = defaultStart;
   let currentLength = defaultLength;

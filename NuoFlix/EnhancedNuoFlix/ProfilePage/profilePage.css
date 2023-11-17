@@ -1,5 +1,3 @@
-const globalStyles = `<style>
-
 :root {
   --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
   --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
@@ -37,9 +35,9 @@ const globalStyles = `<style>
   word-wrap: break-word;
   background-clip: border-box;
   border: 1px solid #949296;
-  border-radius: 0.25rem;
+  border-radius: .25rem;
   max-width: 30rem;
-  padding: 0.75rem;
+  padding: .75rem;
   width: 30%;
 }
 
@@ -67,7 +65,7 @@ const globalStyles = `<style>
 
 #paginationContainer, #paginationContainerBottom {
   text-align: center;
-  margin-block: 0.8rem;
+  margin-block: .8rem;
 }
 
 .buttonGroup {
@@ -101,8 +99,8 @@ const globalStyles = `<style>
 }
 
 .pageNrBtn {
-  padding-inline: max(1.0vw, 10px);
-  margin-inline: 0.25rem !important;
+  padding-inline: max(1vw, 10px);
+  margin-inline: .25rem !important;
 }
 
 .pageNrBtn.activePage {
@@ -127,14 +125,14 @@ const globalStyles = `<style>
 #commentsPerPageContainer small {
   align-self: center;
   white-space: pre;
-  margin-inline-end: 0.75rem;
+  margin-inline-end: .75rem;
 }
 
 #commentsPerPageContainer .select {
   background-color: #eee;
   margin-block: auto;
-  padding: 0.4rem;
-  font-size: 0.75rem;
+  padding: .4rem;
+  font-size: .75rem;
   text-align: center;
   text-align-last: center;
 }
@@ -149,8 +147,8 @@ const globalStyles = `<style>
 }
 
 .btn-small {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.75rem;
+  font-size: .75rem;
+  padding: .2rem .75rem;
 }
 
 .msgNoResults {
@@ -173,7 +171,7 @@ const globalStyles = `<style>
 }
 
 #language_container {
-  --borderColor: #555555;
+  --borderColor: #555;
   --borderWidth: 1px;
   --totalWidth: 8rem;
   width: var(--totalWidth);
@@ -212,7 +210,7 @@ const globalStyles = `<style>
   width: calc(100% - 1.75rem);
   display: flex;
   height: inherit;
-  padding-left: 0.4rem;
+  padding-left: .4rem;
   align-items: center;
 }
 
@@ -246,11 +244,11 @@ const globalStyles = `<style>
 #language_dropdown_menu > div {
   background-color: #252525;
   font-weight: bold;
-  padding-left: 0.4rem;
-  padding-block: 0.2rem;
+  padding-left: .4rem;
+  padding-block: .2rem;
   display: flex;
   align-items: center;
-  padding-top: 0.2rem;
+  padding-top: .2rem;
   border-top: var(--borderWidth) solid var(--borderColor);
 }
 
@@ -259,7 +257,7 @@ const globalStyles = `<style>
 }
 
 #language_dropdown_menu svg {
-  margin-right: 0.6rem;
+  margin-right: .6rem;
   height: 1rem;
   width: 2rem;
 }
@@ -283,33 +281,9 @@ const globalStyles = `<style>
 
 input[type="date"] {
     display: inline-block;
-    margin: 7px 0px 15px 0px;
+    margin: 7px 0 15px 0;
     padding: 10px;
     -webkit-border-radius: 10px;
     -moz-border-radius: 10px;
     border-radius: 10px;
 }
-</style>
-
-
-
-<style id="style_newComment">
-  .${cssClassNewComments} {
-    background-color: ${highlightedCommentsColor};
-  }
-</style>
-
-
-<style id="style_hasNewReply">
-  .${cssClassHasNewReplies} {
-    background-color: ${highlightedHasNewRepliesColor};
-  }
-</style>
-
-
-<style id="style_newReply">
-  .${cssClassNewReplies} {
-    background-color: ${highlightedRepliesColor};
-  }
-</style>
-`;

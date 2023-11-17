@@ -1,0 +1,120 @@
+/*<SKIP>
+
+  Styles for fancy 3D switch
+  To insert one, use:
+
+  <div class="mainSwitch">
+    <span><input type="checkbox" />
+      <label data-off="&#10006;" data-on="&#10004;"></label>
+    </span>
+  </div>
+
+<SKIP>*/
+
+
+
+.mainSwitch {
+  --width: 5rem;
+}
+
+.mainSwitch span {
+  --edge-radius: calc(.1*var(--width));
+  position :relative;
+  display: inline-block;
+  width: var(--width);
+  height: calc(1.5*var(--width));
+  background-color: #bbb;
+  -webkit-border-radius: var(--edge-radius);
+  -moz-border-radius: var(--edge-radius);
+  border-radius: var(--edge-radius);
+  text-align: center;
+}
+
+.mainSwitch input {
+  width: 100%;
+  height: 100%;
+  margin: 0 0;
+  padding: 0 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  cursor: pointer;
+  opacity: 0;
+  filter: alpha(opacity=0);
+}
+
+.mainSwitch label {
+  display: block;
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  left: 1px;
+  background-image: -webkit-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
+  background-image: -moz-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
+  background-image: -ms-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
+  background-image: -o-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
+  background-image: linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
+  -webkit-box-shadow: 0 2px 3px rgba(0, 0, 0 , 0.4), inset 0 -1px 1px #888, inset 0 -5px 1px #bbb, inset 0 -6px 0 white;
+  -moz-box-shadow:0 2px 3px rgba(0, 0, 0, 0.4), inset 0 -1px 1px #888, inset 0 -5px 1px #bbb, inset 0 -6px 0 white;
+  box-shadow:0 2px 3px rgba(0, 0, 0, 0.4), inset 0 -1px 1px #888, inset 0 -5px 1px #bbb, inset 0 -6px 0 white;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  font: normal 11px Arial, Sans-Serif;
+  color: #666;
+  text-shadow: 0 1px 0 white;
+  cursor: pointer;
+}
+
+/* Oberes Zeichen (OFF) */
+.mainSwitch label:before {
+  content: attr(data-off);
+  position: absolute;
+  top: 6px;    /* Ausrichtung (Abstand von oben, berechnet aus Höhe und Fontgröße) */
+  right: 0;
+  left: 0;
+  z-index: 4;
+}
+
+/* Unteres Zeichen (ON) */
+.mainSwitch label:after {
+  content: attr(data-on);
+  position: absolute;
+  right: 0;
+  bottom: 11px; /* Ausrichtung (Abstand von unten, berechnet aus Höhe und Fontgröße) */
+  left: 0;
+  color: gray;  /* Basisfarbe (im ausgeschalteten Zustand) */
+  text-shadow: 0 -1px 0 #eee; /* Fix, um den Kontrast zu erhöhen */
+}
+
+/* Oberer Schalter im ausgeschalteten Zustand */
+.mainSwitch input:checked + label {
+  /* Abdunkeln der Fläche */
+  background-image: -webkit-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
+  background-image: -moz-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
+  background-image: -ms-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
+  background-image: -o-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
+  background-image: linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
+  /* Obere Kante durch Abdunkeln erzeugen (3D-Effekt) - Werte berechnet aus Größe/Höhe */
+  -webkit-box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
+  -moz-box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
+}
+
+/* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
+.mainSwitch input:checked + label:before {
+  z-index: 1;
+  top: 11px;   /* Ausgangshöhe + y-Versatz von Oberkante */
+}
+
+/* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
+.mainSwitch input:checked + label:after {
+  z-index: 4;
+  color: #aaa; /* Farbe auch etwas abdunkeln, verstärkt den Kippeffekt */
+  text-shadow: none;
+  bottom: 9px;   /* Ausgangshöhe + y-Versatz von Unterkante */
+}

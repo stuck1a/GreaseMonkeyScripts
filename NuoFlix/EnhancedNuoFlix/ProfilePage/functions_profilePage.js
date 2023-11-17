@@ -2,7 +2,7 @@
 // set up route-scoped fields and start the execution flow fo this route
 let commentData;
 let storedCommentData;
-let enhancedUiContainer;
+/*%% ProfilePage/mainUI.js %%*/
 
 execute_profilePage();
 
@@ -12,14 +12,16 @@ execute_profilePage();
  * Main function of this route
  */
 function execute_profilePage() {
-  /*%% ProfilePage/styles_profilePage.js %%*/
-  /*%% ProfilePage/html_mainUI.js %%*/
-
-  // insert the style sheet for this route
-  document.body.appendChild(globalStyles.parseHTML());
-
+  /*%% ProfilePage/style_comments.js %%*/
+  /*%% ProfilePage/mainUI.js %%*/
+  
+  // insert all style sheets used in this route
+  document.body.appendChild(`<style>/*%% ProfilePage/profilePage.css %%*/</style>`.parseHTML());
+  document.body.appendChild(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML());
+  document.body.appendChild(`<style>/*%% Global/mainSwitch.css %%*/</style>`.parseHTML());
+  
   // insert the additional UI section
-  addCommentMenuToPage(mainUI);
+  addCommentMenuToPage(enhancedUiContainer);
   enhancedUiContainer = document.getElementById('enhancedUi');
 
   // search and disable the original comment container
@@ -80,9 +82,18 @@ function execute_profilePage() {
   });
 
   // insert the main switch to disable EnhancedNuoFlix
-  // TODO: Replace with something which works on all pages, somewhere in the header
-  //       Then store its current state in the GM storage to restore when go on another route/page
+  const mainSwitchContainer = `
+    <div class="mainSwitch">
+      <span><input id="mainSwitch" type="checkbox" checked="checked" />
+        <label data-off="&#10006;" data-on="&#10004;"></label>
+      </span>
+    </div>
+  `.parseHTML();
+
+  enhancedUiContainer = document.getElementById('enhancedUi');    // FIXME: Why is enhancedUiContainer here a DocumentFragment again?? Should be HTMLElement already...
   enhancedUiContainer.parentElement.insertBefore(mainSwitchContainer, enhancedUiContainer);
+  
+  
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
   // mount handler for the "new only" filter button
@@ -100,6 +111,14 @@ function execute_profilePage() {
     }
   });
 
+  // mount handlers for flip flop switches
+  for (const flipflop of document.getElementsByClassName('flipflop')) {
+    flipflop.addEventListener('change', function() {
+      const input = this.getElementsByTagName('input')[0];
+      input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
+    });
+  }
+  
   // initially generate and insert all dynamic components
   updatePage();
   insertLanguageDropdown();  // TODO: Can we move this into updatePage, too ?
@@ -575,6 +594,7 @@ function insertLanguageDropdown() {
 
   // insert as first element after the section headline
   const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
+  enhancedUiContainer = document.getElementById('enhancedUi');    // FIXME: Why is enhancedUiContainer here a DocumentFragment again?? Should be HTMLElement already...
   enhancedUiContainer.insertBefore(languageContainerHtml, headlineHolder.nextElementSibling);
   const languageContainer = document.getElementById('language_container');
 
