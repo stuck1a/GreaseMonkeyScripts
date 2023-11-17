@@ -18,7 +18,6 @@ function execute_profilePage() {
   // insert all style sheets used in this route
   document.body.appendChild(`<style>/*%% ProfilePage/profilePage.css %%*/</style>`.parseHTML());
   document.body.appendChild(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML());
-  document.body.appendChild(`<style>/*%% Global/mainSwitch.css %%*/</style>`.parseHTML());
   
   // insert the additional UI section
   addCommentMenuToPage(enhancedUiContainer);
@@ -82,7 +81,7 @@ function execute_profilePage() {
 
   // insert the main switch to disable EnhancedNuoFlix
   const mainSwitchContainer = `
-    <div class="mainSwitch">
+    <div class="realisticSwitch">
       <span><input id="mainSwitch" type="checkbox" checked="checked" />
         <label data-off="&#10006;" data-on="&#10004;"></label>
       </span>

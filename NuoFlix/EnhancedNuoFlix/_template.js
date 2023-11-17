@@ -27,7 +27,7 @@
   /*%% Global/functions_global.js %%*/
   /*%% Global/functions_debug.js %%*/
 
-  document.body.appendChild(`<style>/*%% Global/mainSwitch.css %%*/</style>`.parseHTML());
+  document.body.appendChild(`<style>/*%% Global/realisticSwitch.css %%*/</style>`.parseHTML());
   
   let totalComments;
   let paginationContainer, paginationContainerBottom, paginationControlContainer;
