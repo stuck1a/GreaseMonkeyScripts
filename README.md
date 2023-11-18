@@ -27,11 +27,11 @@ https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/NuoFlix/Comme
 
 Desktop Version:
 
-![](previews/NuoFlix_CommentFilter_Desktop.png)
+![](doc/scripts/NuoFlix/CommentFilter/img/Overview_Desktop.png)
 
 Mobile Version:
 
-![](previews/NuoFlix_CommentFilter_Mobile.png)
+![](doc/scripts/NuoFlix/CommentFilter/img/Overview_Mobile.png)
 
 
 

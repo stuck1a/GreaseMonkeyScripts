@@ -1192,7 +1192,7 @@ function getOriginalCommentIds(which) {
   Styles for fancy 3D switch
   To insert one, use:
 
-  <div class="mainSwitch">
+  <div class="realisticSwitch">
     <span><input type="checkbox" />
       <label data-off="&#10006;" data-on="&#10004;"></label>
     </span>
@@ -1202,11 +1202,11 @@ function getOriginalCommentIds(which) {
 
 
 
-.mainSwitch {
+.realisticSwitch {
   --width: 5rem;
 }
 
-.mainSwitch span {
+.realisticSwitch span {
   --edge-radius: calc(.1*var(--width));
   position :relative;
   display: inline-block;
@@ -1219,7 +1219,7 @@ function getOriginalCommentIds(which) {
   text-align: center;
 }
 
-.mainSwitch input {
+.realisticSwitch input {
   width: 100%;
   height: 100%;
   margin: 0 0;
@@ -1235,7 +1235,7 @@ function getOriginalCommentIds(which) {
   filter: alpha(opacity=0);
 }
 
-.mainSwitch label {
+.realisticSwitch label {
   display: block;
   position: absolute;
   top: 1px;
@@ -1260,7 +1260,7 @@ function getOriginalCommentIds(which) {
 }
 
 /* Oberes Zeichen (OFF) */
-.mainSwitch label:before {
+.realisticSwitch label:before {
   content: attr(data-off);
   position: absolute;
   top: 6px;    /* Ausrichtung (Abstand von oben, berechnet aus Höhe und Fontgröße) */
@@ -1270,7 +1270,7 @@ function getOriginalCommentIds(which) {
 }
 
 /* Unteres Zeichen (ON) */
-.mainSwitch label:after {
+.realisticSwitch label:after {
   content: attr(data-on);
   position: absolute;
   right: 0;
@@ -1281,7 +1281,7 @@ function getOriginalCommentIds(which) {
 }
 
 /* Oberer Schalter im ausgeschalteten Zustand */
-.mainSwitch input:checked + label {
+.realisticSwitch input:checked + label {
   /* Abdunkeln der Fläche */
   background-image: -webkit-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
   background-image: -moz-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
@@ -1295,13 +1295,13 @@ function getOriginalCommentIds(which) {
 }
 
 /* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
-.mainSwitch input:checked + label:before {
+.realisticSwitch input:checked + label:before {
   z-index: 1;
   top: 11px;   /* Ausgangshöhe + y-Versatz von Oberkante */
 }
 
 /* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
-.mainSwitch input:checked + label:after {
+.realisticSwitch input:checked + label:after {
   z-index: 4;
   color: #aaa; /* Farbe auch etwas abdunkeln, verstärkt den Kippeffekt */
   text-shadow: none;
@@ -1956,7 +1956,7 @@ input[type="date"] {
 
   // insert the main switch to disable EnhancedNuoFlix
   const mainSwitchContainer = `
-    <div class="mainSwitch">
+    <div class="realisticSwitch">
       <span><input id="mainSwitch" type="checkbox" checked="checked" />
         <label data-off="&#10006;" data-on="&#10004;"></label>
       </span>
