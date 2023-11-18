@@ -72,206 +72,138 @@ const i18n = new Map([
 'Nur neue Kommentare',
 'New comments only',
 ],
-
-
 [
 'Kommentare pro Seite:',
 'Comments per Page:',
 ],
-
-
 [
 'alle',
 'all'
 ],
-
-
 [
 'Kommentare {0} .. {1} von {2}',
 'Comments {0} .. {1} of {2}',
 ],
-
-
 [
 'Antwort abschicken',
 'Send reply',
 ],
-
-
 [
 'Deine Antwort zu diesem Kommentar',
 'Your reply to this comment',
 ],
-
-
 [
 'antworten',
 'answer',
 ],
-
-
 [
 '({0} gefiltert)',
 '({0} filtered)',
 ],
-
-
 [
 'GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.',
 'GreaseMonkey function {0}() not found! Add "@grant {0}" in the script header to fix the error.',
 ],
-
-
 [
 'DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.',
 'Target DOM element not found. Are you logged in? If yes, maybe the DOM has changed.',
 ],
-
-
 [
 'Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!',
 'Warning!\nTried to store non-serializable object!\nThe script will try to store it as plain object, but the data might get corrupted!',
 ],
-
-
 [
 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.',
 'It seems like there is deprecated/invalid/corrupted comment data stored.\nUsually this should be fixed with the next page refresh.',
 ],
-
-
 [
 'Aufgetreten in {0}',
 'Occurred in {0}',
 ],
-
-
 [
 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?',
 'Failed to gather "{0}" data - maybe the DOM has changed?',
 ],
-
-
 [
 'Folgenden Benutzer zur Ignorieren-Liste hinzufügen:',
 'Add the following user to the ignore list:',
 ],
-
-
 [
 'Noch keine Kommentare...',
 'No comments yet...',
 ],
-
-
 [
 'Zeige {0} ältere Antworten',
 'Show {0} old replies',
 ],
-
-
 [
 'Kein Kommentar entspricht den Filterkriterien',
 'No comments match the filter criteria',
 ],
-
-
 [
 'Hinzufügen...',
 'Add...',
 ],
-
-
 [
 'Entfernen',
 'Delete',
 ],
-
-
 [
 'Blockierte Benutzer',
 'Blocked users',
 ],
-
-
 [
 'NuoFlix 2.0',
 'Enhanced NuoFlix',
 ],
-
-
 [
 'Kommentare filtern',
 'Filter comments',
 ],
-
-
 [
 'Suche',
 'Search',
 ],
-
-
 [
 'Erweiterte Filteroptionen',
 'Advanced filter options',
 ],
-
-
 [
 'Muss alle Wörter enthalten',
 'Must contain all words',
 ],
-
-
 [
 'nach Datum',
 'By date',
 ],
-
-
 [
 'nach Benutzer',
 'By user',
 ],
-
-
 [
 'Einzufügendes Element:',
 'Element to insert:',
 ],
-
-
 [
 'Referenz-Element:',
 'Reference Element:',
 ],
-
-
 [
 'Verwendete Methode:',
 'Used method:',
 ],
-
-
 [
 'Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
 'Cannot insert before an element without parent!',
 ],
-
-
 [
 'Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
 'Cannot insert after an element without parent!',
 ],
-
-
 [
 'Unbekannte Einfüge-Methode angefordert.',
 'Received unknown insertion method.',
 ],
-
-
 [
 'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
 'Injected custom element before initialization of the global register.\nThe element was therefore not registered!',
@@ -290,206 +222,138 @@ const i18n = new Map([
 'Nur neue Kommentare',
 'Tol\'ko novyye kommentarii',
 ],
-
-
 [
 'Kommentare pro Seite:',
 'Kommentarii na stranitse:',
 ],
-
-
 [
 'alle',
 'vse',
 ],
-
-
 [
 'Kommentare {0} .. {1} von {2}',
 'Kommentarii {0} .. {1} ot {2}',
 ],
-
-
 [
 'Antwort abschicken',
 'Otpravit\' otvet',
 ],
-
-
 [
 'Deine Antwort zu diesem Kommentar',
 'Vash otvet na etot kommentariy',
 ],
-
-
 [
 'antworten',
 'otvechat\'',
 ],
-
-
 [
 '({0} gefiltert)',
 '({0} Otfil\'trovano)',
 ],
-
-
 [
 'GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.',
 'Funktsiya GreaseMonkey {0}() ne naydena! Dobav\'te "@grant {0}" v zagolovok skripta, chtoby ispravit\' oshibku.',
 ],
-
-
 [
 'DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.',
 'Element DOM ne nayden. Ne voshel? Yesli da, to DOM izmenilsya.',
 ],
-
-
 [
 'Warnung!\nEs wurde versucht, ein nicht serialisierbares Objekt zu speichern!\nDas Skript wird versuchen, es als einfaches Objekt zu speichern, aber die Daten könnten beschädigt werden!',
 'Preduprezhdeniye!\nPytalsya sokhranit\' neserializuyemyy ob"yekt!\nSkript popytayetsya sokhranit\' yego kak prostoy ob"yekt, no dannyye mogut byt\'!',
 ],
-
-
 [
 'Aufgetreten in {0}',
 'Proizoshlo v {0}',
 ],
-
-
 [
 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?',
 'Ne udalos\' sobrat\' dannyye "{0}". Vozmozhno, izmenilsya DOM?',
 ],
-
-
 [
 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.',
 'Pokhozhe, chto khranyatsya ustarevshiye/nedeystvitel\'nyye/povrezhdennyye dannyye kommentariyev.\nObychno eto dolzhno byt\' ispravleno pri sleduyushchem obnovlenii stranitsy.',
 ],
-
-
 [
 'Folgenden Benutzer zur Ignorieren-Liste hinzufügen:',
 'Dobav\'te v spisok ignorirovaniya sleduyushchego pol\'zovatelya:',
 ],
-
-
 [
 'Noch keine Kommentare...',
 'Kommentariyev poka net...',
 ],
-
-
 [
 'Zeige {0} ältere Antworten',
 'Pokazany {0} starykh otvetov',
 ],
-
-
 [
 'Kein Kommentar entspricht den Filterkriterien',
 'Net kommentariyev, sootvetstvuyushchikh kriteriyam fil\'tra.',
 ],
-
-
 [
 'Hinzufügen...',
 'Dobavlyat\'...',
 ],
-
-
 [
 'Entfernen',
 'Udalyat\'',
 ],
-
-
 [
 'Blockierte Benutzer',
 'Zablokirovannyye pol\'zovateli',
 ],
-
-
 [
 'NuoFlix 2.0',
 'Uluchshennyy NuoFlix',
 ],
-
-
 [
 'Kommentare filtern',
 'Fil\'trovat\' kommentarii',
 ],
-
-
 [
 'Suche',
 'Poisk teksta',
 ],
-
-
 [
 'Erweiterte Filteroptionen',
 'Rasshirennyye parametry fil\'tra',
 ],
-
-
 [
 'Muss alle Wörter enthalten',
 'Dolzhen soderzhat\' vse slova',
 ],
-
-
 [
 'nach Datum',
 'po date',
 ],
-
-
 [
 'nach Benutzer',
 'pol\'zovatelem',
 ],
-
-
 [
 'Einzufügendes Element:',
 'Element dlya vstavki:',
 ],
-
-
 [
 'Referenz-Element:',
 'Spravochnyy element:',
 ],
-
-
 [
 'Verwendete Methode:',
 'Ispol\'zuyemyy metod',
 ],
-
-
 [
 'Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
 'Element ne mozhet byt\' vstavlen pered ssylochnym elementom, yesli u nego net roditel\'skogo elementa!',
 ],
-
-
 [
 'Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!',
 'Element nel\'zya vstavit\' posle ssylochnogo elementa, yesli u nego net roditel\'skogo elementa!',
 ],
-
-
 [
 'Unbekannte Einfüge-Methode angefordert.',
 'Zaproshen neizvestnyy metod vstavki.',
 ],
-
-
 [
 'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
 'Pol\'zovatel\'skiy element byl vstavlen do initsializatsii global\'nogo registra.\nPoetomu element ne udalos\' zaregistrirovat\'.',
@@ -1187,25 +1051,10 @@ function getOriginalCommentIds(which) {
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
 
-  document.body.appendChild(`<style>/*<SKIP>
-
-  Styles for fancy 3D switch
-  To insert one, use:
-
-  <div class="realisticSwitch">
-    <span><input type="checkbox" />
-      <label data-off="&#10006;" data-on="&#10004;"></label>
-    </span>
-  </div>
-
-<SKIP>*/
-
-
-
+  document.body.appendChild(`<style>
 .realisticSwitch {
   --width: 5rem;
 }
-
 .realisticSwitch span {
   --edge-radius: calc(.1*var(--width));
   position :relative;
@@ -1218,7 +1067,6 @@ function getOriginalCommentIds(which) {
   border-radius: var(--edge-radius);
   text-align: center;
 }
-
 .realisticSwitch input {
   width: 100%;
   height: 100%;
@@ -1234,7 +1082,6 @@ function getOriginalCommentIds(which) {
   opacity: 0;
   filter: alpha(opacity=0);
 }
-
 .realisticSwitch label {
   display: block;
   position: absolute;
@@ -1258,7 +1105,6 @@ function getOriginalCommentIds(which) {
   text-shadow: 0 1px 0 white;
   cursor: pointer;
 }
-
 /* Oberes Zeichen (OFF) */
 .realisticSwitch label:before {
   content: attr(data-off);
@@ -1268,7 +1114,6 @@ function getOriginalCommentIds(which) {
   left: 0;
   z-index: 4;
 }
-
 /* Unteres Zeichen (ON) */
 .realisticSwitch label:after {
   content: attr(data-on);
@@ -1279,7 +1124,6 @@ function getOriginalCommentIds(which) {
   color: gray;  /* Basisfarbe (im ausgeschalteten Zustand) */
   text-shadow: 0 -1px 0 #eee; /* Fix, um den Kontrast zu erhöhen */
 }
-
 /* Oberer Schalter im ausgeschalteten Zustand */
 .realisticSwitch input:checked + label {
   /* Abdunkeln der Fläche */
@@ -1293,13 +1137,11 @@ function getOriginalCommentIds(which) {
   -moz-box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
 }
-
 /* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
 .realisticSwitch input:checked + label:before {
   z-index: 1;
   top: 11px;   /* Ausgangshöhe + y-Versatz von Oberkante */
 }
-
 /* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
 .realisticSwitch input:checked + label:after {
   z-index: 4;
@@ -1332,11 +1174,7 @@ function getOriginalCommentIds(which) {
   if (route === 'index') {
     (function() { 
 // set up route-scoped fields and start the execution flow fo this route
-
 execute_startPage();
-
-
-
 /**
  * Main function of this route
  */
@@ -1426,13 +1264,11 @@ function execute_profilePage() {
   background-color: ${highlightedCommentsColor};
 }
 </style>
-
 <style id="style_hasNewReply">
   .${cssClassHasNewReplies} {
   background-color: ${highlightedHasNewRepliesColor};
 }
 </style>
-
 <style id="style_newReply">
   .${cssClassNewReplies} {
   background-color: ${highlightedRepliesColor};
@@ -1793,28 +1629,7 @@ input[type="date"] {
     -moz-border-radius: 10px;
     border-radius: 10px;
 }</style>`.parseHTML());
-  document.body.appendChild(`<style>/*<SKIP>
-
-  Styles for FlipFlop-Switch
-  To insert one, use:
-
-  <div class="flipflop">
-    <span>Caption</span>
-    <label><input type="checkbox" checked="checked" /><span></span></label>
-  </div>
-  
-  To adjust configuration, following css-vars can be set to any element with the .flipflop class.
-  If a variable is not set, it will get a default value.
-  
-  --width
-  --speed
-  --color-thumb
-  --color-on
-  --color-off
-  --label-offset
-
-<SKIP>*/
-
+  document.body.appendChild(`<style>
 .flipflop {
   /* set defaults for unset variables */
   --_width: var(--width, 3rem);
@@ -1830,11 +1645,9 @@ input[type="date"] {
   display: inline-flex;
   align-items: center;
 }
-
 .flipflop > span {
   margin-right: var(--_label-offset);
 }
-
 .flipflop > label {
   display: inline-block;
   position: relative;
@@ -1842,13 +1655,11 @@ input[type="date"] {
   height: var(--height);
   padding: unset !important;
 }
-
 .flipflop > label input {
   opacity: 0;
   width: 0;
   height: 0;
 }
-
 .flipflop > label > span {
   position: absolute;
   cursor: pointer;
@@ -1860,7 +1671,6 @@ input[type="date"] {
   -webkit-transition: var(--_speed);
   transition: var(--_speed);
 }
-
 .flipflop > label > span:before {
   position: absolute;
   content: "";
@@ -1872,21 +1682,17 @@ input[type="date"] {
   -webkit-transition: var(--_speed);
   transition: var(--_speed);
 }
-
 .flipflop > label > input:checked + span {
   background-color: var(--_color-on);
 }
-
 .flipflop input:focus + span {
   box-shadow: 0 0 1px var(--_color-on);
 }
-
 .flipflop > label > input:checked + span:before {
   -webkit-transform: translateX(var(--size-thumb));
   -ms-transform: translateX(var(--size-thumb));
   transform: translateX(var(--size-thumb));
 }
-
 .flipflop > label > span {
   border-radius: calc(var(--height));
 }

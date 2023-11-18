@@ -168,7 +168,6 @@ process_rules() {
   local sectionName
   # transfer config lines into an array
   read_configs
-  
   # declare all variables for each config section and execute the function given under key "fnc"
   for line in "${configs[@]}"; do
     # skip blank lines
@@ -200,18 +199,6 @@ process_rules() {
   echo "Now executing: ${sectionName}"
   "${fnc}"
   $fnc
-  
-#  exit
-#  
-#  open_tag='/*%% '
-#  close_tag=' %%*/'
-#  fnc='merge_blocks'
-#  $fnc
-#  
-#  open_tag='/*<SKIP>'
-#  close_tag='<SKIP>*/'
-#  fnc='skip_blocks'
-#  $fnc
 }
 
 
