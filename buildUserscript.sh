@@ -68,24 +68,36 @@ mktouch() {
 
 
 
+die() {
+ printf >&2 "%s\n" "$@"
+ exit 1
+}
+
+
+
+read_configs() {
+  while IFS=$'\n' read -a line; do
+    configs+=("${line}")
+  done < "${config_file}"
+}
+
+
+
+
 #######################################################################################
 ###                                    FUNCTIONS                                    ###
 #######################################################################################
 
 
 ## Function to process operation 'skip'
-## @param $1  - output file
-## @param $2  - skip block open tag
-## @param $3  - skip block close tag
 skip_blocks() {
+  # TODO
   return 0
 }
 
 
 
 ## Function to process operation 'merge'
-## @param $2  - merge block open tag
-## @param $3  - merge block close tag
 merge_blocks() {
   local output
   local tmp
@@ -122,22 +134,52 @@ merge_blocks() {
 }
 
 
-
 ## Executes all configured block rules
-## @param $1  - Absolute path to the output file
 process_rules() {
-  local open_tag
-  local close_tag
+  local configs=()
+  local isFirstSection=1
+  # transfer config lines into an array
+  read_configs
   
-  # merge blocks
-  open_tag='/*%% '
-  close_tag=' %%*/'
-  merge_blocks
+  # declare all variables for each config section and execute the function given under key "fnc"
+  for line in "${configs[@]}"; do
+    # skip blank lines
+    if [[ "${line}" =~ ^[[:space:]]*$ ]]; then
+      continue
+    # if current line is an key-value-pair
+    elif [[ "${line}" =~ ^([^=]+)=(.*)$ ]]; then
+      # execute keyname=value to create a variable
+      printf -v "${BASH_REMATCH[1]}" '%s' "${BASH_REMATCH[2]}"
+    # if current line defines a new section
+    elif [[ "${line}" =~ ^\[(.*)\]$ ]]; then  
+      if [[ "${isFirstSection}" == 0 ]]; then
+        # execute the latest section
+        echo "Now executing: ${fnc}"
+        "${fnc}"
+      fi
+      isFirstSection=0
+    # anything else is invalid
+    else
+      echo 'buildUserscript.sh: Config file is invalid! Exit.'
+      exit 1
+    fi
+  done
+  # finally we have to execute the last section as well
+  echo "Now executing: ${fnc}"
+  "${fnc}"
+  $fnc
   
-  # skip blocks
-  open_tag='/*<SKIP>'
-  close_tag='<SKIP>*/'
-  skip_blocks  
+#  exit
+#  
+#  open_tag='/*%% '
+#  close_tag=' %%*/'
+#  fnc='merge_blocks'
+#  $fnc
+#  
+#  open_tag='/*<SKIP>'
+#  close_tag='<SKIP>*/'
+#  fnc='skip_blocks'
+#  $fnc
 }
 
 
@@ -149,13 +191,15 @@ main() {
   # store initial dir (to restore it later) and change to the directory with the base file
   local _pwd="${PWD}"
   cd "$(dirname "${1}")" || return 1
+  # store path to configs file
+  config_file="${_pwd}/buildUserscript.cfg"
   # generate absolute path to the output file and copy content of the base file to it
   local output_file="${_pwd}/${2}"
   base_filename=$(basename "${1}")
   mktouch "${output_file}"
   cat "${base_filename}" > "${output_file}"
   # process blocks
-  process_rules "${output_file}"
+  process_rules
   # restore initial dir and finish task
   cd "${_pwd}" || return 1
 }
@@ -168,6 +212,6 @@ main() {
 
 main "${@}"
 
-# cls && wsl ./buildUserscript.sh 'src/NuoFlix/EnhancedNuoFlix' 'base.js' 'dist/NuoFlix/EnhancedNuoFlix/EnhancedNuoFlix.js'
-# cls && wsl ./buildUserscript.sh 'src/FooPage/FooUserscript/base.txt' 'src/FooPage/FooUserscript/generatedResult.txt'
+# wsl ./buildUserscript.sh src/NuoFlix/EnhancedNuoFlix/base.js dist/NuoFlix/EnhancedNuoFlix/EnhancedNuoFlix.js
+# wsl ./buildUserscript.sh src/FooPage/FooUserscript/base.txt dist/FooPage/FooUserscript/generatedResult.txt
 
