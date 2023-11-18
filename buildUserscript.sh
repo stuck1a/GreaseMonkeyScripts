@@ -11,6 +11,7 @@
 # resulting in a single script file usable as GreaseMonkey userscript.
 #
 # At the moment there are two predefined core functions by default:
+#
 # (1) Merge-Blocks: 
 # Use /*%% PATH %%*/ anywhere in your script. This block will be
 # replaced by content of the file specified as PATH. These sub files
@@ -52,6 +53,29 @@ str_escape() {
 }
 
 
+## Prepend a backslash to all given characters
+## @param $1  - String to escape
+## @param $2  - All characters to escape (case-sensitive)
+## @example str_escape_given '<F*OO*~B#AR>' '*~#' outputs <F\*OO\*\~B\#AR>
+str_escape_given() {
+  for (( i=0; i<${#1}; i++ )); do
+    hit=0
+    for (( j=0; j<${#2}; j++ )); do
+      if [[ "${1:${i}:1}" == "${2:${j}:1}" ]]; then  
+        hit=1
+        break
+      fi
+    done
+    if [[ "${hit}" == 1 ]]; then
+      str="${str}\\${1:${i}:1}"
+    else
+      str=${str}"${1:${i}:1}"
+    fi
+  done
+  printf '%s' "${str}"
+}
+
+
 ## Create empty files given as arguments. Folders are created as necessary on-the-fly.
 ## @param ...$1  - Files to creates
 ## @return {boolean}
@@ -65,14 +89,6 @@ mktouch() {
     touch -- "${f}"
   done
 }
-
-
-
-die() {
- printf >&2 "%s\n" "$@"
- exit 1
-}
-
 
 
 read_configs() {
@@ -89,9 +105,20 @@ read_configs() {
 #######################################################################################
 
 
+## Function to process operation 'remove_blank_lines'
+remove_blank_lines() {
+  sed -i '/./!d' "${output_file}"
+  return 0
+}
+
+
+
 ## Function to process operation 'skip'
 skip_blocks() {
-  # TODO
+  open_tag="$(str_escape_given "${open_tag}" '*')"
+  close_tag="$(str_escape_given "${close_tag}" '*')"
+  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
+  echo "${result}" > "${output_file}"
   return 0
 }
 
@@ -138,6 +165,7 @@ merge_blocks() {
 process_rules() {
   local configs=()
   local isFirstSection=1
+  local sectionName
   # transfer config lines into an array
   read_configs
   
@@ -146,17 +174,21 @@ process_rules() {
     # skip blank lines
     if [[ "${line}" =~ ^[[:space:]]*$ ]]; then
       continue
+    # skip comment lines
+    elif [[ "${line}" =~ ^[[:space:]]*#.*$ ]]; then
+      continue
     # if current line is an key-value-pair
     elif [[ "${line}" =~ ^([^=]+)=(.*)$ ]]; then
       # execute keyname=value to create a variable
       printf -v "${BASH_REMATCH[1]}" '%s' "${BASH_REMATCH[2]}"
     # if current line defines a new section
-    elif [[ "${line}" =~ ^\[(.*)\]$ ]]; then  
+    elif [[ "${line}" =~ ^\[(.*)\]$ ]]; then
       if [[ "${isFirstSection}" == 0 ]]; then
         # execute the latest section
-        echo "Now executing: ${fnc}"
+        echo "Now executing: ${sectionName}"
         "${fnc}"
       fi
+      sectionName="${BASH_REMATCH[1]}"
       isFirstSection=0
     # anything else is invalid
     else
@@ -165,7 +197,7 @@ process_rules() {
     fi
   done
   # finally we have to execute the last section as well
-  echo "Now executing: ${fnc}"
+  echo "Now executing: ${sectionName}"
   "${fnc}"
   $fnc
   
