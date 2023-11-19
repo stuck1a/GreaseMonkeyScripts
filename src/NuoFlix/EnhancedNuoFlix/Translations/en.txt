@@ -119,8 +119,8 @@
 
 
 [
-'Blockierte Benutzer',
-'Blocked users',
+'Blockierte Benutzer:',
+'Blocked users:',
 ],
 
 
@@ -137,8 +137,8 @@
 
 
 [
-'Suche',
-'Search',
+'Suche:',
+'Search:',
 ],
 
 
@@ -161,8 +161,8 @@
 
 
 [
-'nach Benutzer',
-'By user',
+'nach Benutzer:',
+'By user:',
 ],
 
 

@@ -102,7 +102,8 @@ class InsertionService {
  * @param {?string} registerId  - ID under which the element is added to the register. 
  *                                If no access is needed later on, can be omitted or set to null (will use random ID).
  *
- * @return {HTMLElement|HTMLElement[]}  - Reference (or list of references) of inserted element(s) or the input itself, if something went wrong.
+ * @return {HTMLElement|HTMLElement[]}  - Reference (or list of references) of inserted element(s) or the input itself,
+ *   if something went wrong.
  */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
   if (typeof refElement === 'string' ) refElement = document.getElementById(refElement);
@@ -269,4 +270,25 @@ function enablePrimalElement(elementOrId) {
   }
   
   return false;
+}
+
+
+
+/**
+ * Adds a new element to the list of elements which aren't rebuilt on updates
+ * but contains text which need to translated when the active language is changed.
+ * As entry key the element itself is used.
+ * The value is an object with property text and property args which is an array
+ * holding all arguments for sending to t().
+ * 
+ * @requires staticTranslatableElements
+ * 
+ * @param {HTMLElement} element  - Target element
+ * @param {string} text  - The text which will be send to t()
+ * @param {string[]} [args=[]]  - The argument list for the formatters send to t()
+ */
+function registerStaticTranslatable(element, text, args = []) {
+  if (!staticTranslatableElements.has(element)) {
+    staticTranslatableElements.set(element, { text: text, args: args });
+  }
 }

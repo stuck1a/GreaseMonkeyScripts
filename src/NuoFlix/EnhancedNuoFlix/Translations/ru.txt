@@ -119,8 +119,8 @@
 
 
 [
-'Blockierte Benutzer',
-'Zablokirovannyye pol\'zovateli',
+'Blockierte Benutzer:',
+'Zablokirovannyye pol\'zovateli:',
 ],
 
 
@@ -137,8 +137,8 @@
 
 
 [
-'Suche',
-'Poisk teksta',
+'Suche:',
+'Poisk teksta:',
 ],
 
 
@@ -155,14 +155,14 @@
 
 
 [
-'nach Datum',
-'po date',
+'nach Datum:',
+'po date:',
 ],
 
 
 [
-'nach Benutzer',
-'pol\'zovatelem',
+'nach Benutzer:',
+'pol\'zovatelem:',
 ],
 
 

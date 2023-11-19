@@ -13,7 +13,8 @@ execute_profilePage();
  */
 function execute_profilePage() {
   /*%% ProfilePage/style_comments.js %%*/
-  /*%% ProfilePage/mainUI.js %%*/
+
+
   
   // insert all style sheets used in this route
   addToDOM(`<style>/*%% ProfilePage/profilePage.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
@@ -22,7 +23,20 @@ function execute_profilePage() {
   
   // insert the additional UI section
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
-
+  
+  // register all static elements from enhancedUiContainer with text to translate
+  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer:');
+  registerStaticTranslatable(document.getElementById('addIgnoreUser'), 'Hinzufügen...');
+  registerStaticTranslatable(document.getElementById('deleteIgnoreUser'), 'Entfernen');
+  registerStaticTranslatable(document.getElementById('btnFilterNew'), 'Nur neue Kommentare');
+  registerStaticTranslatable(document.getElementById('pluginHeadline'), 'NuoFlix 2.0');
+  registerStaticTranslatable(document.getElementById('filterLabel'), 'Kommentare filtern');
+  registerStaticTranslatable(document.getElementById('searchInputLabel'), 'Suche:');
+  registerStaticTranslatable(document.getElementById('moreFilterTrigger'), 'Erweiterte Filteroptionen');
+  registerStaticTranslatable(document.getElementById('useAndLogicLabel'), 'Muss alle Wörter enthalten');
+  registerStaticTranslatable(document.getElementById('searchByUserLabel'), 'nach Benutzer:');
+  registerStaticTranslatable(document.getElementById('searchByDateLabel'), 'nach Datum:');
+  
   // restore list of blocked users
   for (const user of get_value('ignoredUsers')) {
     addToDOM(`<option>${user}</option>`.parseHTML(), 'ignoredUsers', InsertionService.AsLastChild, false);
@@ -392,13 +406,10 @@ function insertPaginatedComments() {
  * @return {boolean} True, if the comment shall be displayed, false if not
  */
 function applyFilters(commentData) {
-
   /* show only, if the comment is new or has new replies */
   if (commentFilters.get('filterOnlyNew').active) {
     if (!commentData.isNew && !commentData.hasNewReplies) return false;
   }
-
-
   /* show only, if one of the comment/replies authors is listed in the username filter list */
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
@@ -414,16 +425,12 @@ function applyFilters(commentData) {
     }
     if (!match) return false;
   }
-
-
   /* show only, if author is NOT in the list of ignored users (replies are checked individually elsewhere) */
   if (commentFilters.get('filterSkipUser').active) {
     for (const author of commentFilters.get('filterSkipUser').value) {
       if (commentData.user === author) return false;
     }
   }
-
-
   /* show only, if ALL search words are found somewhere in the related properties of the comment */
   if (commentFilters.get('filterTextSearch').active) {
     // collect all string to search in
@@ -451,7 +458,6 @@ function applyFilters(commentData) {
     // do we have a match for each given word?
     if (wordsFound < commentFilters.get('filterTextSearch').value.length) return false;
   }
-
   return true;
 }
 
@@ -805,23 +811,29 @@ function updateComments() {
  * inside this function.
  */
 function updateStaticTranslations() {
-  const staticElementsToUpdate = [
-    { elementId: 'ignoredLabel', text: 'Blockierte Benutzer', args: [] },
-    { elementId: 'addIgnoreUser', text: 'Hinzufügen...', args: [] },
-    { elementId: 'deleteIgnoreUser', text: 'Entfernen', args: [] },
-    { elementId: 'btnFilterNew', text: 'Nur neue Kommentare', args: [] },
-    { elementId: 'pluginHeadline', text: 'NuoFlix 2.0', args: [] },
-    { elementId: 'filterLabel', text: 'Kommentare filtern', args: [] },
-    { elementId: 'searchInputLabel', text: 'Suche', args: [] },
-    { elementId: 'moreFilterTrigger', text: 'Erweiterte Filteroptionen', args: [] },
-    { elementId: 'useAndLogicLabel', text: 'Muss alle Wörter enthalten', args: [] },
-    { elementId: 'searchByUserLabel', text: 'nach Benutzer', args: [] },
-    { elementId: 'searchByDateLabel', text: 'nach Datum', args: [] },
-  ];
-  for (const element of staticElementsToUpdate) {
-    const target = document.getElementById(element.elementId);
-    if (target) target.innerText = t(element.text, element.args);
+  //const staticElementsToUpdate = [
+  //  { elementId: 'ignoredLabel', text: 'Blockierte Benutzer', args: [] },
+  //  { elementId: 'addIgnoreUser', text: 'Hinzufügen...', args: [] },
+  //  { elementId: 'deleteIgnoreUser', text: 'Entfernen', args: [] },
+  //  { elementId: 'btnFilterNew', text: 'Nur neue Kommentare', args: [] },
+  //  { elementId: 'pluginHeadline', text: 'NuoFlix 2.0', args: [] },
+  //  { elementId: 'filterLabel', text: 'Kommentare filtern', args: [] },
+  //  { elementId: 'searchInputLabel', text: 'Suche', args: [] },
+  //  { elementId: 'moreFilterTrigger', text: 'Erweiterte Filteroptionen', args: [] },
+  //  { elementId: 'useAndLogicLabel', text: 'Muss alle Wörter enthalten', args: [] },
+  //  { elementId: 'searchByUserLabel', text: 'nach Benutzer', args: [] },
+  //  { elementId: 'searchByDateLabel', text: 'nach Datum', args: [] },
+  //];
+  //for (const element of staticElementsToUpdate) {
+  //  const target = document.getElementById(element.elementId);
+  //  if (target) target.innerText = t(element.text, element.args);
+  //}
+  
+  
+  for (const element of staticTranslatableElements.entries()) {
+    element[0].innerText = t(element[1].text, element[1].args);
   }
+  
 }
 
 

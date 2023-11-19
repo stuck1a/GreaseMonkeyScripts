@@ -149,8 +149,8 @@ const i18n = new Map([
 'Delete',
 ],
 [
-'Blockierte Benutzer',
-'Blocked users',
+'Blockierte Benutzer:',
+'Blocked users:',
 ],
 [
 'NuoFlix 2.0',
@@ -161,8 +161,8 @@ const i18n = new Map([
 'Filter comments',
 ],
 [
-'Suche',
-'Search',
+'Suche:',
+'Search:',
 ],
 [
 'Erweiterte Filteroptionen',
@@ -177,8 +177,8 @@ const i18n = new Map([
 'By date',
 ],
 [
-'nach Benutzer',
-'By user',
+'nach Benutzer:',
+'By user:',
 ],
 [
 'Einzufügendes Element:',
@@ -299,8 +299,8 @@ const i18n = new Map([
 'Udalyat\'',
 ],
 [
-'Blockierte Benutzer',
-'Zablokirovannyye pol\'zovateli',
+'Blockierte Benutzer:',
+'Zablokirovannyye pol\'zovateli:',
 ],
 [
 'NuoFlix 2.0',
@@ -311,8 +311,8 @@ const i18n = new Map([
 'Fil\'trovat\' kommentarii',
 ],
 [
-'Suche',
-'Poisk teksta',
+'Suche:',
+'Poisk teksta:',
 ],
 [
 'Erweiterte Filteroptionen',
@@ -323,12 +323,12 @@ const i18n = new Map([
 'Dolzhen soderzhat\' vse slova',
 ],
 [
-'nach Datum',
-'po date',
+'nach Datum:',
+'po date:',
 ],
 [
-'nach Benutzer',
-'pol\'zovatelem',
+'nach Benutzer:',
+'pol\'zovatelem:',
 ],
 [
 'Einzufügendes Element:',
@@ -747,7 +747,8 @@ class InsertionService {
  * @param {?string} registerId  - ID under which the element is added to the register. 
  *                                If no access is needed later on, can be omitted or set to null (will use random ID).
  *
- * @return {HTMLElement|HTMLElement[]}  - Reference (or list of references) of inserted element(s) or the input itself, if something went wrong.
+ * @return {HTMLElement|HTMLElement[]}  - Reference (or list of references) of inserted element(s) or the input itself,
+ *   if something went wrong.
  */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
   if (typeof refElement === 'string' ) refElement = document.getElementById(refElement);
@@ -914,6 +915,27 @@ function enablePrimalElement(elementOrId) {
   }
   
   return false;
+}
+
+
+
+/**
+ * Adds a new element to the list of elements which aren't rebuilt on updates
+ * but contains text which need to translated when the active language is changed.
+ * As entry key the element itself is used.
+ * The value is an object with property text and property args which is an array
+ * holding all arguments for sending to t().
+ * 
+ * @requires staticTranslatableElements
+ * 
+ * @param {HTMLElement} element  - Target element
+ * @param {string} text  - The text which will be send to t()
+ * @param {string[]} [args=[]]  - The argument list for the formatters send to t()
+ */
+function registerStaticTranslatable(element, text, args = []) {
+  if (!staticTranslatableElements.has(element)) {
+    staticTranslatableElements.set(element, { text: text, args: args });
+  }
 }
   
 /**
@@ -1158,7 +1180,8 @@ function getOriginalCommentIds(which) {
 
   let customElementsRegister = new Map();
   let disabledPrimalElementsRegister = new Map();
-  
+  let staticTranslatableElements = new Map();
+
   let currentStart = defaultStart;
   let currentLength = defaultLength;
   let activeLanguage = defaultLanguage;
@@ -1192,57 +1215,57 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
       <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
       <div class="rowHeadlineHolderItem headerTxt">
-        <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
+        <h2 id="pluginHeadline"></h2>
       </div>
       <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
     </div>  
     <div class="row card-group">
     
       <fieldset class="card">
-        <legend id="ignoredLabel">${t('Blockierte Benutzer')}:</legend>
+        <legend id="ignoredLabel"></legend>
         <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
         <div class="row">
           <div class="col-auto">
-            <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
+            <a id="addIgnoreUser" class="btn btn-small"></a>
           </div>
           <div class="col-1" style="flex-grow: 1;"></div>
           <div class="col-auto">
-            <a id="deleteIgnoreUser" class="btn btn-small">${t('Entfernen')}</a>
+            <a id="deleteIgnoreUser" class="btn btn-small"></a>
           </div>
         </div>
       </fieldset>
       
       <fieldset class="card col">
-        <legend id="filterLabel">${t('Kommentare filtern')}</legend>
+        <legend id="filterLabel"></legend>
         <div class="row">
-          <label id="searchInputLabel" class="col-auto" for="filterByText" style="margin-right: 2rem;">${t('Suche')}&colon;</label>
+          <label id="searchInputLabel" class="col-auto" for="filterByText" style="margin-right: 2rem;"></label>
           <input id="filterByText" type="text" name="filterByText" class="col" />
         </div>
         <details id="moreFilter">
-          <summary id="moreFilterTrigger" style="text-align: right;">${t('Erweiterte Filteroptionen')}</summary>
+          <summary id="moreFilterTrigger" style="text-align: right;"></summary>
           <ul id="moreFilterMenu" style="list-style-type: none;">
             <li>
               <div class="flipflop" style="--color-on: #e86344;">
-                <span id="useAndLogicLabel">${t('Muss alle Wörter enthalten')}</span>
+                <span id="useAndLogicLabel"></span>
                 <label><input id="filterNewOnly" type="checkbox" checked="checked" /><span></span></label>
               </div> 
             </li>
             <li class="row">
-              <label id="searchByUserLabel" class="col-4" for="filterByUser">${t('nach Benutzer')}&colon;</label>
+              <label id="searchByUserLabel" class="col-4" for="filterByUser"></label>
               <div class="col">
                 <input id="filterByUser" type="text" name="filterByUser" />
               </div>
             </li>
             <li class="row">
-              <label id="searchByDateLabel" class="row col-4" for="filterByDateFrom">${t('nach Datum')}&colon;</label>
-              <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: 0.4rem;">
-                <input id="filterByDateFrom" name="filterByDateFrom" type="date" />
-                <label style="padding-block: .75rem;" for="filterByDateTo">-</label>
-                <input id="filterByDateTo" name="filterByDateTo" type="date" />
+              <label id="searchByDateLabel" class="row col-4" for="filterByDateFrom"></label>
+              <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: .4rem;">
+                <input id="filterByDateFrom" type="date" name="filterByDateFrom" />
+                <label for="filterByDateTo" style="padding-block: .75rem;">-</label>
+                <input id="filterByDateTo" type="date" name="filterByDateTo" />
               </div>
             </li>
             <li>
-              <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
+              <a id="btnFilterNew" class="btn"></a>
             </li>   
           </ul>
         </details>
@@ -1277,68 +1300,8 @@ function execute_profilePage() {
 }
 </style>
 `.parseHTML();
-  let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
-    <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
-      <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
-      <div class="rowHeadlineHolderItem headerTxt">
-        <h2 id="pluginHeadline">${t('NuoFlix 2.0')}</h2>
-      </div>
-      <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
-    </div>  
-    <div class="row card-group">
-    
-      <fieldset class="card">
-        <legend id="ignoredLabel">${t('Blockierte Benutzer')}:</legend>
-        <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
-        <div class="row">
-          <div class="col-auto">
-            <a id="addIgnoreUser" class="btn btn-small">${t('Hinzufügen...')}</a>
-          </div>
-          <div class="col-1" style="flex-grow: 1;"></div>
-          <div class="col-auto">
-            <a id="deleteIgnoreUser" class="btn btn-small">${t('Entfernen')}</a>
-          </div>
-        </div>
-      </fieldset>
-      
-      <fieldset class="card col">
-        <legend id="filterLabel">${t('Kommentare filtern')}</legend>
-        <div class="row">
-          <label id="searchInputLabel" class="col-auto" for="filterByText" style="margin-right: 2rem;">${t('Suche')}&colon;</label>
-          <input id="filterByText" type="text" name="filterByText" class="col" />
-        </div>
-        <details id="moreFilter">
-          <summary id="moreFilterTrigger" style="text-align: right;">${t('Erweiterte Filteroptionen')}</summary>
-          <ul id="moreFilterMenu" style="list-style-type: none;">
-            <li>
-              <div class="flipflop" style="--color-on: #e86344;">
-                <span id="useAndLogicLabel">${t('Muss alle Wörter enthalten')}</span>
-                <label><input id="filterNewOnly" type="checkbox" checked="checked" /><span></span></label>
-              </div> 
-            </li>
-            <li class="row">
-              <label id="searchByUserLabel" class="col-4" for="filterByUser">${t('nach Benutzer')}&colon;</label>
-              <div class="col">
-                <input id="filterByUser" type="text" name="filterByUser" />
-              </div>
-            </li>
-            <li class="row">
-              <label id="searchByDateLabel" class="row col-4" for="filterByDateFrom">${t('nach Datum')}&colon;</label>
-              <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: 0.4rem;">
-                <input id="filterByDateFrom" name="filterByDateFrom" type="date" />
-                <label style="padding-block: .75rem;" for="filterByDateTo">-</label>
-                <input id="filterByDateTo" name="filterByDateTo" type="date" />
-              </div>
-            </li>
-            <li>
-              <a id="btnFilterNew" class="btn">${t('Nur neue Kommentare')}</a>
-            </li>   
-          </ul>
-        </details>
-      </fieldset>
-      
-    </div>
-  </div>`.parseHTML();
+
+
   
   // insert all style sheets used in this route
   addToDOM(`<style>:root {
@@ -1704,7 +1667,20 @@ input[type="date"] {
   
   // insert the additional UI section
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
-
+  
+  // register all static elements from enhancedUiContainer with text to translate
+  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer:');
+  registerStaticTranslatable(document.getElementById('addIgnoreUser'), 'Hinzufügen...');
+  registerStaticTranslatable(document.getElementById('deleteIgnoreUser'), 'Entfernen');
+  registerStaticTranslatable(document.getElementById('btnFilterNew'), 'Nur neue Kommentare');
+  registerStaticTranslatable(document.getElementById('pluginHeadline'), 'NuoFlix 2.0');
+  registerStaticTranslatable(document.getElementById('filterLabel'), 'Kommentare filtern');
+  registerStaticTranslatable(document.getElementById('searchInputLabel'), 'Suche:');
+  registerStaticTranslatable(document.getElementById('moreFilterTrigger'), 'Erweiterte Filteroptionen');
+  registerStaticTranslatable(document.getElementById('useAndLogicLabel'), 'Muss alle Wörter enthalten');
+  registerStaticTranslatable(document.getElementById('searchByUserLabel'), 'nach Benutzer:');
+  registerStaticTranslatable(document.getElementById('searchByDateLabel'), 'nach Datum:');
+  
   // restore list of blocked users
   for (const user of get_value('ignoredUsers')) {
     addToDOM(`<option>${user}</option>`.parseHTML(), 'ignoredUsers', InsertionService.AsLastChild, false);
@@ -2074,13 +2050,10 @@ function insertPaginatedComments() {
  * @return {boolean} True, if the comment shall be displayed, false if not
  */
 function applyFilters(commentData) {
-
   /* show only, if the comment is new or has new replies */
   if (commentFilters.get('filterOnlyNew').active) {
     if (!commentData.isNew && !commentData.hasNewReplies) return false;
   }
-
-
   /* show only, if one of the comment/replies authors is listed in the username filter list */
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
@@ -2096,16 +2069,12 @@ function applyFilters(commentData) {
     }
     if (!match) return false;
   }
-
-
   /* show only, if author is NOT in the list of ignored users (replies are checked individually elsewhere) */
   if (commentFilters.get('filterSkipUser').active) {
     for (const author of commentFilters.get('filterSkipUser').value) {
       if (commentData.user === author) return false;
     }
   }
-
-
   /* show only, if ALL search words are found somewhere in the related properties of the comment */
   if (commentFilters.get('filterTextSearch').active) {
     // collect all string to search in
@@ -2133,7 +2102,6 @@ function applyFilters(commentData) {
     // do we have a match for each given word?
     if (wordsFound < commentFilters.get('filterTextSearch').value.length) return false;
   }
-
   return true;
 }
 
@@ -2487,23 +2455,29 @@ function updateComments() {
  * inside this function.
  */
 function updateStaticTranslations() {
-  const staticElementsToUpdate = [
-    { elementId: 'ignoredLabel', text: 'Blockierte Benutzer', args: [] },
-    { elementId: 'addIgnoreUser', text: 'Hinzufügen...', args: [] },
-    { elementId: 'deleteIgnoreUser', text: 'Entfernen', args: [] },
-    { elementId: 'btnFilterNew', text: 'Nur neue Kommentare', args: [] },
-    { elementId: 'pluginHeadline', text: 'NuoFlix 2.0', args: [] },
-    { elementId: 'filterLabel', text: 'Kommentare filtern', args: [] },
-    { elementId: 'searchInputLabel', text: 'Suche', args: [] },
-    { elementId: 'moreFilterTrigger', text: 'Erweiterte Filteroptionen', args: [] },
-    { elementId: 'useAndLogicLabel', text: 'Muss alle Wörter enthalten', args: [] },
-    { elementId: 'searchByUserLabel', text: 'nach Benutzer', args: [] },
-    { elementId: 'searchByDateLabel', text: 'nach Datum', args: [] },
-  ];
-  for (const element of staticElementsToUpdate) {
-    const target = document.getElementById(element.elementId);
-    if (target) target.innerText = t(element.text, element.args);
+  //const staticElementsToUpdate = [
+  //  { elementId: 'ignoredLabel', text: 'Blockierte Benutzer', args: [] },
+  //  { elementId: 'addIgnoreUser', text: 'Hinzufügen...', args: [] },
+  //  { elementId: 'deleteIgnoreUser', text: 'Entfernen', args: [] },
+  //  { elementId: 'btnFilterNew', text: 'Nur neue Kommentare', args: [] },
+  //  { elementId: 'pluginHeadline', text: 'NuoFlix 2.0', args: [] },
+  //  { elementId: 'filterLabel', text: 'Kommentare filtern', args: [] },
+  //  { elementId: 'searchInputLabel', text: 'Suche', args: [] },
+  //  { elementId: 'moreFilterTrigger', text: 'Erweiterte Filteroptionen', args: [] },
+  //  { elementId: 'useAndLogicLabel', text: 'Muss alle Wörter enthalten', args: [] },
+  //  { elementId: 'searchByUserLabel', text: 'nach Benutzer', args: [] },
+  //  { elementId: 'searchByDateLabel', text: 'nach Datum', args: [] },
+  //];
+  //for (const element of staticElementsToUpdate) {
+  //  const target = document.getElementById(element.elementId);
+  //  if (target) target.innerText = t(element.text, element.args);
+  //}
+  
+  
+  for (const element of staticTranslatableElements.entries()) {
+    element[0].innerText = t(element[1].text, element[1].args);
   }
+  
 }
 
 

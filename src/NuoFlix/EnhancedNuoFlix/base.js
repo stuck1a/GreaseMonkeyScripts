@@ -35,7 +35,8 @@
 
   let customElementsRegister = new Map();
   let disabledPrimalElementsRegister = new Map();
-  
+  let staticTranslatableElements = new Map();
+
   let currentStart = defaultStart;
   let currentLength = defaultLength;
   let activeLanguage = defaultLanguage;
