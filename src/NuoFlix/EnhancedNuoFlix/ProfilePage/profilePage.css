@@ -297,20 +297,18 @@ input[type="date"] {
   padding-block: .75rem;
 }
 
-
 .selectedUserFilter {
-  position: absolute;
-  top: .75rem;
-  height: 1.6rem;
-  margin-left: .75rem;
+  margin-right: .75rem;
+  margin-bottom: .5rem;
   background-color: lightgray;
-  padding-inline: .4rem;
+  padding: .2rem .6rem;
   color: #D53D16;
   border-radius: 6px;
-  left: 0; /* Adjusted by JS */
+  width: auto;
+  display: flex;
 }
 .selectedUserFilter :first-child {
-  margin-right: .2rem;
+  margin-right: .4rem;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -320,9 +318,18 @@ input[type="date"] {
 }
 .selectedUserFilter :last-child:after {
   color: #f00;
-  content: "&cross;";
+  content: var(--svg-unchecked);
+  vertical-align: middle;
+  display: inline-flex;
 }
 .selectedUserFilter :last-child:hover {
   cursor: pointer;
   font-weight: bold;
+}
+#filteredUserList {
+  justify-content: end;
+}
+
+#settingsLanguage {
+  align-items: center;
 }

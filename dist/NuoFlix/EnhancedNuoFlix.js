@@ -1278,6 +1278,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
               <div class="col">
                 <input id="filterByUser" list="availableUsers" type="text" name="filterByUser" />
               </div>
+              <div id="filteredUserList" class="row"></div>
             </li>
             <li class="row">
               <label id="searchByDateLabel" class="row col-5" for="filterByDateFrom"></label>
@@ -1329,9 +1330,7 @@ function execute_profilePage() {
 }
 </style>
 `.parseHTML();
-
-
-  
+    
   // insert all style sheets used in this route
   addToDOM(`<style>:root {
   --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
@@ -1632,20 +1631,18 @@ input[type="date"] {
   padding-block: .75rem;
 }
 
-
 .selectedUserFilter {
-  position: absolute;
-  top: .75rem;
-  height: 1.6rem;
-  margin-left: .75rem;
+  margin-right: .75rem;
+  margin-bottom: .5rem;
   background-color: lightgray;
-  padding-inline: .4rem;
+  padding: .2rem .6rem;
   color: #D53D16;
   border-radius: 6px;
-  left: 0; /* Adjusted by JS */
+  width: auto;
+  display: flex;
 }
 .selectedUserFilter :first-child {
-  margin-right: .2rem;
+  margin-right: .4rem;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -1655,11 +1652,20 @@ input[type="date"] {
 }
 .selectedUserFilter :last-child:after {
   color: #f00;
-  content: "&cross;";
+  content: var(--svg-unchecked);
+  vertical-align: middle;
+  display: inline-flex;
 }
 .selectedUserFilter :last-child:hover {
   cursor: pointer;
   font-weight: bold;
+}
+#filteredUserList {
+  justify-content: end;
+}
+
+#settingsLanguage {
+  align-items: center;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>
 .flipflop {
@@ -1780,16 +1786,32 @@ input[type="date"] {
   );
 
   // generate datalist for autocompletion of user filter input
-  const availableUsers = addToDOM('<datalist id="availableUsers"></datalist>'.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  let alreadyInsertedUsers = [];
-  for (const comment of commentData) {
-    // prevent duplicates
-    if (alreadyInsertedUsers.indexOf(comment.user) === -1) {
-      addToDOM(`<option value="${comment.user}"></option>`.parseHTML(), availableUsers, InsertionService.AsLastChild, false);
-      alreadyInsertedUsers.push(comment.user);
+  addUserFilterAutocompletionList();
+    
+  // mount handlers for adding a user to the list of users to search for
+  const filterByUserInput = document.getElementById('filterByUser');
+  const addUserIfValid = function(input) {
+    for (const element of document.getElementById('availableUsers').children) {
+      if (element.value === input.value) {
+        doAddUserToFilterList(input);
+        break;
+      }
     }
   }
-    
+  // whenever user enters a comma or space
+  filterByUserInput.addEventListener('change', function(ev) {
+    if (this.value.endsWith === ',' || this.value.endsWith === ' ') {
+      // remove the comma
+      this.value = this.value.substring(0, this.value.length - 1);
+      addUserIfValid(this);
+    } 
+  });
+  // whenever user hits enter
+  filterByUserInput.onkeypress = function(ev) {
+    if (!ev) ev = window.event;
+    let keyCode = ev.code || ev.key;
+    if (keyCode === 'Enter' || keyCode === 'NumpadEnter') addUserIfValid(this);
+  };
   
   // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
@@ -1807,6 +1829,16 @@ input[type="date"] {
     ignoreFilter.active = true;
     // update storage
     set_value('ignoredUsers', ignoreFilter.value);
+    // if the blocked user is on the filter list of users to search for, then remove it from that list
+    for (const selectedUser of document.getElementById('filteredUserList').children) {
+      if (selectedUser.firstElementChild.innerText === user) {
+        removeFromDOM(selectedUser);
+        break;
+      }
+    }
+    // update autocompletion list
+    addUserFilterAutocompletionList();
+    // update page
     updatePage();
   });
 
@@ -1824,8 +1856,11 @@ input[type="date"] {
         if (entry !== user) ignoreFilter.value.push(entry);
       }
       if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
-      // update storage and page
+      // update storage
       set_value('ignoredUsers', ignoreFilter.value);
+      // update autocompletion list
+      addUserFilterAutocompletionList();
+      // update page
       updatePage();
     }
   });
@@ -1953,6 +1988,44 @@ function generateCommentObject() {
   }
 
   return commentDataCollection;
+}
+
+
+
+
+/**
+ * (Re-)creates and inserts the datalist element which will be used for autocompletion of the user filter input.
+ */
+function addUserFilterAutocompletionList() {
+  // remove the current list, if available
+  const oldList = customElementsRegister.get('availableUsersForFilter');
+  if (oldList) {
+    removeFromDOM(oldList);
+  }
+  
+  const availableUsersForFilter = addToDOM(
+    '<datalist id="availableUsers"></datalist>'.parseHTML(),
+    document.body,
+    InsertionService.AsLastChild,
+    true,
+    'availableUsersForFilter'
+  );
+  let alreadyInsertedUsers = [];
+  const blockedUsers = commentFilters.get('filterSkipUser').value;
+  for (const comment of commentData) {
+    // prevent duplicates and blocked users
+    if (alreadyInsertedUsers.indexOf(comment.user) === -1 && blockedUsers.indexOf(comment.user) === -1) {
+      addToDOM(`<option value="${comment.user}"></option>`.parseHTML(), availableUsersForFilter, InsertionService.AsLastChild, false);
+      alreadyInsertedUsers.push(comment.user);
+    }
+    // check replies of each comment, too
+    for (const reply of comment.replies) {
+      if (alreadyInsertedUsers.indexOf(reply.user) === -1 && blockedUsers.indexOf(reply.user) === -1) {
+        addToDOM(`<option value="${reply.user}"></option>`.parseHTML(), availableUsersForFilter, InsertionService.AsLastChild, false);
+        alreadyInsertedUsers.push(reply.user);
+      }
+    }
+  }
 }
 
 
@@ -2140,15 +2213,15 @@ function applyFilters(commentData) {
   if (commentFilters.get('filterOnlyNew').active) {
     if (!commentData.isNew && !commentData.hasNewReplies) return false;
   }
-  /* show only, if one of the comment/replies authors is listed in the username filter list */
+  /* show only, if one of the comment or one of its replies is from a user listed in the username filter list */
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
-    for (const author of commentFilters.get('filterOnlyUser').value) {
+    for (const currentFilterEntry of commentFilters.get('filterOnlyUser').value) {
       // get a list of all related users (comment author and all replies authors)
       const usersFromReplies = commentData.replies.map(function (item) { return item.user || ''; });
-      const relatedUsers = mergeArraysDistinct([author], usersFromReplies);
+      const relatedUsers = mergeArraysDistinct([commentData.user], usersFromReplies);
       // check if the current user from filter list is in the author list
-      if (relatedUsers.indexOf(commentData.user) > -1) {
+      if (relatedUsers.indexOf(currentFilterEntry) > -1) {
         match = true;
         break;
       }
@@ -2398,6 +2471,60 @@ function doClickedPagination(ev, clickedBtn) {
   currentLength = parseInt(clickedBtn.getAttribute('data-length')) || currentLength || defaultLength;
   updatePage();
   paginationControlContainer.scrollIntoView();
+}
+
+
+
+
+/**
+ * Event handler that is called whenever a new user is added to the list of users whose comments shall be searched for.
+ * The current input value is cut out of the input field and added as new element to the div which shows all selected
+ * users. This allows to use the autocompletion for adding another user and it looks super fancy as well.
+ * 
+ * @param {HTMLInputElement} input  - The input which fired the event
+ */
+function doAddUserToFilterList(input) {
+  let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span></span></span>`.parseHTML();
+  const filterOnlyUser = commentFilters.get('filterOnlyUser');
+  userElement = addToDOM(userElement, document.getElementById('filteredUserList'), InsertionService.AsLastChild, false);
+  
+  // remove this username from autocompletion list
+  const availableUsersForFilter = customElementsRegister.get('availableUsersForFilter');
+  for (const entry of availableUsersForFilter.children) {
+    if (entry.value === input.value) {
+      removeFromDOM(entry, true);
+      break;
+    }
+  }
+  
+  // mount event handler for removing this user from the filter list again
+  userElement.lastElementChild.addEventListener('click', function() {
+    const targetUsername = this.previousElementSibling.innerText;
+    // make this user available for autocompletion again
+    const datalistEntry = `<option value="${targetUsername}"></option>`.parseHTML();
+    addToDOM(datalistEntry, availableUsersForFilter, InsertionService.AsLastChild, false);
+    // remove the username from the filter values and disable the filter if this was the last entry
+    const oldFilterUserList = filterOnlyUser.value;
+    filterOnlyUser.value = [];
+    for (const entry of oldFilterUserList) {
+      if (entry !== targetUsername) {
+        filterOnlyUser.value.push(entry);
+      } 
+    }
+    if (filterOnlyUser.value.length === 0) filterOnlyUser.active = false;
+    // remove user from the list which shows all selected users
+    removeFromDOM(this.parentElement, true);
+    // update comments
+    updatePage();
+  });
+  
+  // add the username to the filter values
+  let currentFilterList = filterOnlyUser.value;
+  currentFilterList.push(input.value);
+  // clear the input, so the user can enter another user
+  input.value = '';
+  // apply filter and update comments
+  changeFilter('filterOnlyUser', currentFilterList);
 }
 
 

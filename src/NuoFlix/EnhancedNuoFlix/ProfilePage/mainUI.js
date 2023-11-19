@@ -49,6 +49,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
               <div class="col">
                 <input id="filterByUser" list="availableUsers" type="text" name="filterByUser" />
               </div>
+              <div id="filteredUserList" class="row"></div>
             </li>
             <li class="row">
               <label id="searchByDateLabel" class="row col-5" for="filterByDateFrom"></label>
