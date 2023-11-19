@@ -26,8 +26,8 @@
   /*%% Global/utilFunctions.js %%*/
   /*%% Global/functions_global.js %%*/
   /*%% Global/functions_debug.js %%*/
-
-  document.body.appendChild(`<style>/*%% Global/realisticSwitch.css %%*/</style>`.parseHTML());
+  
+  addToDOM(`<style>/*%% Global/realisticSwitch.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   
   let totalComments;
   let paginationContainer, paginationContainerBottom, paginationControlContainer;

@@ -1050,8 +1050,8 @@ function getOriginalCommentIds(which) {
     const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
-
-  document.body.appendChild(`<style>
+  
+  addToDOM(`<style>
 .realisticSwitch {
   --width: 5rem;
 }
@@ -1148,7 +1148,7 @@ function getOriginalCommentIds(which) {
   color: #aaa; /* Farbe auch etwas abdunkeln, verstärkt den Kippeffekt */
   text-shadow: none;
   bottom: 9px;   /* Ausgangshöhe + y-Versatz von Unterkante */
-}</style>`.parseHTML());
+}</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   
   let totalComments;
   let paginationContainer, paginationContainerBottom, paginationControlContainer;
@@ -2373,18 +2373,15 @@ function updatePaginationUI() {
   if (typeof paginationContainer !== typeof undefined && paginationContainer instanceof HTMLElement) paginationContainer.remove();
   if (typeof paginationContainerBottom !== typeof undefined && paginationContainerBottom instanceof HTMLElement) paginationContainerBottom.remove();
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
-  paginationContainer = buildPaginationUi().parseHTML();
-  const commentHeadlineElement = document.getElementsByClassName('rowHeadlineHolder')[1];
-
-
-  // XXX
-  //paginationContainer = addToDOM(paginationContainer, commentHeadlineElement, InsertionService.Before, false);
   
+  paginationContainer = addToDOM(
+    buildPaginationUi().parseHTML(),
+    document.getElementsByClassName('rowHeadlineHolder')[1],
+    InsertionService.After,
+    true,
+    'paginationContainer'
+  );
   
-  commentHeadlineElement.parentElement.insertBefore(paginationContainer, commentHeadlineElement.nextElementSibling);
-  paginationContainer = document.getElementById('paginationContainer');
-
-
   const paginationButtons = paginationContainer.getElementsByClassName('btn');
   for (const paginationBtn of paginationButtons) {
     paginationBtn.addEventListener('click', function (e) {
@@ -2394,8 +2391,13 @@ function updatePaginationUI() {
   // insert a second pagination after the comments
   paginationContainerBottom = paginationContainer.cloneNode(true);
   paginationContainerBottom.id = paginationContainerBottom.id + 'Bottom';
-  originalCommentContainer.parentElement.insertBefore(paginationContainerBottom, originalCommentContainer);
-  paginationContainerBottom = document.getElementById(paginationContainerBottom.id);
+  paginationContainerBottom = addToDOM(
+    paginationContainerBottom,
+    originalCommentContainer,
+    InsertionService.Before,
+    true,
+    'paginationContainerBottom'
+  );
   // handlers won't get cloned
   const paginationButtonsBottom = paginationContainerBottom.getElementsByClassName('btn');
   for (const paginationBtn of paginationButtonsBottom) {
@@ -2404,8 +2406,13 @@ function updatePaginationUI() {
     });
   }
   // insert pagination control (displays from..to, length selection and such)
-  paginationContainer.parentElement.insertBefore(buildPaginationControl().parseHTML(), paginationContainer);
-  paginationControlContainer = document.getElementById('paginationControl');
+  paginationControlContainer = addToDOM(
+    buildPaginationControl().parseHTML(),
+    paginationContainer,
+    InsertionService.Before,
+    true,
+    'paginationControlContainer'
+  );
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
@@ -2413,6 +2420,7 @@ function updatePaginationUI() {
     paginationContainerBottom.classList.add('hidden');
   }
 }
+
 
 
 
@@ -2447,9 +2455,12 @@ function updateComments() {
     let replies = repliesWrapper;
     if (replies) replies = replies.children;
     if (replies.length > expandedReplyCount) {
-      const hiddenCount = replies.length - expandedReplyCount;
-      const expander = `<div class="expander">${t('Zeige {0} ältere Antworten', hiddenCount)}</div>`.parseHTML();
-      repliesWrapper.insertBefore(expander, repliesWrapper.firstElementChild);
+      addToDOM(
+        `<div class="expander">${t('Zeige {0} ältere Antworten', replies.length - expandedReplyCount)}</div>`.parseHTML(),
+        repliesWrapper,
+        InsertionService.Before,
+        false
+      );
     }
   }
   // mount expand handler function
@@ -2457,7 +2468,7 @@ function updateComments() {
   for (const expander of expanderElements) {
     expander.addEventListener('click', function() {
       if (!this) return;
-      this.parentElement.parentElement.parentElement.classList.remove('repliesCollapsed');
+      this.parentElement.parentElement.classList.remove('repliesCollapsed');
       this.remove();
     })
   }
@@ -2509,11 +2520,13 @@ function updatePage() {
   } else if (route === 'video') {
     (function() { 
 // set up route-scoped fields and start the execution flow fo this route
-
+const maxRetries = 3;
+const delay = 1000;
+let retries = 0;
+let storedIgnoreList;
+let comments;
 execute_genericPage()
 
-
-// TODO: Innere Funktionen rausholen, jetzt wo alles schön scoped ist :-)
 
 
 
@@ -2522,43 +2535,56 @@ execute_genericPage()
  */
 function execute_genericPage() {
   if (document.getElementById('commentContent')) {
-    // function to delete comments and replies of a given user
-    const removeCommentsFrom = function(username) {
-      const allComments = document.querySelectorAll('.profilName');
-      for (let i = allComments.length - 1; i >= 0; i--) {
-        const comment = allComments[i];
-        if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
-          if (comment.id.startsWith('comment_')) {
-            // also remove spacer if its a reply
-            if (comment.previousElementSibling) comment.previousElementSibling.remove();
-          }
-          if (comment.parentElement.classList.contains('commentItem')) {
-            comment.parentElement.remove();
-          } else {
-            comment.remove();
-          }
-        }
+    // load list of ignored users and try to apply them
+    storedIgnoreList = get_value('ignoredUsers');
+    comments = document.getElementById('commentContent');
+    tryToApply();
+  }
+}
+
+
+
+
+/**
+ * Calls removeCommentsFrom after a delay as long as the maximal retry count is not reached yet.
+ */
+function tryToApply() {
+  setTimeout(function() {
+    if (comments.childElementCount > 0) {
+      for (const user of storedIgnoreList) removeCommentsFrom(user);
+    } else {
+      // retry it up to 3 times after waiting one second after each try
+      if (retries < maxRetries - 1) {
+        retries++;
+        tryToApply();
       }
     }
-    // we need some delay for the comments to load
-    function tryToApply() {
-      setTimeout(function() {
-        if (comments.childElementCount > 0) {
-          for (const user of storedIgnoreList) removeCommentsFrom(user);
-        } else {
-          // retry it up to 3 times after waiting one second after each try
-          if (retries < 2) {
-            retries++;
-            tryToApply();
-          }
-        }
-      }, 1000);
+  }, delay);
+}
+
+
+
+
+/**
+ * Deletes all comments and replies of a given user
+ * 
+ * @param username
+ */
+const removeCommentsFrom = function(username) {
+  const allComments = document.querySelectorAll('.profilName');
+  for (let i = allComments.length - 1; i >= 0; i--) {
+    const comment = allComments[i];
+    if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
+      if (comment.id.startsWith('comment_')) {
+        // also remove spacer if its a reply
+        if (comment.previousElementSibling) comment.previousElementSibling.remove();
+      }
+      if (comment.parentElement.classList.contains('commentItem')) {
+        comment.parentElement.remove();
+      } else {
+        comment.remove();
+      }
     }
-    // load list of ignored users and try to apply them
-    const storedIgnoreList = get_value('ignoredUsers');
-    const comments = document.getElementById('commentContent');
-    let retries = 0;
-    tryToApply();
   }
 } })();
   }

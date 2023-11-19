@@ -693,18 +693,15 @@ function updatePaginationUI() {
   if (typeof paginationContainer !== typeof undefined && paginationContainer instanceof HTMLElement) paginationContainer.remove();
   if (typeof paginationContainerBottom !== typeof undefined && paginationContainerBottom instanceof HTMLElement) paginationContainerBottom.remove();
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
-  paginationContainer = buildPaginationUi().parseHTML();
-  const commentHeadlineElement = document.getElementsByClassName('rowHeadlineHolder')[1];
-
-
-  // XXX
-  //paginationContainer = addToDOM(paginationContainer, commentHeadlineElement, InsertionService.Before, false);
   
+  paginationContainer = addToDOM(
+    buildPaginationUi().parseHTML(),
+    document.getElementsByClassName('rowHeadlineHolder')[1],
+    InsertionService.After,
+    true,
+    'paginationContainer'
+  );
   
-  commentHeadlineElement.parentElement.insertBefore(paginationContainer, commentHeadlineElement.nextElementSibling);
-  paginationContainer = document.getElementById('paginationContainer');
-
-
   const paginationButtons = paginationContainer.getElementsByClassName('btn');
   for (const paginationBtn of paginationButtons) {
     paginationBtn.addEventListener('click', function (e) {
@@ -714,8 +711,13 @@ function updatePaginationUI() {
   // insert a second pagination after the comments
   paginationContainerBottom = paginationContainer.cloneNode(true);
   paginationContainerBottom.id = paginationContainerBottom.id + 'Bottom';
-  originalCommentContainer.parentElement.insertBefore(paginationContainerBottom, originalCommentContainer);
-  paginationContainerBottom = document.getElementById(paginationContainerBottom.id);
+  paginationContainerBottom = addToDOM(
+    paginationContainerBottom,
+    originalCommentContainer,
+    InsertionService.Before,
+    true,
+    'paginationContainerBottom'
+  );
   // handlers won't get cloned
   const paginationButtonsBottom = paginationContainerBottom.getElementsByClassName('btn');
   for (const paginationBtn of paginationButtonsBottom) {
@@ -724,8 +726,13 @@ function updatePaginationUI() {
     });
   }
   // insert pagination control (displays from..to, length selection and such)
-  paginationContainer.parentElement.insertBefore(buildPaginationControl().parseHTML(), paginationContainer);
-  paginationControlContainer = document.getElementById('paginationControl');
+  paginationControlContainer = addToDOM(
+    buildPaginationControl().parseHTML(),
+    paginationContainer,
+    InsertionService.Before,
+    true,
+    'paginationControlContainer'
+  );
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
@@ -733,6 +740,7 @@ function updatePaginationUI() {
     paginationContainerBottom.classList.add('hidden');
   }
 }
+
 
 
 
@@ -767,9 +775,12 @@ function updateComments() {
     let replies = repliesWrapper;
     if (replies) replies = replies.children;
     if (replies.length > expandedReplyCount) {
-      const hiddenCount = replies.length - expandedReplyCount;
-      const expander = `<div class="expander">${t('Zeige {0} ältere Antworten', hiddenCount)}</div>`.parseHTML();
-      repliesWrapper.insertBefore(expander, repliesWrapper.firstElementChild);
+      addToDOM(
+        `<div class="expander">${t('Zeige {0} ältere Antworten', replies.length - expandedReplyCount)}</div>`.parseHTML(),
+        repliesWrapper,
+        InsertionService.Before,
+        false
+      );
     }
   }
   // mount expand handler function
@@ -777,7 +788,7 @@ function updateComments() {
   for (const expander of expanderElements) {
     expander.addEventListener('click', function() {
       if (!this) return;
-      this.parentElement.parentElement.parentElement.classList.remove('repliesCollapsed');
+      this.parentElement.parentElement.classList.remove('repliesCollapsed');
       this.remove();
     })
   }
