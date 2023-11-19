@@ -25,10 +25,10 @@ function execute_profilePage() {
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
   
   // register all static elements from enhancedUiContainer with text to translate
-  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer:');
+  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer');
   registerStaticTranslatable(document.getElementById('addIgnoreUser'), 'Hinzufügen...');
   registerStaticTranslatable(document.getElementById('deleteIgnoreUser'), 'Entfernen');
-  registerStaticTranslatable(document.getElementById('btnFilterNew'), 'Nur neue Kommentare');
+  registerStaticTranslatable(document.getElementById('filterOnlyNewLabel'), 'Nur neue Kommentare');
   registerStaticTranslatable(document.getElementById('pluginHeadline'), 'NuoFlix 2.0');
   registerStaticTranslatable(document.getElementById('filterLabel'), 'Kommentare filtern');
   registerStaticTranslatable(document.getElementById('searchInputLabel'), 'Suche:');
@@ -36,6 +36,8 @@ function execute_profilePage() {
   registerStaticTranslatable(document.getElementById('useAndLogicLabel'), 'Muss alle Wörter enthalten');
   registerStaticTranslatable(document.getElementById('searchByUserLabel'), 'nach Benutzer:');
   registerStaticTranslatable(document.getElementById('searchByDateLabel'), 'nach Datum:');
+  registerStaticTranslatable(document.getElementById('settingsLabel'), 'Einstellungen');
+  registerStaticTranslatable(document.getElementById('settingsLanguageLabel'), 'Sprache:');
   
   // restore list of blocked users
   for (const user of get_value('ignoredUsers')) {
@@ -68,9 +70,22 @@ function execute_profilePage() {
     'customCommentContainer'
   );
 
+  // generate datalist for autocompletion of user filter input
+  const availableUsers = addToDOM('<datalist id="availableUsers"></datalist>'.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  let alreadyInsertedUsers = [];
+  for (const comment of commentData) {
+    // prevent duplicates
+    if (alreadyInsertedUsers.indexOf(comment.user) === -1) {
+      addToDOM(`<option value="${comment.user}"></option>`.parseHTML(), availableUsers, InsertionService.AsLastChild, false);
+      alreadyInsertedUsers.push(comment.user);
+    }
+  }
+    
+  
   // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
-    const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
+    let user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:'));
+    if (user) user = user.trim();
     if (user === null || user === '') return;
     const selectElement = document.getElementById('ignoredUsers');
     for (const option of selectElement.children) {
@@ -91,6 +106,7 @@ function execute_profilePage() {
     if (selectElement.selectedOptions.length > 0) {
       const user = selectElement.selectedOptions[0].innerText.trim();
       selectElement.selectedOptions[0].remove();
+      this.classList.add('disabled');
       const ignoreFilter = commentFilters.get('filterSkipUser');
       // update filter
       const oldIgnoreList = ignoreFilter.value;
@@ -99,12 +115,20 @@ function execute_profilePage() {
         if (entry !== user) ignoreFilter.value.push(entry);
       }
       if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
-      // update storage
+      // update storage and page
       set_value('ignoredUsers', ignoreFilter.value);
       updatePage();
     }
   });
 
+  // only enable the button for deleting users from block list if an entry is selected
+  document.getElementById('ignoredUsers').addEventListener('change', function() {
+    const deleteButton = document.getElementById('deleteIgnoreUser');
+    this.selectedIndex === -1 && deleteButton
+      ? deleteButton.classList.add('disabled')
+      : deleteButton.classList.remove('disabled');
+  });
+  
   // insert the main switch to disable EnhancedNuoFlix
   const mainSwitchContainer = `
     <div class="realisticSwitch">
@@ -118,16 +142,12 @@ function execute_profilePage() {
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
   // mount handler for the "new only" filter button
-  // TODO: Use flip flop switch
-  document.getElementById('btnFilterNew').addEventListener('click', function() {
+  document.getElementById('filterOnlyNew').addEventListener('change', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
     if (commentFilters.get('filterOnlyNew').active) {
-      // this will change the cross to a hook in the filter button
-      this.classList.add('filterIsActive');
       // no need to highlight new comments if we filter all not new
       document.getElementById('style_newComment').innerText = '';
     } else {
-      this.classList.remove('filterIsActive');
       document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
     }
   });
@@ -146,6 +166,7 @@ function execute_profilePage() {
 
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+  document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
 }
 
 
@@ -523,8 +544,11 @@ function buildPageButton(pageNr, buttonStart, isActivePage = false) {
 
 
 
-
-function buildPaginationControl() {
+/**
+ * @param {string} suffix  - If set, appends this string to all element IDs
+ * @return {string}
+ */
+function buildPaginationControl(suffix= '') {
   const _totalComments = totalComments - filteredCommentsCount;
   const to = currentStart + currentLength > _totalComments ? _totalComments : currentStart + currentLength - 1;
   const from = to === 0 ? 0 : currentStart;
@@ -536,13 +560,13 @@ function buildPaginationControl() {
     }
   }
   return `
-    <div id="paginationControl">
-      <div id="commentsFromToContainer">
+    <div id="paginationControl${suffix}">
+      <div id="commentsFromToContainer${suffix}">
         <small>${t('Kommentare {0} .. {1} von {2}', from, to, _totalComments)}${filtered}</small>
       </div>
-      <div id="commentsPerPageContainer">
+      <div id="commentsPerPageContainer${suffix}">
         <small>${t('Kommentare pro Seite:')}</small>
-        <select id="pageLengthSelect" class="select">
+        <select id="pageLengthSelect${suffix}" class="select">
           <option value="5"${(currentLength === 5 ? 'selected="selected"' : '')}>5</option>
           <option value="25"${(currentLength === 25 ? 'selected="selected"' : '')}>25</option>
           <option value="50"${(currentLength === 50 ? 'selected="selected"' : '')}>50</option>
@@ -569,11 +593,11 @@ function insertLanguageDropdown() {
   `.parseHTML();
 
   // insert as first element after the section headline
-  const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
+  const settingsLanguageLabel = document.getElementById('settingsLanguageLabel');
 
-  // Some weird side effect causes that we have the Fragment again here so lets simply get the element from the register again
+  // Some weird side effect causes that we have the DocumentFragment here so lets simply get the element from the register again
   enhancedUiContainer = customElementsRegister.get('enhancedUiContainer');
-  const languageContainer = addToDOM(languageContainerHtml, headlineHolder, InsertionService.After, true, 'language_container');
+  const languageContainer = addToDOM(languageContainerHtml, settingsLanguageLabel, InsertionService.After, true, 'language_container');
 
   // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
@@ -699,6 +723,7 @@ function updatePaginationUI() {
   if (typeof paginationContainer !== typeof undefined && paginationContainer instanceof HTMLElement) paginationContainer.remove();
   if (typeof paginationContainerBottom !== typeof undefined && paginationContainerBottom instanceof HTMLElement) paginationContainerBottom.remove();
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
+  if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   
   paginationContainer = addToDOM(
     buildPaginationUi().parseHTML(),
@@ -735,11 +760,22 @@ function updatePaginationUI() {
   paginationControlContainer = addToDOM(
     buildPaginationControl().parseHTML(),
     paginationContainer,
-    InsertionService.Before,
+    InsertionService.After,
     true,
     'paginationControlContainer'
   );
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+  
+  // insert a second pagination control after the comments
+  paginationControlContainerBottom = addToDOM(
+    buildPaginationControl('Bottom').parseHTML(),
+    paginationContainerBottom,
+    InsertionService.Before,
+    true,
+    'paginationControlContainerBottom'
+  );
+  document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
+  
   // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
     paginationContainer.classList.add('hidden');

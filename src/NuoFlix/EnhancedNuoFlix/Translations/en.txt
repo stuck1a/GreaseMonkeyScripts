@@ -119,8 +119,8 @@
 
 
 [
-'Blockierte Benutzer:',
-'Blocked users:',
+'Blockierte Benutzer',
+'Blocked users',
 ],
 
 
@@ -205,4 +205,14 @@
 [
 'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
 'Injected custom element before initialization of the global register.\nThe element was therefore not registered!',
+],
+
+[
+'Einstellungen',
+'Settings',
+],
+
+[
+'Sprache:',
+'Language:',
 ],

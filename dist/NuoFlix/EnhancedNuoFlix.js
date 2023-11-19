@@ -149,8 +149,8 @@ const i18n = new Map([
 'Delete',
 ],
 [
-'Blockierte Benutzer:',
-'Blocked users:',
+'Blockierte Benutzer',
+'Blocked users',
 ],
 [
 'NuoFlix 2.0',
@@ -207,6 +207,14 @@ const i18n = new Map([
 [
 'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
 'Injected custom element before initialization of the global register.\nThe element was therefore not registered!',
+],
+[
+'Einstellungen',
+'Settings',
+],
+[
+'Sprache:',
+'Language:',
 ],
     ])
   ],
@@ -299,8 +307,8 @@ const i18n = new Map([
 'Udalyat\'',
 ],
 [
-'Blockierte Benutzer:',
-'Zablokirovannyye pol\'zovateli:',
+'Blockierte Benutzer',
+'Zablokirovannyye pol\'zovateli',
 ],
 [
 'NuoFlix 2.0',
@@ -357,6 +365,14 @@ const i18n = new Map([
 [
 'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
 'Pol\'zovatel\'skiy element byl vstavlen do initsializatsii global\'nogo registra.\nPoetomu element ne udalos\' zaregistrirovat\'.',
+],
+[
+'Einstellungen',
+'Nastroyki',
+],
+[
+'Sprache:',
+'YAzyk:',
 ],
     ])
   ],
@@ -1175,7 +1191,7 @@ function getOriginalCommentIds(which) {
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   
   let totalComments;
-  let paginationContainer, paginationContainerBottom, paginationControlContainer;
+  let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
   let customCommentContainer, originalCommentContainer;
 
   let customElementsRegister = new Map();
@@ -1221,7 +1237,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     </div>  
     <div class="row card-group">
     
-      <fieldset class="card">
+      <fieldset class="card col-4">
         <legend id="ignoredLabel"></legend>
         <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
         <div class="row">
@@ -1230,7 +1246,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
           </div>
           <div class="col-1" style="flex-grow: 1;"></div>
           <div class="col-auto">
-            <a id="deleteIgnoreUser" class="btn btn-small"></a>
+            <a id="deleteIgnoreUser" class="btn btn-small disabled"></a>
           </div>
         </div>
       </fieldset>
@@ -1242,35 +1258,48 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
           <input id="filterByText" type="text" name="filterByText" class="col" />
         </div>
         <details id="moreFilter">
-          <summary id="moreFilterTrigger" style="text-align: right;"></summary>
+          <summary id="moreFilterTrigger"></summary>
+          <div class="clearfix"></div>
           <ul id="moreFilterMenu" style="list-style-type: none;">
             <li>
-              <div class="flipflop" style="--color-on: #e86344;">
-                <span id="useAndLogicLabel"></span>
-                <label><input id="filterNewOnly" type="checkbox" checked="checked" /><span></span></label>
+              <div class="flipflop col-12" style="--color-on: #e86344;margin-top: 1rem;">
+                <span id="useAndLogicLabel" class="col-5"></span>
+                <label><input id="filterAllWords" type="checkbox" checked="checked" /><span></span></label>
               </div> 
             </li>
-            <li class="row">
-              <label id="searchByUserLabel" class="col-4" for="filterByUser"></label>
+            <li>
+              <div class="flipflop col-12" style="--color-on: #e86344;margin-top: 1rem;">
+                <span id="filterOnlyNewLabel" class="col-5"></span>
+                <label><input id="filterOnlyNew" type="checkbox" /><span></span></label>
+              </div> 
+            </li>
+            <li class="row" style="margin-top: 1rem;">
+              <label id="searchByUserLabel" class="col-5" for="filterByUser"></label>
               <div class="col">
-                <input id="filterByUser" type="text" name="filterByUser" />
+                <input id="filterByUser" list="availableUsers" type="text" name="filterByUser" />
               </div>
             </li>
             <li class="row">
-              <label id="searchByDateLabel" class="row col-4" for="filterByDateFrom"></label>
+              <label id="searchByDateLabel" class="row col-5" for="filterByDateFrom"></label>
               <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: .4rem;">
                 <input id="filterByDateFrom" type="date" name="filterByDateFrom" />
                 <label for="filterByDateTo" style="padding-block: .75rem;">-</label>
                 <input id="filterByDateTo" type="date" name="filterByDateTo" />
               </div>
-            </li>
-            <li>
-              <a id="btnFilterNew" class="btn"></a>
             </li>   
           </ul>
         </details>
       </fieldset>
       
+    </div>
+    
+    <div class="row card-group">
+      <fieldset id="settingsContainer" class="card col-5">
+        <legend id="settingsLabel"></legend>
+        <div id="settingsLanguage" class="row">
+          <label id="settingsLanguageLabel" class="col-5"></label>
+        </div>
+      </fieldset>
     </div>
   </div>`.parseHTML();
 
@@ -1342,9 +1371,7 @@ function execute_profilePage() {
   background-clip: border-box;
   border: 1px solid #949296;
   border-radius: .25rem;
-  max-width: 30rem;
   padding: .75rem;
-  width: 30%;
 }
 
 .card-body { flex: 1 1 auto; padding: 1rem 1rem }
@@ -1354,28 +1381,59 @@ function execute_profilePage() {
   margin-left: 1rem;
 }
 
-#ignoredUsers {
-  width: 100%;
-}
-
-#paginationContainer .btn.disabled {
-  background-color: darkgray !important;
-  color: lightgray !important;
-  cursor: default !important;
-}
-
-#paginationContainer .btn:not(.disabled):hover {
-  font-weight: bold;
-  background-color: #bd8656;
-}
-
-#paginationContainer, #paginationContainerBottom {
+.card legend {
+  padding-inline: .5rem;
   text-align: center;
-  margin-block: .8rem;
+}
+
+input[type="date"] {
+  display: inline-block;
+  margin: 7px 0 15px 0;
+  padding: 10px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+}
+
+.btn-small {
+  font-size: .75rem;
+  padding: .2rem .75rem;
 }
 
 .buttonGroup {
   display: inline-block;
+}
+
+.btn:not(.disabled):hover {
+  font-weight: bold;
+  background-color: #bd8656;
+}
+
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+.disabled {
+  background-color: darkgray !important;
+  color: lightgray !important;
+  cursor: default !important;
+  pointer-events: none;
+}
+
+#ignoredUsers {
+  width: 100%;
+}
+
+#paginationContainer {
+  text-align: center;
+  margin-top: .8rem;
+}
+
+#paginationContainerBottom {
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 #paginationNext {
@@ -1416,45 +1474,35 @@ function execute_profilePage() {
 }
 
 #paginationControl {
+  margin-bottom: .5rem;
+}
+
+#paginationControl, #paginationControlBottom {
   display: flow-root;
 }
 
-#commentsFromToContainer {
+#commentsFromToContainer, #commentsFromToContainerBottom {
   float: left;
 }
 
-#commentsPerPageContainer {
+#commentsPerPageContainer, #commentsPerPageContainerBottom {
   float: right;
   display: flex;
 }
 
-#commentsPerPageContainer small {
+#commentsPerPageContainer small, #commentsPerPageContainerBottom small {
   align-self: center;
   white-space: pre;
   margin-inline-end: .75rem;
 }
 
-#commentsPerPageContainer .select {
+#commentsPerPageContainer .select, #commentsPerPageContainerBottom .select {
   background-color: #eee;
   margin-block: auto;
   padding: .4rem;
   font-size: .75rem;
   text-align: center;
   text-align-last: center;
-}
-
-#btnFilterNew:after {
-  content: "\\00a0\\00a0\\00a0" var(--svg-unchecked);
-  vertical-align: -10%;
-}
-
-#btnFilterNew.filterIsActive:after {
-  content: "\\00a0\\00a0\\00a0" var(--svg-checked);
-}
-
-.btn-small {
-  font-size: .75rem;
-  padding: .2rem .75rem;
 }
 
 .msgNoResults {
@@ -1568,30 +1616,50 @@ function execute_profilePage() {
   width: 2rem;
 }
 
+#moreFilterTrigger {
+  float: right;
+}
 #moreFilterTrigger:hover {
   font-weight: bold;
+  cursor: pointer;
 }
 
 #moreFilterMenu {
   margin-inline-start: 1rem;
 }
 
-.card legend {
-  padding-inline: .5rem;
-  text-align: center;
-}
-
 #enhancedUi label {
   padding-block: .75rem;
 }
 
-input[type="date"] {
-    display: inline-block;
-    margin: 7px 0 15px 0;
-    padding: 10px;
-    -webkit-border-radius: 10px;
-    -moz-border-radius: 10px;
-    border-radius: 10px;
+
+.selectedUserFilter {
+  position: absolute;
+  top: .75rem;
+  height: 1.6rem;
+  margin-left: .75rem;
+  background-color: lightgray;
+  padding-inline: .4rem;
+  color: #D53D16;
+  border-radius: 6px;
+  left: 0; /* Adjusted by JS */
+}
+.selectedUserFilter :first-child {
+  margin-right: .2rem;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.selectedUserFilter :last-child:after {
+  color: #f00;
+  content: "&cross;";
+}
+.selectedUserFilter :last-child:hover {
+  cursor: pointer;
+  font-weight: bold;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>
 .flipflop {
@@ -1608,9 +1676,6 @@ input[type="date"] {
   --size-thumb: calc(var(--height) - 2*var(--padding-thumb));
   display: inline-flex;
   align-items: center;
-}
-.flipflop > span {
-  margin-right: var(--_label-offset);
 }
 .flipflop > label {
   display: inline-block;
@@ -1669,10 +1734,10 @@ input[type="date"] {
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
   
   // register all static elements from enhancedUiContainer with text to translate
-  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer:');
+  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer');
   registerStaticTranslatable(document.getElementById('addIgnoreUser'), 'Hinzufügen...');
   registerStaticTranslatable(document.getElementById('deleteIgnoreUser'), 'Entfernen');
-  registerStaticTranslatable(document.getElementById('btnFilterNew'), 'Nur neue Kommentare');
+  registerStaticTranslatable(document.getElementById('filterOnlyNewLabel'), 'Nur neue Kommentare');
   registerStaticTranslatable(document.getElementById('pluginHeadline'), 'NuoFlix 2.0');
   registerStaticTranslatable(document.getElementById('filterLabel'), 'Kommentare filtern');
   registerStaticTranslatable(document.getElementById('searchInputLabel'), 'Suche:');
@@ -1680,6 +1745,8 @@ input[type="date"] {
   registerStaticTranslatable(document.getElementById('useAndLogicLabel'), 'Muss alle Wörter enthalten');
   registerStaticTranslatable(document.getElementById('searchByUserLabel'), 'nach Benutzer:');
   registerStaticTranslatable(document.getElementById('searchByDateLabel'), 'nach Datum:');
+  registerStaticTranslatable(document.getElementById('settingsLabel'), 'Einstellungen');
+  registerStaticTranslatable(document.getElementById('settingsLanguageLabel'), 'Sprache:');
   
   // restore list of blocked users
   for (const user of get_value('ignoredUsers')) {
@@ -1712,9 +1779,22 @@ input[type="date"] {
     'customCommentContainer'
   );
 
+  // generate datalist for autocompletion of user filter input
+  const availableUsers = addToDOM('<datalist id="availableUsers"></datalist>'.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  let alreadyInsertedUsers = [];
+  for (const comment of commentData) {
+    // prevent duplicates
+    if (alreadyInsertedUsers.indexOf(comment.user) === -1) {
+      addToDOM(`<option value="${comment.user}"></option>`.parseHTML(), availableUsers, InsertionService.AsLastChild, false);
+      alreadyInsertedUsers.push(comment.user);
+    }
+  }
+    
+  
   // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
-    const user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:')).trim();
+    let user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:'));
+    if (user) user = user.trim();
     if (user === null || user === '') return;
     const selectElement = document.getElementById('ignoredUsers');
     for (const option of selectElement.children) {
@@ -1735,6 +1815,7 @@ input[type="date"] {
     if (selectElement.selectedOptions.length > 0) {
       const user = selectElement.selectedOptions[0].innerText.trim();
       selectElement.selectedOptions[0].remove();
+      this.classList.add('disabled');
       const ignoreFilter = commentFilters.get('filterSkipUser');
       // update filter
       const oldIgnoreList = ignoreFilter.value;
@@ -1743,12 +1824,20 @@ input[type="date"] {
         if (entry !== user) ignoreFilter.value.push(entry);
       }
       if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
-      // update storage
+      // update storage and page
       set_value('ignoredUsers', ignoreFilter.value);
       updatePage();
     }
   });
 
+  // only enable the button for deleting users from block list if an entry is selected
+  document.getElementById('ignoredUsers').addEventListener('change', function() {
+    const deleteButton = document.getElementById('deleteIgnoreUser');
+    this.selectedIndex === -1 && deleteButton
+      ? deleteButton.classList.add('disabled')
+      : deleteButton.classList.remove('disabled');
+  });
+  
   // insert the main switch to disable EnhancedNuoFlix
   const mainSwitchContainer = `
     <div class="realisticSwitch">
@@ -1762,16 +1851,12 @@ input[type="date"] {
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
   // mount handler for the "new only" filter button
-  // TODO: Use flip flop switch
-  document.getElementById('btnFilterNew').addEventListener('click', function() {
+  document.getElementById('filterOnlyNew').addEventListener('change', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
     if (commentFilters.get('filterOnlyNew').active) {
-      // this will change the cross to a hook in the filter button
-      this.classList.add('filterIsActive');
       // no need to highlight new comments if we filter all not new
       document.getElementById('style_newComment').innerText = '';
     } else {
-      this.classList.remove('filterIsActive');
       document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
     }
   });
@@ -1790,6 +1875,7 @@ input[type="date"] {
 
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+  document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
 }
 
 
@@ -2167,8 +2253,11 @@ function buildPageButton(pageNr, buttonStart, isActivePage = false) {
 
 
 
-
-function buildPaginationControl() {
+/**
+ * @param {string} suffix  - If set, appends this string to all element IDs
+ * @return {string}
+ */
+function buildPaginationControl(suffix= '') {
   const _totalComments = totalComments - filteredCommentsCount;
   const to = currentStart + currentLength > _totalComments ? _totalComments : currentStart + currentLength - 1;
   const from = to === 0 ? 0 : currentStart;
@@ -2180,13 +2269,13 @@ function buildPaginationControl() {
     }
   }
   return `
-    <div id="paginationControl">
-      <div id="commentsFromToContainer">
+    <div id="paginationControl${suffix}">
+      <div id="commentsFromToContainer${suffix}">
         <small>${t('Kommentare {0} .. {1} von {2}', from, to, _totalComments)}${filtered}</small>
       </div>
-      <div id="commentsPerPageContainer">
+      <div id="commentsPerPageContainer${suffix}">
         <small>${t('Kommentare pro Seite:')}</small>
-        <select id="pageLengthSelect" class="select">
+        <select id="pageLengthSelect${suffix}" class="select">
           <option value="5"${(currentLength === 5 ? 'selected="selected"' : '')}>5</option>
           <option value="25"${(currentLength === 25 ? 'selected="selected"' : '')}>25</option>
           <option value="50"${(currentLength === 50 ? 'selected="selected"' : '')}>50</option>
@@ -2213,11 +2302,11 @@ function insertLanguageDropdown() {
   `.parseHTML();
 
   // insert as first element after the section headline
-  const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
+  const settingsLanguageLabel = document.getElementById('settingsLanguageLabel');
 
-  // Some weird side effect causes that we have the Fragment again here so lets simply get the element from the register again
+  // Some weird side effect causes that we have the DocumentFragment here so lets simply get the element from the register again
   enhancedUiContainer = customElementsRegister.get('enhancedUiContainer');
-  const languageContainer = addToDOM(languageContainerHtml, headlineHolder, InsertionService.After, true, 'language_container');
+  const languageContainer = addToDOM(languageContainerHtml, settingsLanguageLabel, InsertionService.After, true, 'language_container');
 
   // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
@@ -2343,6 +2432,7 @@ function updatePaginationUI() {
   if (typeof paginationContainer !== typeof undefined && paginationContainer instanceof HTMLElement) paginationContainer.remove();
   if (typeof paginationContainerBottom !== typeof undefined && paginationContainerBottom instanceof HTMLElement) paginationContainerBottom.remove();
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
+  if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   
   paginationContainer = addToDOM(
     buildPaginationUi().parseHTML(),
@@ -2379,11 +2469,22 @@ function updatePaginationUI() {
   paginationControlContainer = addToDOM(
     buildPaginationControl().parseHTML(),
     paginationContainer,
-    InsertionService.Before,
+    InsertionService.After,
     true,
     'paginationControlContainer'
   );
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
+  
+  // insert a second pagination control after the comments
+  paginationControlContainerBottom = addToDOM(
+    buildPaginationControl('Bottom').parseHTML(),
+    paginationContainerBottom,
+    InsertionService.Before,
+    true,
+    'paginationControlContainerBottom'
+  );
+  document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
+  
   // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
     paginationContainer.classList.add('hidden');

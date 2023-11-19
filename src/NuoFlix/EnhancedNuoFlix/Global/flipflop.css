@@ -36,10 +36,6 @@
   align-items: center;
 }
 
-.flipflop > span {
-  margin-right: var(--_label-offset);
-}
-
 .flipflop > label {
   display: inline-block;
   position: relative;

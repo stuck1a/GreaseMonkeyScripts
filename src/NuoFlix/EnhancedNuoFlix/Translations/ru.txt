@@ -119,8 +119,8 @@
 
 
 [
-'Blockierte Benutzer:',
-'Zablokirovannyye pol\'zovateli:',
+'Blockierte Benutzer',
+'Zablokirovannyye pol\'zovateli',
 ],
 
 
@@ -205,4 +205,14 @@
 [
 'Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.',
 'Pol\'zovatel\'skiy element byl vstavlen do initsializatsii global\'nogo registra.\nPoetomu element ne udalos\' zaregistrirovat\'.',
+],
+
+[
+'Einstellungen',
+'Nastroyki',
+],
+
+[
+'Sprache:',
+'YAzyk:',
 ],

@@ -30,7 +30,7 @@
   addToDOM(`<style>/*%% Global/realisticSwitch.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   
   let totalComments;
-  let paginationContainer, paginationContainerBottom, paginationControlContainer;
+  let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
   let customCommentContainer, originalCommentContainer;
 
   let customElementsRegister = new Map();
