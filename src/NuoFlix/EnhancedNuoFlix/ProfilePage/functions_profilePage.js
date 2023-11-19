@@ -53,7 +53,7 @@ function execute_profilePage() {
   // get last state of stored comments (to identify new comments), then update the storage
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
-  commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
+  //commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
   set_value('commentData', commentData);
 
   // count comments
@@ -71,29 +71,32 @@ function execute_profilePage() {
   // generate datalist for autocompletion of user filter input
   addUserFilterAutocompletionList();
     
-  // mount handlers for adding a user to the list of users to search for
-  const filterByUserInput = document.getElementById('filterByUser');
-  const addUserIfValid = function(input) {
-    for (const element of document.getElementById('availableUsers').children) {
-      if (element.value === input.value) {
-        doAddUserToFilterList(input);
-        break;
-      }
-    }
-  }
-  // whenever user enters a comma or space
-  filterByUserInput.addEventListener('change', function(ev) {
-    if (this.value.endsWith === ',' || this.value.endsWith === ' ') {
-      // remove the comma
-      this.value = this.value.substring(0, this.value.length - 1);
-      addUserIfValid(this);
-    } 
-  });
-  // whenever user hits enter
-  filterByUserInput.onkeypress = function(ev) {
+  // mount handler for adding a user to the list of users to search for
+  document.getElementById('filterByUser').onkeypress = function(ev) {
     if (!ev) ev = window.event;
     let keyCode = ev.code || ev.key;
-    if (keyCode === 'Enter' || keyCode === 'NumpadEnter') addUserIfValid(this);
+    // if user pressed enter
+    if (keyCode === 'Enter' || keyCode === 'NumpadEnter') {
+      // add only if user is found
+      for (const element of document.getElementById('availableUsers').children) {
+        if (element.value === this.value) {
+          doAddUserToFilterList(this);
+          break;
+        }
+      }
+    }
+    // if user has entered a comma or space
+    else if (keyCode === ',' || keyCode === ' ') {
+      // remove the comma/space
+      this.value = this.value.substring(0, this.value.length - 1);
+      // add only if user is found
+      for (const element of document.getElementById('availableUsers').children) {
+        if (element.value === this.value) {
+          doAddUserToFilterList(this);
+          break;
+        }
+      }
+    }
   };
   
   // mount handlers for user block feature
@@ -189,7 +192,7 @@ function execute_profilePage() {
   
   // initially generate and insert all dynamic components
   updatePage();
-  insertLanguageDropdown();  // TODO: Can we move this into updatePage, too ?
+  insertLanguageDropdown();
 
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
@@ -933,6 +936,7 @@ function updateComments() {
   // insert expand button if some replies were hidden by style rule
   for (const commentElement of customCommentContainer.children) {
     let repliesWrapper = commentElement.getElementsByClassName('allReplys')[0];
+    if (!repliesWrapper) continue;
     let replies = repliesWrapper;
     if (replies) replies = replies.children;
     if (replies.length > expandedReplyCount) {
