@@ -100,7 +100,7 @@ function execute_profilePage() {
     </div>
   `.parseHTML();
   
-  addToDOM(mainSwitchContainer, enhancedUiContainer, InsertionService.Before);
+  addToDOM(mainSwitchContainer, enhancedUiContainer, InsertionService.Before, false);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
   // mount handler for the "new only" filter button
@@ -625,21 +625,21 @@ function doChangeLength(ev) {
  * @param {Event} ev
  */
 function doChangeMainSwitch(ev) {
-  const addedCustomElements = [
-    enhancedUiContainer,
-    paginationContainer,
-    paginationContainerBottom,
-    paginationControlContainer,
-    customCommentContainer,
-  ];
-  const disabledOriginalElements = [
-    originalCommentContainer,
-  ];
-  for (const element of addedCustomElements) {
-    this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+  // toggle visibility of custom elements
+  for (const element of customElementsRegister.values()) {
+    if (element instanceof Array) {
+      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
+    } else {
+      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+    }
   }
-  for (const element of disabledOriginalElements) {
-    this.checked ? element.classList.add('hidden') : element.classList.remove('hidden');
+  // toggle visibility of original elements
+  for (const element of disabledPrimalElementsRegister.entries()) {
+    if (element[1] instanceof Array) {
+      for (const entry of element) this.checked ? enablePrimalElement(entry[0]) :enablePrimalElement(entry[0]);
+    } else {
+      this.checked ? enablePrimalElement(element[0]) :enablePrimalElement(element[0]);
+    }
   }
 }
 

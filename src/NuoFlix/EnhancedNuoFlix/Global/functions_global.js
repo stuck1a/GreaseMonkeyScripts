@@ -208,7 +208,8 @@ function removeFromDOM(elementOrId, force = false) {
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
     if (element.hasAttribute('data-customElement')) return false;
-    element.classList.add('hidden');    // TODO: Use display=getAttribute('data-originalDisplayValue') after full implementation
+    // store the display value as attribute so we can restore it later
+    element.classList.add('hidden');
     if (disabledPrimalElementsRegister) {
       if (!id) id = Date.now().toString(36) + Math.random().toString(36).substring(2);
       // if this element is already stored, then just update the register id
@@ -245,7 +246,8 @@ function enablePrimalElement(elementOrId) {
   if (elementOrId instanceof HTMLElement) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
     if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
-    elementOrId.classList.remove('hidden');    // TODO: Use display=none after full implementation
+    elementOrId.classList.remove('hidden');
+    elementOrId.style.display
     return true;
   }
   
@@ -253,7 +255,7 @@ function enablePrimalElement(elementOrId) {
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
     disabledPrimalElementsRegister.delete(elementOrId);
-    element.classList.remove('hidden');    // TODO: Use display=none after full implementation
+    element.classList.remove('hidden');
     return true;
   }
   
@@ -262,7 +264,7 @@ function enablePrimalElement(elementOrId) {
   if (elementOrId) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
     if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
-    elementOrId.classList.remove('hidden');    // TODO: Use display=none after full implementation
+    elementOrId.classList.remove('hidden');
     return true;
   }
   

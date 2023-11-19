@@ -853,7 +853,8 @@ function removeFromDOM(elementOrId, force = false) {
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
     if (element.hasAttribute('data-customElement')) return false;
-    element.classList.add('hidden');    // TODO: Use display=getAttribute('data-originalDisplayValue') after full implementation
+    // store the display value as attribute so we can restore it later
+    element.classList.add('hidden');
     if (disabledPrimalElementsRegister) {
       if (!id) id = Date.now().toString(36) + Math.random().toString(36).substring(2);
       // if this element is already stored, then just update the register id
@@ -890,7 +891,8 @@ function enablePrimalElement(elementOrId) {
   if (elementOrId instanceof HTMLElement) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
     if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
-    elementOrId.classList.remove('hidden');    // TODO: Use display=none after full implementation
+    elementOrId.classList.remove('hidden');
+    elementOrId.style.display
     return true;
   }
   
@@ -898,7 +900,7 @@ function enablePrimalElement(elementOrId) {
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
     disabledPrimalElementsRegister.delete(elementOrId);
-    element.classList.remove('hidden');    // TODO: Use display=none after full implementation
+    element.classList.remove('hidden');
     return true;
   }
   
@@ -907,7 +909,7 @@ function enablePrimalElement(elementOrId) {
   if (elementOrId) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
     if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
-    elementOrId.classList.remove('hidden');    // TODO: Use display=none after full implementation
+    elementOrId.classList.remove('hidden');
     return true;
   }
   
@@ -1780,7 +1782,7 @@ input[type="date"] {
     </div>
   `.parseHTML();
   
-  addToDOM(mainSwitchContainer, enhancedUiContainer, InsertionService.Before);
+  addToDOM(mainSwitchContainer, enhancedUiContainer, InsertionService.Before, false);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
   // mount handler for the "new only" filter button
@@ -2305,21 +2307,21 @@ function doChangeLength(ev) {
  * @param {Event} ev
  */
 function doChangeMainSwitch(ev) {
-  const addedCustomElements = [
-    enhancedUiContainer,
-    paginationContainer,
-    paginationContainerBottom,
-    paginationControlContainer,
-    customCommentContainer,
-  ];
-  const disabledOriginalElements = [
-    originalCommentContainer,
-  ];
-  for (const element of addedCustomElements) {
-    this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+  // toggle visibility of custom elements
+  for (const element of customElementsRegister.values()) {
+    if (element instanceof Array) {
+      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
+    } else {
+      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+    }
   }
-  for (const element of disabledOriginalElements) {
-    this.checked ? element.classList.add('hidden') : element.classList.remove('hidden');
+  // toggle visibility of original elements
+  for (const element of disabledPrimalElementsRegister.entries()) {
+    if (element[1] instanceof Array) {
+      for (const entry of element) this.checked ? enablePrimalElement(entry[0]) :enablePrimalElement(entry[0]);
+    } else {
+      this.checked ? enablePrimalElement(element[0]) :enablePrimalElement(element[0]);
+    }
   }
 }
 
