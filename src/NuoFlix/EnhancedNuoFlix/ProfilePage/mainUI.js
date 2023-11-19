@@ -1,5 +1,4 @@
-let enhancedUiContainer = `
-  <div id="enhancedUi" class="container-fluid">
+let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
       <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
       <div class="rowHeadlineHolderItem headerTxt">
@@ -60,5 +59,4 @@ let enhancedUiContainer = `
       </fieldset>
       
     </div>
-  </div>
-`.parseHTML();
+  </div>`.parseHTML();

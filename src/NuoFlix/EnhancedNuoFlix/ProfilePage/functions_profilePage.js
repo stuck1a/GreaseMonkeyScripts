@@ -16,17 +16,25 @@ function execute_profilePage() {
   /*%% ProfilePage/mainUI.js %%*/
   
   // insert all style sheets used in this route
-  document.body.appendChild(`<style>/*%% ProfilePage/profilePage.css %%*/</style>`.parseHTML());
-  document.body.appendChild(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML());
+  addToDOM(`<style>/*%% ProfilePage/profilePage.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  addToDOM(style_comments, document.body, InsertionService.AsLastChild, false);
   
   // insert the additional UI section
-  addCommentMenuToPage(enhancedUiContainer);
+  enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
 
-  // search and disable the original comment container
+  // restore list of blocked users
+  for (const user of get_value('ignoredUsers')) {
+    addToDOM(`<option>${user}</option>`.parseHTML(), 'ignoredUsers', InsertionService.AsLastChild, false);
+    const ignoreFilter = commentFilters.get('filterSkipUser');
+    ignoreFilter.value.push(user);
+    ignoreFilter.active = true;
+  }
+  
+  // disable the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
   if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
-  originalCommentContainer.id = 'originalCommentContainer';
-  originalCommentContainer.classList.add('hidden');
+  disablePrimalElement(originalCommentContainer, 'originalCommentContainer');
   
   // get last state of stored comments (to identify new comments), then update the storage
   storedCommentData = get_value('commentData');
@@ -38,8 +46,13 @@ function execute_profilePage() {
   totalComments = commentData.length;
   
   // build and insert our own comment container
-  customCommentContainer = '<div class="profilContentInner"></div>'.parseHTML();
-  originalCommentContainer.parentElement.insertBefore(customCommentContainer, originalCommentContainer);
+  customCommentContainer = addToDOM(
+    '<div class="profilContentInner"></div>'.parseHTML(),
+    originalCommentContainer,
+    InsertionService.Before,
+    true, 
+    'customCommentContainer'
+  );
 
   // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
@@ -49,8 +62,7 @@ function execute_profilePage() {
     for (const option of selectElement.children) {
       if (option.innerText === user) return;
     }
-    const option = `<option>${user}</option>`.parseHTML();
-    document.getElementById('ignoredUsers').appendChild(option);
+    addToDOM(`<option>${user}</option>`.parseHTML(), 'ignoredUsers', InsertionService.AsLastChild, false);
     // update filter
     const ignoreFilter = commentFilters.get('filterSkipUser');
     ignoreFilter.value.push(user);
@@ -87,15 +99,12 @@ function execute_profilePage() {
       </span>
     </div>
   `.parseHTML();
-
-  enhancedUiContainer = document.getElementById('enhancedUi');    // FIXME: Why is enhancedUiContainer here a DocumentFragment again?? Should be HTMLElement already...
-  enhancedUiContainer.parentElement.insertBefore(mainSwitchContainer, enhancedUiContainer);
   
-  
+  addToDOM(mainSwitchContainer, enhancedUiContainer, InsertionService.Before);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
 
   // mount handler for the "new only" filter button
-  // TODO: Will be replaced by checkbox
+  // TODO: Use flip flop switch
   document.getElementById('btnFilterNew').addEventListener('click', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
     if (commentFilters.get('filterOnlyNew').active) {
@@ -123,56 +132,6 @@ function execute_profilePage() {
 
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
-}
-
-
-
-
-/**
- * Add the custom UI section to the DOM.
- *
- * @param {any} menu
- */
-function addCommentMenuToPage(menu) {
-  let targetParent = document.getElementsByClassName('profilContent');
-  if (targetParent && targetParent[0] && targetParent[0].firstElementChild) {
-    targetParent = targetParent[0].firstElementChild;
-  } else {
-    log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'error', this);
-    return;
-  }
-  
-  targetParent.insertBefore(menu, targetParent.firstChild);
-  enhancedUiContainer = document.getElementById('enhancedUi');
-  
-  // restore the list of blocked users
-  for (const user of get_value('ignoredUsers')) {
-    document.getElementById('ignoredUsers').appendChild(`<option>${user}</option>`.parseHTML());
-    const ignoreFilter = commentFilters.get('filterSkipUser');
-    ignoreFilter.value.push(user);
-    ignoreFilter.active = true;
-  }
-}
-
-
-
-
-/**
- * Appends the given comment block to the pages comment section.
- *
- * @param {DocumentFragment|HTMLElement|HTMLCollection} obj  - Comment object
- * @param {HTMLElement} [parent=null]  - Container to insert to
- * @param {string[]} [addClasses=[]]  - Additional CSS classes to add
- */
-function addCommentToPage(obj, parent = null, addClasses = []) {
-  // Find the correct container if none was submitted
-  if (!parent) parent = document.getElementsByClassName('profilContentInner')[0];
-  if (!obj) return;
-  parent.appendChild(obj);
-  // get live node
-  obj = parent.lastElementChild;
-  // add all given css classes
-  for (const className of addClasses) obj.classList.add(className);
 }
 
 
@@ -416,11 +375,14 @@ function insertPaginatedComments() {
     if (counter > totalComments || counter / currentPage > filteredComments.length) break;
     // add comment to page
     commentItemElement = buildCommentBlock(filteredComments[currentStart + insertedComments - 1], insertedComments);
-    addCommentToPage(commentItemElement, customCommentContainer, []);
-    insertedComments++;
+    if (commentItemElement) {
+      addToDOM(commentItemElement, customCommentContainer, InsertionService.AsLastChild, false);
+      insertedComments++;
+    }
     counter++;
   }
 }
+
 
 
 
@@ -602,15 +564,16 @@ function insertLanguageDropdown() {
 
   // insert as first element after the section headline
   const headlineHolder = document.getElementById('enhancedUiHeadlineHolder');
-  enhancedUiContainer = document.getElementById('enhancedUi');    // FIXME: Why is enhancedUiContainer here a DocumentFragment again?? Should be HTMLElement already...
-  enhancedUiContainer.insertBefore(languageContainerHtml, headlineHolder.nextElementSibling);
-  const languageContainer = document.getElementById('language_container');
+
+  // Some weird side effect causes that we have the Fragment again here so lets simply get the element from the register again
+  enhancedUiContainer = customElementsRegister.get('enhancedUiContainer');
+  const languageContainer = addToDOM(languageContainerHtml, headlineHolder, InsertionService.After, true, 'language_container');
 
   // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
     const metadata = language[1].get('__metadata__');
     const langEntryHtml = `<div id="lang_${language[0]}" data-lang="${language[0]}">${metadata.icon}<span>${metadata.displayName}</span></div>`;
-    languageContainer.lastElementChild.appendChild(langEntryHtml.parseHTML());
+    addToDOM(langEntryHtml.parseHTML(), languageContainer.lastElementChild, InsertionService.AsLastChild, false);
   }
   // mount handler for all language entries
   for (const langItem of languageContainer.lastElementChild.children) {
@@ -732,8 +695,16 @@ function updatePaginationUI() {
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
   paginationContainer = buildPaginationUi().parseHTML();
   const commentHeadlineElement = document.getElementsByClassName('rowHeadlineHolder')[1];
+
+
+  // XXX
+  //paginationContainer = addToDOM(paginationContainer, commentHeadlineElement, InsertionService.Before, false);
+  
+  
   commentHeadlineElement.parentElement.insertBefore(paginationContainer, commentHeadlineElement.nextElementSibling);
   paginationContainer = document.getElementById('paginationContainer');
+
+
   const paginationButtons = paginationContainer.getElementsByClassName('btn');
   for (const paginationBtn of paginationButtons) {
     paginationBtn.addEventListener('click', function (e) {
@@ -785,10 +756,10 @@ function updateComments() {
   // if no comments to display, display message instead
   if (totalComments === 0) {
     const msg = `<div class="msgNoResults">${t('Noch keine Kommentare...')}</div>`.parseHTML();
-    customCommentContainer.appendChild(msg);
+    addToDOM(msg, customCommentContainer, InsertionService.AsLastChild, false);
   } else if (totalComments === filteredCommentsCount) {
     const msg = `<div class="msgNoResults">${t('Kein Kommentar entspricht den Filterkriterien')}</div>`.parseHTML();
-    customCommentContainer.appendChild(msg);
+    addToDOM(msg, customCommentContainer, InsertionService.AsLastChild, false);
   }
   // insert expand button if some replies were hidden by style rule
   for (const commentElement of customCommentContainer.children) {

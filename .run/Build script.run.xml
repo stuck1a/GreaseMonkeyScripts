@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Build script [$Prompt$]" type="ShConfigurationType" folderName="Deploy">
-    <option name="SCRIPT_TEXT" value="echo 'Please specify path to the base file of the target script to build (relative to repo root dir), example: &quot;src/NuoFlix/EnhancedNuoFlix/_template.js&quot;'" />
+    <option name="SCRIPT_TEXT" value="echo 'Please specify path to the base file of the target script to build and where the output file shall be stored (relative to repo root dir), example: 'src/NuoFlix/EnhancedNuoFlix/base.js' 'dist/NuoFlix/EnhancedNuoFlix.js'" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />

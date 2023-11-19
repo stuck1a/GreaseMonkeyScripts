@@ -1,4 +1,6 @@
-`<style id="style_newComment">
+const style_comments = `
+  
+<style id="style_newComment">
   .${cssClassNewComments} {
   background-color: ${highlightedCommentsColor};
 }
@@ -14,4 +16,6 @@
   .${cssClassNewReplies} {
   background-color: ${highlightedRepliesColor};
 }
-</style>`.parseHTML();
+</style>
+
+`.parseHTML();
