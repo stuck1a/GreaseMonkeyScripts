@@ -216,3 +216,13 @@
 'Sprache:',
 'Language:',
 ],
+
+[
+'Ungültiger Datums-Teil in Input',
+'Invalid Date part in input',
+],
+
+[
+'Ungültiger Zeit-Teil in Input',
+'Invalid Time part in input',
+],

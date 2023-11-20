@@ -216,3 +216,13 @@
 'Sprache:',
 'YAzyk:',
 ],
+
+[
+'Ungültiger Datums-Teil in Input',
+'Nevernaya chast\' daty vo vkhodnykh dannykh',
+],
+
+[
+'Ungültiger Zeit-Teil in Input',
+'Nedopustimaya chast\' vremeni vo vkhodnykh dannykh',
+],

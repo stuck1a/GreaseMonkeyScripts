@@ -184,8 +184,10 @@ process_rules() {
     elif [[ "${line}" =~ ^\[(.*)\]$ ]]; then
       if [[ "${isFirstSection}" == 0 ]]; then
         # execute the latest section
-        echo "Now executing: ${sectionName}"
-        "${fnc}"
+        if [[ "${enabled}" == 'true' ]]; then
+          echo "Now executing: ${sectionName}"
+          "${fnc}"
+        fi  
       fi
       sectionName="${BASH_REMATCH[1]}"
       isFirstSection=0
@@ -196,9 +198,10 @@ process_rules() {
     fi
   done
   # finally we have to execute the last section as well
-  echo "Now executing: ${sectionName}"
-  "${fnc}"
-  $fnc
+  if [[ "${enabled}" == 'true' ]]; then
+    echo "Now executing: ${sectionName}"
+    "${fnc}"
+  fi  
 }
 
 

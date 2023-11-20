@@ -216,6 +216,14 @@ const i18n = new Map([
 'Sprache:',
 'Language:',
 ],
+[
+'Ungültiger Datums-Teil in Input',
+'Invalid Date part in input',
+],
+[
+'Ungültiger Zeit-Teil in Input',
+'Invalid Time part in input',
+],
     ])
   ],
   
@@ -373,6 +381,14 @@ const i18n = new Map([
 [
 'Sprache:',
 'YAzyk:',
+],
+[
+'Ungültiger Datums-Teil in Input',
+'Nevernaya chast\' daty vo vkhodnykh dannykh',
+],
+[
+'Ungültiger Zeit-Teil in Input',
+'Nedopustimaya chast\' vremeni vo vkhodnykh dannykh',
 ],
     ])
   ],
@@ -1208,6 +1224,7 @@ function getOriginalCommentIds(which) {
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
     [ 'filterTextSearch', { active: false, value: [] } ],
+    [ 'filterDateRange', { active: false, value: [] } ],
   ]);
 
   // hand over execution flow depending on the route (literally the current page)
@@ -1254,7 +1271,15 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
       <fieldset class="card col">
         <legend id="filterLabel"></legend>
         <div class="row">
-          <label id="searchInputLabel" class="col-auto" for="filterByText" style="margin-right: 2rem;"></label>
+          <label class="row col-2" for="filterByText" style="display: flex; flex-wrap: nowrap;">
+              <span id="searchInputLabel"></span>
+              <span id="revertFilterTextInput" class="hidden" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
+                  <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
+                  <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
+                </svg>
+              </span>
+          </label>
           <input id="filterByText" type="text" name="filterByText" class="col" />
         </div>
         <details id="moreFilter">
@@ -1274,14 +1299,30 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
               </div> 
             </li>
             <li class="row" style="margin-top: 1rem;">
-              <label id="searchByUserLabel" class="col-5" for="filterByUser"></label>
+              <label class="row col-5" for="filterByUser" style="display: flex; flex-wrap: nowrap;">
+                <span id="searchByUserLabel"></span>
+                <span id="revertFilterUserInput" class="hidden" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                  <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
+                    <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
+                    <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
+                  </svg>
+                </span>
+              </label>
               <div class="col">
                 <input id="filterByUser" list="availableUsers" type="text" name="filterByUser" />
               </div>
               <div id="filteredUserList" class="row"></div>
             </li>
             <li class="row">
-              <label id="searchByDateLabel" class="row col-5" for="filterByDateFrom"></label>
+              <label class="row col-5" for="filterByDateFrom" style="display: flex; flex-wrap: nowrap;">
+                <span id="searchByDateLabel"></span>
+                <span id="revertDateRangeInputs" class="hidden" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                  <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
+                    <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
+                    <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
+                  </svg>
+                </span>
+              </label>
               <div class="col" style="justify-content: space-between;display: flex;padding-inline-end: .4rem;">
                 <input id="filterByDateFrom" type="date" name="filterByDateFrom" />
                 <label for="filterByDateTo" style="padding-block: .75rem;">-</label>
@@ -1333,8 +1374,34 @@ function execute_profilePage() {
     
   // insert all style sheets used in this route
   addToDOM(`<style>:root {
-  --svg-checked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
-  --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1em" width="1em" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
+  --svg-checked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
+  --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
+  --svg-revert: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000"><path fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/><path fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/></svg>');
+}
+
+@-moz-keyframes spinR { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spinR { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spinR { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+@-moz-keyframes spinL { 100% { -moz-transform: rotate(-360deg); } }
+@-webkit-keyframes spinL { 100% { -webkit-transform: rotate(-360deg); } }
+@keyframes spinL { 100% { -webkit-transform: rotate(-360deg); transform:rotate(-360deg); } }
+
+.spinRightOnHover:hover {
+  --duration: 1s;
+  -webkit-animation: spinR var(--duration) linear infinite;
+  -moz-animation: spinR var(--duration) linear infinite;
+  animation: spinR var(--duration) linear infinite;
+}
+.spinLeftOnHover:hover {
+  --duration: 1s;
+  -webkit-animation: spinL var(--duration) linear infinite;
+  -moz-animation: spinL var(--duration) linear infinite;
+  animation: spinL var(--duration) linear infinite;
+}
+
+.stretchToParent {
+  height: 100%;
+  width: 100%;
 }
 
 .container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
@@ -1666,7 +1733,16 @@ input[type="date"] {
 
 #settingsLanguage {
   align-items: center;
-}</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+}
+
+.svgColorized { --color: #d53d16; }
+
+.svgColorized .svgColoredFill { fill: var(--color) }
+.svgColorized .svgColoredStroke { stroke: var(--color) }
+
+
+
+</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>
 .flipflop {
   /* set defaults for unset variables */
@@ -1770,7 +1846,7 @@ input[type="date"] {
   // get last state of stored comments (to identify new comments), then update the storage
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
-  //commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
+  commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
   set_value('commentData', commentData);
 
   // count comments
@@ -1787,7 +1863,8 @@ input[type="date"] {
 
   // generate datalist for autocompletion of user filter input
   addUserFilterAutocompletionList();
-    
+  
+  
   // mount handler for adding a user to the list of users to search for
   document.getElementById('filterByUser').onkeypress = function(ev) {
     if (!ev) ev = window.event;
@@ -1816,6 +1893,91 @@ input[type="date"] {
     }
   };
   
+  
+  // mount handler for the text search filter
+  let textFilterDelayActive = false;
+  document.getElementById('filterByText').oninput = function(ev) {
+    const revertFilterTextInput = document.getElementById('revertFilterTextInput');
+    let textFilter = commentFilters.get('filterTextSearch');
+    if (this.value) {
+      revertFilterTextInput.classList.remove('hidden');
+    } else {
+      revertFilterTextInput.classList.add('hidden');
+      textFilter.value = [];
+      textFilter.active = false;
+    }
+    // add delay before updating the page to reduce performance impact
+    if (!textFilterDelayActive) {
+      textFilterDelayActive = true;
+      setTimeout(function() {
+        // reset execution delayer
+        textFilterDelayActive = false;
+        // update filter
+        textFilter.value = this.value.split();
+        textFilter.active = true;
+        // update page
+        updatePage();
+      }.bind(this), 150);
+    }
+  };
+  
+  
+  // mount handlers for the date search filter
+  document.getElementById('filterByDateFrom').oninput = function(ev) {
+    doUpdateDateFilter(this, document.getElementById('filterByDateTo'));
+  };
+  document.getElementById('filterByDateTo').oninput = function(ev) {
+    doUpdateDateFilter(document.getElementById('filterByDateFrom'), this);
+  };
+
+  
+  // mount handler for changing the text search logic
+  document.getElementById('filterAllWords').addEventListener('change', function() {
+    if (document.getElementById('filterByText').textLength > 0) updatePage();
+  });
+  
+  
+  // mount handler for the reset button of the date range filter
+  document.getElementById('revertDateRangeInputs').addEventListener('click', function() {
+    document.getElementById('filterByDateFrom').value = '';
+    document.getElementById('filterByDateTo').value = '';
+    let filter = commentFilters.get('filterDateRange');
+    filter.active = false;
+    filter.value = [];
+    this.classList.add('hidden');
+    updatePage();
+  });
+
+  
+  // mount handler for the reset button of the user filter
+  document.getElementById('revertFilterUserInput').addEventListener('click', function(ev) {
+    // clear the displayed filter values
+    const filteredUserList = document.getElementById('filteredUserList');
+    while (filteredUserList.firstChild) filteredUserList.removeChild(filteredUserList.lastChild);
+    // clear the filter
+    let userFilter = commentFilters.get('filterOnlyUser');
+    userFilter.values = [];
+    userFilter.active = false;
+    // restore the autocompletion list
+    addUserFilterAutocompletionList();
+    this.classList.add('hidden');
+    updatePage();
+  });
+
+  
+  // mount handler for the reset button of the text filter
+  document.getElementById('revertFilterTextInput').addEventListener('click', function(ev) {
+    // clear the displayed filter values
+    document.getElementById('filterByText').value = '';
+    // clear the filter
+    let textFilter = commentFilters.get('filterTextSearch');
+    textFilter.values = [];
+    textFilter.active = false;
+    this.classList.add('hidden');
+    updatePage();
+  });
+
+
   // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
     let user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:'));
@@ -1899,7 +2061,7 @@ input[type="date"] {
     }
   });
 
-  // mount handlers for flip flop switches
+  // mount handlers for setting the checked attribute of flip flop switches
   for (const flipflop of document.getElementsByClassName('flipflop')) {
     flipflop.addEventListener('change', function() {
       const input = this.getElementsByTagName('input')[0];
@@ -1914,6 +2076,43 @@ input[type="date"] {
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
+}
+
+
+
+
+/**
+ * Event handler hooked to the input event on both date inputs.
+ * 
+ * @param {HTMLInputElement} fromInput
+ * @param {HTMLInputElement} toInput
+ */
+function doUpdateDateFilter(fromInput, toInput) {
+  const revertDateRangeInputs = document.getElementById('revertDateRangeInputs');
+  let filterDateRange = commentFilters.get('filterDateRange');
+  // show/hide reset button
+  if (fromInput.value === '' && toInput.value === '') {
+    filterDateRange.active = false;
+    filterDateRange.value = [];
+    revertDateRangeInputs.classList.add('hidden');
+    return;
+  } else {
+    revertDateRangeInputs.classList.remove('hidden');
+  }
+  // do nothing until we have a valid, positive date range
+  if (
+    !(fromInput.valueAsDate instanceof Date) ||
+    !(toInput.valueAsDate instanceof Date) ||
+    (toInput.valueAsDate < fromInput.valueAsDate)
+  ) return;
+  // adjust the time parts to include the entered days and update the filter values
+  filterDateRange.value = [
+    fromInput.valueAsDate.setHours(0, 0, 0, 0),
+    toInput.valueAsDate.setHours(23, 59, 59, 999)
+  ];
+  filterDateRange.active = true;
+  // update page
+  updatePage();
 }
 
 
@@ -2237,7 +2436,11 @@ function applyFilters(commentData) {
       if (commentData.user === author) return false;
     }
   }
-  /* show only, if ALL search words are found somewhere in the related properties of the comment */
+  /* apply text search filter */
+  // NICE2HAVE: Highlight matches
+  //            One possibility for that would be wrap the matches here in span's and store a deep copy of the comment
+  //            in the comment data itself. Then when printing the comments check, whether the text filter is active and
+  //            if so, use this copy instead of the normal data. Would require to rebuild the copy data here each time.
   if (commentFilters.get('filterTextSearch').active) {
     // collect all string to search in
     let relatedContent = [
@@ -2251,22 +2454,77 @@ function applyFilters(commentData) {
       relatedContent.push(reply.text);
       relatedContent.push(reply.user);
     });
-    // check whether all words are at least once somewhere in the related data
     let wordsFound = 0;
-    outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
-      for (const content of relatedContent) {
-        if (content.contains(searchTag)) {
-          wordsFound++;
-          continue outer;
+    if (document.getElementById('filterAllWords').checked) {
+      /* AND logic - must contain ALL search words */
+      // check whether all words are at least once somewhere in the related data
+      outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
+        for (const content of relatedContent) {
+          if (content.indexOf(searchTag) !== -1) {
+            wordsFound++;
+            continue outer;
+          }
         }
       }
+      // do we have a match for each given word?
+      if (wordsFound < commentFilters.get('filterTextSearch').value.length) return false;
+    } else {
+      /* OR logic - must contain ANY search word */
+      // NICE2HAVE: Count matches and add the match count in percentage to the comment data, then sort them after when in callee.
+      //            But it probably makes sense to wait with that feature until a general
+      //            sort feature is implemented so we can use those functions for this sorting as well
+      outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
+        for (const content of relatedContent) {
+          if (content.indexOf(searchTag)) {
+            wordsFound++;
+            break outer;
+          }
+        }
+      }
+      if (!wordsFound) return false;
     }
-    // do we have a match for each given word?
-    if (wordsFound < commentFilters.get('filterTextSearch').value.length) return false;
   }
+  
+  /* apply date range filter */
+  if (commentFilters.get('filterDateRange').active) {
+    const filterDateRangeValues = commentFilters.get('filterDateRange').value;
+    const commentDate = new Date(convertGermanDate(commentData.date));
+    if (filterDateRangeValues[0] > commentDate || filterDateRangeValues[1] < commentDate) return false;
+  }
+  
   return true;
 }
 
+
+/**
+ * Reorders a date string formatted as dd.mm.yyyy [hh:mm][:ss] into JS standard date format.
+ * 
+ * @param {string} string  - Target date string
+ * 
+ * @return {?string}  - JS date object compatible date string or null if input string is invalid
+ */
+function convertGermanDate(string) {
+  const parts = string.split(' ');
+  const dateParts = parts[0].split('.');
+  const timeParts = parts[1] ? parts[1].split(':') : [];
+  if (dateParts.length !== 3 || dateParts[0].length !== 2 || dateParts[1].length !== 2 || dateParts[2].length !== 4) {
+    log('convertGermanDate():' + t('Ungültiger Datums-Teil in Input'), 'error', ['string:', string]);
+    return null;
+  }
+  let result = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+  if (timeParts.length === 0 || timeParts.length === 2 || timeParts.length === 3) {
+    result += ' ';
+    for (const part of timeParts) {
+      if (part.length !== 2) {
+        log('convertGermanDate():' + t('Ungültiger Zeit-Teil in Input'), 'error', ['string:', string, 'part:', part]);
+        return null;  
+      }
+      result += part + ':';
+    }
+    if (timeParts) result = result.substring(0, result.length - 1);
+  }
+  return result;
+}
 
 
 
@@ -2500,6 +2758,9 @@ function doAddUserToFilterList(input) {
     }
   }
   
+  // show revert button
+  document.getElementById('revertFilterUserInput').classList.remove('hidden');
+  
   // mount event handler for removing this user from the filter list again
   userElement.lastElementChild.addEventListener('click', function() {
     const targetUsername = this.previousElementSibling.innerText;
@@ -2514,7 +2775,11 @@ function doAddUserToFilterList(input) {
         filterOnlyUser.value.push(entry);
       } 
     }
-    if (filterOnlyUser.value.length === 0) filterOnlyUser.active = false;
+    if (filterOnlyUser.value.length === 0) {
+      filterOnlyUser.active = false;
+      // also hide the revert filter button
+      document.getElementById('revertFilterUserInput').classList.add('hidden');
+    }
     // remove user from the list which shows all selected users
     removeFromDOM(this.parentElement, true);
     // update comments
@@ -2687,29 +2952,7 @@ function updateComments() {
  * inside this function.
  */
 function updateStaticTranslations() {
-  //const staticElementsToUpdate = [
-  //  { elementId: 'ignoredLabel', text: 'Blockierte Benutzer', args: [] },
-  //  { elementId: 'addIgnoreUser', text: 'Hinzufügen...', args: [] },
-  //  { elementId: 'deleteIgnoreUser', text: 'Entfernen', args: [] },
-  //  { elementId: 'btnFilterNew', text: 'Nur neue Kommentare', args: [] },
-  //  { elementId: 'pluginHeadline', text: 'NuoFlix 2.0', args: [] },
-  //  { elementId: 'filterLabel', text: 'Kommentare filtern', args: [] },
-  //  { elementId: 'searchInputLabel', text: 'Suche', args: [] },
-  //  { elementId: 'moreFilterTrigger', text: 'Erweiterte Filteroptionen', args: [] },
-  //  { elementId: 'useAndLogicLabel', text: 'Muss alle Wörter enthalten', args: [] },
-  //  { elementId: 'searchByUserLabel', text: 'nach Benutzer', args: [] },
-  //  { elementId: 'searchByDateLabel', text: 'nach Datum', args: [] },
-  //];
-  //for (const element of staticElementsToUpdate) {
-  //  const target = document.getElementById(element.elementId);
-  //  if (target) target.innerText = t(element.text, element.args);
-  //}
-  
-  
-  for (const element of staticTranslatableElements.entries()) {
-    element[0].innerText = t(element[1].text, element[1].args);
-  }
-  
+  for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
 }
 
 

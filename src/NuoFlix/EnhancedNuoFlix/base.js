@@ -47,6 +47,7 @@
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
     [ 'filterTextSearch', { active: false, value: [] } ],
+    [ 'filterDateRange', { active: false, value: [] } ],
   ]);
 
   // hand over execution flow depending on the route (literally the current page)
