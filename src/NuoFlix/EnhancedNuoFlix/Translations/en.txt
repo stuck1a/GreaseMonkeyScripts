@@ -226,3 +226,8 @@
 'Ungültiger Zeit-Teil in Input',
 'Invalid Time part in input',
 ],
+
+[
+'Mehr anzeigen',
+'Show more',
+],

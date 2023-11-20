@@ -224,6 +224,10 @@ const i18n = new Map([
 'Ungültiger Zeit-Teil in Input',
 'Invalid Time part in input',
 ],
+[
+'Mehr anzeigen',
+'Show more',
+],
     ])
   ],
   
@@ -389,6 +393,10 @@ const i18n = new Map([
 [
 'Ungültiger Zeit-Teil in Input',
 'Nedopustimaya chast\' vremeni vo vkhodnykh dannykh',
+],
+[
+'Mehr anzeigen',
+'Bol\'she informatsii',
 ],
     ])
   ],
@@ -674,7 +682,26 @@ function t(string, ...args) {
   const lang = activeLanguage || defaultLanguage;
   if (!i18n.has(lang) || !i18n.get(lang).has(string)) return String.sprintf(string, ...args);
   return String.sprintf(i18n.get(lang).get(string), ...args);
-}
+}
+
+
+
+
+/**
+ * Count the amount of next siblings an element has.
+ * @param {HTMLElement|DocumentFragment} element  - Target element
+ * @return {number}  - Amount of next siblings
+ */
+function getNextSiblingCount(element) {
+  let cnt = 0;
+  let lastSibling = element;
+  while (lastSibling.nextElementSibling) {
+    lastSibling = lastSibling.nextElementSibling;
+    cnt++;
+  }
+  return cnt;
+}
+
   
 /**
  * Uses the predefined route mappings to determine the route name
@@ -1241,9 +1268,11 @@ function execute_startPage() {
 } })();
   } else if (route === 'profile') {
     (function() { 
-// set up route-scoped fields and start the execution flow fo this route
+// set up route-scoped fields and configs, then start the execution flow fo this route
 let commentData;
 let storedCommentData;
+const maxCommentHeightBeforeCut = 250;  // in pixel
+
 let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
       <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
@@ -1377,6 +1406,8 @@ function execute_profilePage() {
   --svg-checked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
   --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
   --svg-revert: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000"><path fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/><path fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/></svg>');
+  --theme-color: #d53d16;
+  --theme-color-brigthen: #bd8656;
 }
 
 @-moz-keyframes spinR { 100% { -moz-transform: rotate(360deg); } }
@@ -1476,7 +1507,7 @@ input[type="date"] {
 
 .btn:not(.disabled):hover {
   font-weight: bold;
-  background-color: #bd8656;
+  background-color: var(--theme-color-brigthen);
 }
 
 .clearfix::after {
@@ -1586,8 +1617,11 @@ input[type="date"] {
 }
 
 .expander {
+  padding-top: 1rem;
+  margin-left: 75px;
+  margin-bottom: -.5rem;
   cursor: pointer;
-  color: #d53d16;
+  color: var(--theme-color);
 }
 
 .expander:hover {
@@ -1601,7 +1635,7 @@ input[type="date"] {
   width: var(--totalWidth);
   height: 2rem;
   margin-left: auto;
-  color: #d53d16;
+  color: var(--theme-color);
   cursor: pointer;
   border: var(--borderWidth) solid var(--borderColor);
   border-top-left-radius: 1px;
@@ -1616,7 +1650,7 @@ input[type="date"] {
   position: absolute;
   height: inherit;
   width: inherit;
-  background: linear-gradient(to left, var(--borderColor) var(--borderWidth), #d53d16 var(--borderWidth), #d53d16 1.75rem, #fcfcfc 1.75rem);
+  background: linear-gradient(to left, var(--borderColor) var(--borderWidth), var(--theme-color) var(--borderWidth), var(--theme-color) 1.75rem, #fcfcfc 1.75rem);
   font-weight: bold;
   display: flex;
   flex-wrap: nowrap;
@@ -1707,7 +1741,7 @@ input[type="date"] {
   margin-bottom: .5rem;
   background-color: lightgray;
   padding: .2rem .6rem;
-  color: #D53D16;
+  color: var(--theme-color);
   border-radius: 6px;
   width: auto;
   display: flex;
@@ -1739,14 +1773,33 @@ input[type="date"] {
   align-items: center;
 }
 
-.svgColorized { --color: #d53d16; }
-
+.svgColorized { --color: var(--theme-color); }
 .svgColorized .svgColoredFill { fill: var(--color) }
 .svgColorized .svgColoredStroke { stroke: var(--color) }
 
+.commentText.hasOverflow,
+.replyText.hasOverflow {
+  --linesBeforeCut: 10;
+  overflow-y: hidden;
+  max-height: ${maxCommentHeightBeforeCut}px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, #0000);
+  mask-image: linear-gradient(to bottom, #000, #0000);
+}
 
+.showFullLength {
+  padding-bottom: 1rem;
+  color: #205bca;
+  font-weight: bold;
+  margin-top: -.5rem;
+}
+.showFullLength:hover {
+  color: #4e7cd5;
+  cursor: pointer;
+}
 
-</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+.replyText + .showFullLength {
+  padding-bottom: 0;
+}</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>
 .flipflop {
   /* set defaults for unset variables */
@@ -1858,7 +1911,7 @@ input[type="date"] {
   
   // build and insert our own comment container
   customCommentContainer = addToDOM(
-    '<div class="profilContentInner"></div>'.parseHTML(),
+    '<div id="customCommentContainer" class="profilContentInner"></div>'.parseHTML(),
     originalCommentContainer,
     InsertionService.Before,
     true, 
@@ -2243,12 +2296,11 @@ function addUserFilterAutocompletionList() {
  * the original structure which can be appended
  * to the page's comment blocks section.
  *
- * @param  {object} commentData  - Comment data
- * @param  {int}  [counter=1]  - Current number of generated comment
+ * @param {object} commentData  - Comment data
  *
  * @return {void|DocumentFragment}  - Prepared comment block
  */
-function buildCommentBlock(commentData, counter = 1) {
+function buildCommentBlock(commentData) {
   if (!commentData) return;
 
   // generate replies
@@ -2257,7 +2309,6 @@ function buildCommentBlock(commentData, counter = 1) {
   const ignoreFilter = commentFilters.get('filterSkipUser');
   outer: for (const replyData of commentData.replies) {
     // skip if reply is from an ignored user
-    // TODO: Really skip instead of just hiding them? Hide would allow to outsource this logic to applyFilter
     if (ignoreFilter.active) {
       for (const ignoredUser of ignoreFilter.value) {
         if (ignoredUser === replyData.user) continue outer;
@@ -2272,7 +2323,7 @@ function buildCommentBlock(commentData, counter = 1) {
         </div>
         <div class="profilName">
           <strong>${replyData.user}</strong>&nbsp;<small>am ${replyData.date}</small>
-          <pre>${replyData.text}</pre>
+          <pre class="replyText">${replyData.text}</pre>
         </div>
       </div>
     `;
@@ -2280,13 +2331,13 @@ function buildCommentBlock(commentData, counter = 1) {
 
   // generate comment including the pre-generated replies
   const commentBlock = `
-    <div data-comment-id="${counter}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
+    <div data-comment-id="${commentData.id}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
       <div><a href="${commentData.video.url}">${commentData.video.title}</a></div>
       <div class="spacer15"></div>
       <div class="profilPic"><img src="${commentData.pic}" alt=""></div>
       <div class="profilName">
         <strong>${commentData.user}</strong>&nbsp;<small>am ${commentData.date}</small>
-        <pre>${commentData.text}</pre>
+        <pre class="commentText">${commentData.text}</pre>
         <div class="allReplys">${repliesBlock}</div>
         <div class="replyBtnHolder"><div class="replyBtn">${t('antworten')}</div></div>
         <div class="replyHolder">
@@ -2383,6 +2434,30 @@ function getFilteredCount() {
 
 
 
+/**
+ * Adds fade out effect to a comment or reply text element and adds a "Show More" button next to it
+ *  
+ * @param {HTMLPreElement} textElement  - Target text element
+ */
+function addFadeOutEffect(textElement) {
+  // add class which will fade out the text
+  textElement.classList.add('hasOverflow');
+  // add the "Show more" button
+  const showFullLength = addToDOM(
+    `<div class="showFullLength">${t('Mehr anzeigen')}</div>`.parseHTML(),
+    textElement,
+    InsertionService.After,
+    false
+  );
+  // mount handler of the "Show more" button
+  showFullLength.addEventListener('click', function() {
+    this.previousElementSibling.classList.remove('hasOverflow');
+    removeFromDOM(this);
+  });
+}
+
+
+
 function insertPaginatedComments() {
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let insertedComments = 0;
@@ -2397,10 +2472,17 @@ function insertPaginatedComments() {
     // stop if we have filtered as many comments as we even have in total
     if (counter > totalComments || counter / currentPage > filteredComments.length) break;
     // add comment to page
-    commentItemElement = buildCommentBlock(filteredComments[currentStart + insertedComments - 1], insertedComments);
+    commentItemElement = buildCommentBlock(filteredComments[currentStart + insertedComments - 1]);
     if (commentItemElement) {
-      addToDOM(commentItemElement, customCommentContainer, InsertionService.AsLastChild, false);
+      commentItemElement = addToDOM(commentItemElement, customCommentContainer, InsertionService.AsLastChild, false);
       insertedComments++;
+      // add fade out effect to comment text if text is longer than the limit
+      const commentTextElement = commentItemElement.getElementsByClassName('commentText')[0];
+      if (commentTextElement && commentTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(commentTextElement);
+      // do the same for all replies of the comment
+      for (const replyTextElement of commentItemElement.getElementsByClassName('replyText')) {
+        if (replyTextElement && replyTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(replyTextElement);
+      }
     }
     counter++;
   }
@@ -2735,7 +2817,7 @@ function doClickedPagination(ev, clickedBtn) {
   currentStart = parseInt(clickedBtn.getAttribute('data-start')) || currentStart || defaultStart;
   currentLength = parseInt(clickedBtn.getAttribute('data-length')) || currentLength || defaultLength;
   updatePage();
-  paginationControlContainer.scrollIntoView();
+  paginationContainer.previousElementSibling.scrollIntoView()
 }
 
 
@@ -2819,6 +2901,10 @@ function changeFilter(filterName, newValue) {
   }
   updatePage();
 }
+
+
+
+
 
 
 
@@ -2940,6 +3026,12 @@ function updateComments() {
     expander.addEventListener('click', function() {
       if (!this) return;
       this.parentElement.parentElement.classList.remove('repliesCollapsed');
+      // add fadeout effect to now visible replies, if necessary
+      for (const reply of expander.nextElementSibling.children) {
+        // skip already processed replies
+        const replyTextElement = reply.getElementsByClassName('replyText')[0];
+        if (!replyTextElement.classList.contains('hasOverflow') && replyTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(replyTextElement);
+      }
       this.remove();
     })
   }

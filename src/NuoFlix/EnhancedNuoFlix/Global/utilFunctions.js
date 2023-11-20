@@ -279,3 +279,36 @@ function t(string, ...args) {
   if (!i18n.has(lang) || !i18n.get(lang).has(string)) return String.sprintf(string, ...args);
   return String.sprintf(i18n.get(lang).get(string), ...args);
 }
+
+
+
+
+/**
+ * Count the amount of next siblings an element has.
+ * @param {HTMLElement|DocumentFragment} element  - Target element
+ * @return {number}  - Amount of next siblings
+ */
+function getNextSiblingCount(element) {
+  let cnt = 0;
+  let lastSibling = element;
+  while (lastSibling.nextElementSibling) {
+    lastSibling = lastSibling.nextElementSibling;
+    cnt++;
+  }
+  return cnt;
+}
+
+
+
+/**
+ * Calculates the line count of an given text element.
+ * Note, that this will only return correct values if the element contains only text nodes
+ * or elements which have no impact on the elements total height.
+ * 
+ * @param {HTMLElement} element  - Target element
+ * 
+ * @return {int}  - Line count
+ */
+function countElementLines(element) {
+  return Math.floor(element.offsetHeight / parseInt(window.getComputedStyle(element).lineHeight));
+}

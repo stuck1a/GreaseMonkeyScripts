@@ -1,7 +1,9 @@
 
-// set up route-scoped fields and start the execution flow fo this route
+// set up route-scoped fields and configs, then start the execution flow fo this route
 let commentData;
 let storedCommentData;
+const maxCommentHeightBeforeCut = 250;  // in pixel
+
 /*%% ProfilePage/mainUI.js %%*/
 
 execute_profilePage();
@@ -61,7 +63,7 @@ function execute_profilePage() {
   
   // build and insert our own comment container
   customCommentContainer = addToDOM(
-    '<div class="profilContentInner"></div>'.parseHTML(),
+    '<div id="customCommentContainer" class="profilContentInner"></div>'.parseHTML(),
     originalCommentContainer,
     InsertionService.Before,
     true, 
@@ -446,12 +448,11 @@ function addUserFilterAutocompletionList() {
  * the original structure which can be appended
  * to the page's comment blocks section.
  *
- * @param  {object} commentData  - Comment data
- * @param  {int}  [counter=1]  - Current number of generated comment
+ * @param {object} commentData  - Comment data
  *
  * @return {void|DocumentFragment}  - Prepared comment block
  */
-function buildCommentBlock(commentData, counter = 1) {
+function buildCommentBlock(commentData) {
   if (!commentData) return;
 
   // generate replies
@@ -460,7 +461,6 @@ function buildCommentBlock(commentData, counter = 1) {
   const ignoreFilter = commentFilters.get('filterSkipUser');
   outer: for (const replyData of commentData.replies) {
     // skip if reply is from an ignored user
-    // TODO: Really skip instead of just hiding them? Hide would allow to outsource this logic to applyFilter
     if (ignoreFilter.active) {
       for (const ignoredUser of ignoreFilter.value) {
         if (ignoredUser === replyData.user) continue outer;
@@ -475,7 +475,7 @@ function buildCommentBlock(commentData, counter = 1) {
         </div>
         <div class="profilName">
           <strong>${replyData.user}</strong>&nbsp;<small>am ${replyData.date}</small>
-          <pre>${replyData.text}</pre>
+          <pre class="replyText">${replyData.text}</pre>
         </div>
       </div>
     `;
@@ -483,13 +483,13 @@ function buildCommentBlock(commentData, counter = 1) {
 
   // generate comment including the pre-generated replies
   const commentBlock = `
-    <div data-comment-id="${counter}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
+    <div data-comment-id="${commentData.id}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
       <div><a href="${commentData.video.url}">${commentData.video.title}</a></div>
       <div class="spacer15"></div>
       <div class="profilPic"><img src="${commentData.pic}" alt=""></div>
       <div class="profilName">
         <strong>${commentData.user}</strong>&nbsp;<small>am ${commentData.date}</small>
-        <pre>${commentData.text}</pre>
+        <pre class="commentText">${commentData.text}</pre>
         <div class="allReplys">${repliesBlock}</div>
         <div class="replyBtnHolder"><div class="replyBtn">${t('antworten')}</div></div>
         <div class="replyHolder">
@@ -586,6 +586,30 @@ function getFilteredCount() {
 
 
 
+/**
+ * Adds fade out effect to a comment or reply text element and adds a "Show More" button next to it
+ *  
+ * @param {HTMLPreElement} textElement  - Target text element
+ */
+function addFadeOutEffect(textElement) {
+  // add class which will fade out the text
+  textElement.classList.add('hasOverflow');
+  // add the "Show more" button
+  const showFullLength = addToDOM(
+    `<div class="showFullLength">${t('Mehr anzeigen')}</div>`.parseHTML(),
+    textElement,
+    InsertionService.After,
+    false
+  );
+  // mount handler of the "Show more" button
+  showFullLength.addEventListener('click', function() {
+    this.previousElementSibling.classList.remove('hasOverflow');
+    removeFromDOM(this);
+  });
+}
+
+
+
 function insertPaginatedComments() {
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let insertedComments = 0;
@@ -600,10 +624,17 @@ function insertPaginatedComments() {
     // stop if we have filtered as many comments as we even have in total
     if (counter > totalComments || counter / currentPage > filteredComments.length) break;
     // add comment to page
-    commentItemElement = buildCommentBlock(filteredComments[currentStart + insertedComments - 1], insertedComments);
+    commentItemElement = buildCommentBlock(filteredComments[currentStart + insertedComments - 1]);
     if (commentItemElement) {
-      addToDOM(commentItemElement, customCommentContainer, InsertionService.AsLastChild, false);
+      commentItemElement = addToDOM(commentItemElement, customCommentContainer, InsertionService.AsLastChild, false);
       insertedComments++;
+      // add fade out effect to comment text if text is longer than the limit
+      const commentTextElement = commentItemElement.getElementsByClassName('commentText')[0];
+      if (commentTextElement && commentTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(commentTextElement);
+      // do the same for all replies of the comment
+      for (const replyTextElement of commentItemElement.getElementsByClassName('replyText')) {
+        if (replyTextElement && replyTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(replyTextElement);
+      }
     }
     counter++;
   }
@@ -938,7 +969,7 @@ function doClickedPagination(ev, clickedBtn) {
   currentStart = parseInt(clickedBtn.getAttribute('data-start')) || currentStart || defaultStart;
   currentLength = parseInt(clickedBtn.getAttribute('data-length')) || currentLength || defaultLength;
   updatePage();
-  paginationControlContainer.scrollIntoView();
+  paginationContainer.previousElementSibling.scrollIntoView()
 }
 
 
@@ -1022,6 +1053,10 @@ function changeFilter(filterName, newValue) {
   }
   updatePage();
 }
+
+
+
+
 
 
 
@@ -1143,6 +1178,12 @@ function updateComments() {
     expander.addEventListener('click', function() {
       if (!this) return;
       this.parentElement.parentElement.classList.remove('repliesCollapsed');
+      // add fadeout effect to now visible replies, if necessary
+      for (const reply of expander.nextElementSibling.children) {
+        // skip already processed replies
+        const replyTextElement = reply.getElementsByClassName('replyText')[0];
+        if (!replyTextElement.classList.contains('hasOverflow') && replyTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(replyTextElement);
+      }
       this.remove();
     })
   }

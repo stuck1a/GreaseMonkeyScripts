@@ -226,3 +226,9 @@
 'Ungültiger Zeit-Teil in Input',
 'Nedopustimaya chast\' vremeni vo vkhodnykh dannykh',
 ],
+
+[
+'Mehr anzeigen',
+'Bol\'she informatsii',
+],
+
