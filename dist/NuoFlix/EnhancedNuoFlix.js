@@ -1273,7 +1273,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
         <div class="row">
           <label class="row col-2" for="filterByText" style="display: flex; flex-wrap: nowrap;">
               <span id="searchInputLabel"></span>
-              <span id="revertFilterTextInput" class="hidden" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+              <span id="revertFilterTextInput" class="hidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                 <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                   <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                   <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1301,7 +1301,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
             <li class="row" style="margin-top: 1rem;">
               <label class="row col-5" for="filterByUser" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByUserLabel"></span>
-                <span id="revertFilterUserInput" class="hidden" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertFilterUserInput" class="hidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1316,7 +1316,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
             <li class="row">
               <label class="row col-5" for="filterByDateFrom" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByDateLabel"></span>
-                <span id="revertDateRangeInputs" class="hidden" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertDateRangeInputs" class="hidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1402,6 +1402,10 @@ function execute_profilePage() {
 .stretchToParent {
   height: 100%;
   width: 100%;
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 .container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
@@ -1913,7 +1917,7 @@ input[type="date"] {
         // reset execution delayer
         textFilterDelayActive = false;
         // update filter
-        textFilter.value = this.value.split();
+        textFilter.value = this.value.split(' ');
         textFilter.active = true;
         // update page
         updatePage();
@@ -1956,7 +1960,7 @@ input[type="date"] {
     while (filteredUserList.firstChild) filteredUserList.removeChild(filteredUserList.lastChild);
     // clear the filter
     let userFilter = commentFilters.get('filterOnlyUser');
-    userFilter.values = [];
+    userFilter.value = [];
     userFilter.active = false;
     // restore the autocompletion list
     addUserFilterAutocompletionList();
@@ -1971,7 +1975,7 @@ input[type="date"] {
     document.getElementById('filterByText').value = '';
     // clear the filter
     let textFilter = commentFilters.get('filterTextSearch');
-    textFilter.values = [];
+    textFilter.value = [];
     textFilter.active = false;
     this.classList.add('hidden');
     updatePage();
@@ -2442,17 +2446,17 @@ function applyFilters(commentData) {
   //            in the comment data itself. Then when printing the comments check, whether the text filter is active and
   //            if so, use this copy instead of the normal data. Would require to rebuild the copy data here each time.
   if (commentFilters.get('filterTextSearch').active) {
-    // collect all string to search in
+    // collect all string to search in (uppercase to make the search case-insensitive)
     let relatedContent = [
-      commentData.text,
-      commentData.user,
-      commentData.date,
-      commentData.video.title,
+      commentData.text.toUpperCase(),
+      commentData.user.toUpperCase(),
+      commentData.date.toUpperCase(),
+      commentData.video.title.toUpperCase(),
     ];
     commentData.replies.forEach( reply => {
-      relatedContent.push(reply.date);
-      relatedContent.push(reply.text);
-      relatedContent.push(reply.user);
+      relatedContent.push(reply.date.toUpperCase());
+      relatedContent.push(reply.text.toUpperCase());
+      relatedContent.push(reply.user.toUpperCase());
     });
     let wordsFound = 0;
     if (document.getElementById('filterAllWords').checked) {
@@ -2460,7 +2464,7 @@ function applyFilters(commentData) {
       // check whether all words are at least once somewhere in the related data
       outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
         for (const content of relatedContent) {
-          if (content.indexOf(searchTag) !== -1) {
+          if (content.indexOf(searchTag.toUpperCase()) !== -1) {
             wordsFound++;
             continue outer;
           }
@@ -2475,7 +2479,7 @@ function applyFilters(commentData) {
       //            sort feature is implemented so we can use those functions for this sorting as well
       outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
         for (const content of relatedContent) {
-          if (content.indexOf(searchTag)) {
+          if (content.indexOf(searchTag.toUpperCase()) !== -1) {
             wordsFound++;
             break outer;
           }

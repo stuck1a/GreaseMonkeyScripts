@@ -120,7 +120,7 @@ function execute_profilePage() {
         // reset execution delayer
         textFilterDelayActive = false;
         // update filter
-        textFilter.value = this.value.split();
+        textFilter.value = this.value.split(' ');
         textFilter.active = true;
         // update page
         updatePage();
@@ -163,7 +163,7 @@ function execute_profilePage() {
     while (filteredUserList.firstChild) filteredUserList.removeChild(filteredUserList.lastChild);
     // clear the filter
     let userFilter = commentFilters.get('filterOnlyUser');
-    userFilter.values = [];
+    userFilter.value = [];
     userFilter.active = false;
     // restore the autocompletion list
     addUserFilterAutocompletionList();
@@ -178,7 +178,7 @@ function execute_profilePage() {
     document.getElementById('filterByText').value = '';
     // clear the filter
     let textFilter = commentFilters.get('filterTextSearch');
-    textFilter.values = [];
+    textFilter.value = [];
     textFilter.active = false;
     this.classList.add('hidden');
     updatePage();
@@ -649,17 +649,17 @@ function applyFilters(commentData) {
   //            in the comment data itself. Then when printing the comments check, whether the text filter is active and
   //            if so, use this copy instead of the normal data. Would require to rebuild the copy data here each time.
   if (commentFilters.get('filterTextSearch').active) {
-    // collect all string to search in
+    // collect all string to search in (uppercase to make the search case-insensitive)
     let relatedContent = [
-      commentData.text,
-      commentData.user,
-      commentData.date,
-      commentData.video.title,
+      commentData.text.toUpperCase(),
+      commentData.user.toUpperCase(),
+      commentData.date.toUpperCase(),
+      commentData.video.title.toUpperCase(),
     ];
     commentData.replies.forEach( reply => {
-      relatedContent.push(reply.date);
-      relatedContent.push(reply.text);
-      relatedContent.push(reply.user);
+      relatedContent.push(reply.date.toUpperCase());
+      relatedContent.push(reply.text.toUpperCase());
+      relatedContent.push(reply.user.toUpperCase());
     });
     let wordsFound = 0;
     if (document.getElementById('filterAllWords').checked) {
@@ -667,7 +667,7 @@ function applyFilters(commentData) {
       // check whether all words are at least once somewhere in the related data
       outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
         for (const content of relatedContent) {
-          if (content.indexOf(searchTag) !== -1) {
+          if (content.indexOf(searchTag.toUpperCase()) !== -1) {
             wordsFound++;
             continue outer;
           }
@@ -682,7 +682,7 @@ function applyFilters(commentData) {
       //            sort feature is implemented so we can use those functions for this sorting as well
       outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
         for (const content of relatedContent) {
-          if (content.indexOf(searchTag)) {
+          if (content.indexOf(searchTag.toUpperCase()) !== -1) {
             wordsFound++;
             break outer;
           }
