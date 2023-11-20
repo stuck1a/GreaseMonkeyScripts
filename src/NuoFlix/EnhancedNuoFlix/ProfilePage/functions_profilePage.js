@@ -1190,6 +1190,69 @@ function updateComments() {
 }
 
 
+/**
+ * Applies a defined order function on the comment data. The default order is 'activity' which orders the comments
+ * by date in descending order including the reply dates.
+ * 
+ * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount, relevance
+ */
+function doOrderCommentData(orderType = 'activity') {
+  if (orderType === 'user') {
+    // compares the comment authors (no replies) and orders from A to Z
+    commentData.sort((a, b) => {
+      const valA = a.user.toUpperCase();
+      const valB = b.user.toUpperCase();
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+  } else if (orderType === 'activity') {
+    // this is the original order so we can simply compare the comment id's to restore that order
+    commentData.sort((a, b) => {
+      const valA = a.id;
+      const valB = b.id;
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+  } else if (orderType === 'video') {
+    // compares the video titles and orders from A to Z (case-insensitive)
+    commentData.sort((a, b) => {
+      const valA = a.video.title.toUpperCase();
+      const valB = b.video.title.toUpperCase();
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+  } else if (orderType === 'relevance') {
+    // TODO: Introduce "matchValue", then unlock order type "relevance"
+    log('Feature "order by relevance" not yet implemented!');
+    return;
+    // special order type only after a text search with OR logic was done - will compare the match values (orders from best matches to worst)
+    if (!commentData[0].matchValue) {
+      log(t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!'), 'warn');
+      return;
+    }
+    commentData.sort((a, b) => {
+      const valA = a.matchValue;
+      const valB = b.matchValue;
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+   } else if (orderType === 'replyCount') {
+    commentData.sort((a, b) => {
+      const valA = a.reply_cnt;
+      const valB = b.reply_cnt;
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+  }
+}
+
+
+
 
 /**
  * This function is responsible for update all strings of elements,
