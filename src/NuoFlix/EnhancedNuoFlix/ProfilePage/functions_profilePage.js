@@ -864,12 +864,12 @@ function buildPaginationControl(suffix= '') {
 
 function insertLanguageDropdown() {
   const languageContainerHtml = `
-    <div id="language_container" class="row">
-      <div id="language_dropdown_toggler">
-        <span id="activeLanguage">${i18n.get(activeLanguage).get('__metadata__').displayName}</span>
+    <div id="language_container" class="row customDropdown">
+      <div class="customDropdownToggler">
+        <span id="activeLanguage" class="customDropdown_ActiveVal">${i18n.get(activeLanguage).get('__metadata__').displayName}</span>
         <span>&gt;</span>
       </div>
-      <div id="language_dropdown_menu"></div>
+      <div class="customDropdownMenu"></div>
     </div>
   `.parseHTML();
 
@@ -900,6 +900,36 @@ function insertLanguageDropdown() {
       insertLanguageDropdown();
     });
   }
+}
+
+
+
+/**
+ * Generates the comment sorting dropdown in default state (no "relevance" option) and adds it to the DOM.
+ * Must be inserted after the pagination container since it uses it as reference for the insert location.
+ */
+function insertSortingMenu() {
+  const sortingContainerHtml = `
+    <div id="sorting_container" class="row customDropdown" style="position: relative;top: 2rem;margin-top: -2rem;">
+      <div class="customDropdownToggler">
+        <span id="activeSorting" class="customDropdown_ActiveVal">${t('Neueste zuerst')}</span>
+        <span>&gt;</span>
+      </div>
+      <div class="customDropdownMenu">
+        <div id="sortByActivity">${t('Neueste zuerst')}</div>
+        <div id="sortByUserOption">${t('Nach User')}</div>
+        <div id="sortByVideo">${t('Nach Video')}</div>
+        <div id="sortByReplyCnt">${t('Nach Antwortzahl')}</div>
+      </div>
+    </div>
+  `.parseHTML();
+
+  // TODO: option handlers + click (rebuild menu) handler (see language menu)
+  
+  
+  
+  
+  addToDOM(sortingContainerHtml, paginationContainer, InsertionService.Before, true, 'sortingController');
 }
 
 
@@ -1190,9 +1220,11 @@ function updateComments() {
 }
 
 
+
+
 /**
  * Applies a defined order function on the comment data. The default order is 'activity' which orders the comments
- * by date in descending order including the reply dates.
+ * by date in descending order (it also takes the reply dates into account)
  * 
  * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount, relevance
  */
@@ -1202,6 +1234,7 @@ function doOrderCommentData(orderType = 'activity') {
     commentData.sort((a, b) => {
       const valA = a.user.toUpperCase();
       const valB = b.user.toUpperCase();
+      if (valA === '') return 1; // set empty user names to the end
       if (valA < valB) return -1;
       if (valA > valB) return 1;
       return 0;
@@ -1225,9 +1258,6 @@ function doOrderCommentData(orderType = 'activity') {
       return 0;
     });
   } else if (orderType === 'relevance') {
-    // TODO: Introduce "matchValue", then unlock order type "relevance"
-    log('Feature "order by relevance" not yet implemented!');
-    return;
     // special order type only after a text search with OR logic was done - will compare the match values (orders from best matches to worst)
     if (!commentData[0].matchValue) {
       log(t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!'), 'warn');
@@ -1244,8 +1274,8 @@ function doOrderCommentData(orderType = 'activity') {
     commentData.sort((a, b) => {
       const valA = a.reply_cnt;
       const valB = b.reply_cnt;
-      if (valA < valB) return -1;
-      if (valA > valB) return 1;
+      if (valA < valB) return 1;
+      if (valA > valB) return -1;
       return 0;
     });
   }

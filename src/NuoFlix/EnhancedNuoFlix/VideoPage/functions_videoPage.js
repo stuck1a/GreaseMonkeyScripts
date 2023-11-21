@@ -14,8 +14,36 @@ execute_genericPage()
  * Main function of this route
  */
 function execute_genericPage() {
+  // add link overlays over suggested videos to enable "open in new tab" function
+  let foundSuggestedVideos = false;
+  for (const suggestion of document.getElementsByClassName('folgenItem')) {
+    // generate full URI
+    let uri = suggestion.getAttribute('onClick').replace("folgenItem('", '');
+    uri = window.location.origin + '/' + uri.substr(0, uri.length-2);
+    const overlay = `<a href="${uri}" class="overlayLink" style="position: absolute;left: 0;top: 0;height: 100%;width: 100%;"></a>`;
+    suggestion.removeAttribute('onClick');
+    suggestion.appendChild(overlay.parseHTML());
+    foundSuggestedVideos = true;
+  }
+  // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
+  if (foundSuggestedVideos) {
+    window.addEventListener('beforeunload', function(ev) {
+      debugger;
+      // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
+      const callee = ev.originalTarget.activeElement;
+      if (callee.classList.contains('overlayLink')) {
+        let permalink = ev.originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
+        permalink = permalink.substring(1, permalink.length);
+        if (permalink) {
+          window.onbeforeunload = null;  // prevent infinity loop
+          folgenItem(permalink);
+        }
+      }
+    });
+  }
+  
+  // load list of ignored users and try to apply them
   if (document.getElementById('commentContent')) {
-    // load list of ignored users and try to apply them
     storedIgnoreList = get_value('ignoredUsers');
     comments = document.getElementById('commentContent');
     tryToApply();

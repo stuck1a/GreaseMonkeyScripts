@@ -224,7 +224,7 @@ input[type="date"] {
   font-weight: bold;
 }
 
-#language_container {
+.customDropdown {
   --borderColor: #555;
   --borderWidth: 1px;
   --totalWidth: 8rem;
@@ -238,11 +238,11 @@ input[type="date"] {
   border-bottom: 0;
 }
 
-#language_container:hover > #language_dropdown_toggler > span:last-of-type  {
+.customDropdown:hover > .customDropdownToggler > span:last-of-type  {
   transform: rotate(90deg);
 }
 
-#language_dropdown_toggler {
+.customDropdownToggler {
   position: absolute;
   height: inherit;
   width: inherit;
@@ -255,12 +255,12 @@ input[type="date"] {
   border-bottom: var(--borderWidth) solid var(--borderColor);
 }
 
-#language_dropdown_toggler:hover + #language_dropdown_menu,
-#language_dropdown_menu:hover {
+.customDropdownToggler:hover + .customDropdownMenu,
+.customDropdownMenu:hover {
   display: block;
 }
 
-#language_dropdown_toggler > span {
+.customDropdownToggler > span {
   width: calc(100% - 1.75rem);
   display: flex;
   height: inherit;
@@ -268,12 +268,12 @@ input[type="date"] {
   align-items: center;
 }
 
-#activeLanguage {
+#customDropdown_ActiveVal {
   border: var(--borderWidth) solid var(--borderColor);
   border-bottom-width: 0;
 }
 
-#language_dropdown_toggler > span:last-of-type {
+.customDropdownToggler > span:last-of-type {
   border-radius: 1px 1px 0 0;
   width: 1.5rem;
   text-align: center;
@@ -284,7 +284,7 @@ input[type="date"] {
   justify-content: center;
 }
 
-#language_dropdown_menu {
+.customDropdownMenu {
   position: relative;
   top: 100%;
   border-radius: 0 0 1px 1px;
@@ -295,7 +295,7 @@ input[type="date"] {
   display: none;
 }
 
-#language_dropdown_menu > div {
+.customDropdownMenu > div {
   background-color: #252525;
   font-weight: bold;
   padding-left: .4rem;
@@ -306,11 +306,11 @@ input[type="date"] {
   border-top: var(--borderWidth) solid var(--borderColor);
 }
 
-#language_dropdown_menu > div:hover {
+.customDropdownMenu > div:hover {
   background-color: #f0cbc2;
 }
 
-#language_dropdown_menu svg {
+.customDropdownMenu svg {
   margin-right: .6rem;
   height: 1rem;
   width: 2rem;
