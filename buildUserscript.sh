@@ -99,30 +99,9 @@ read_configs() {
 
 
 
-
 #######################################################################################
-###                                    FUNCTIONS                                    ###
+###                                PROCESS FUNCTIONS                                ###
 #######################################################################################
-
-
-## Function to process operation 'remove_blank_lines'
-remove_blank_lines() {
-  sed -i '/./!d' "${output_file}"
-  return 0
-}
-
-
-
-## Function to process operation 'skip'
-skip_blocks() {
-  open_tag="$(str_escape_given "${open_tag}" '*')"
-  close_tag="$(str_escape_given "${close_tag}" '*')"
-  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
-  echo "${result}" > "${output_file}"
-  return 0
-}
-
-
 
 ## Function to process operation 'merge'
 merge_blocks() {
@@ -160,6 +139,54 @@ merge_blocks() {
   done
 }
 
+
+## Function to process operation 'skipBlocks'
+remove_skip_blocks() {
+  open_tag="$(str_escape_given "${open_tag}" '*')"
+  close_tag="$(str_escape_given "${close_tag}" '*')"
+  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
+  echo "${result}" > "${output_file}"
+  return 0
+}
+
+
+## Function to process operation 'lineComments'
+remove_line_comments() {
+  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
+  echo "${result}" > "${output_file}"
+  return 0
+}
+
+
+## Function to process operation 'blockComments'
+remove_block_comments() {
+  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
+  echo "${result}" > "${output_file}"
+  return 0
+}
+
+
+## Function to process operation 'docComments'
+remove_doc_comments() {
+  open_tag="$(str_escape_given "${open_tag}" '*')"
+  close_tag="$(str_escape_given "${close_tag}" '*')"
+  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
+  echo "${result}" > "${output_file}"
+  return 0
+}
+
+
+## Function to process operation 'emptyLines'
+remove_blank_lines() {
+  sed -i '/./!d' "${output_file}"
+  return 0
+}
+
+
+
+#######################################################################################
+###                                 BASIC FUNCTIONS                                 ###
+#######################################################################################
 
 ## Executes all configured block rules
 process_rules() {
@@ -205,7 +232,6 @@ process_rules() {
 }
 
 
-
 ## Entry point
 ## @param $1  - Relative path to base file
 ## @param $2  - Relative path to output file
@@ -234,6 +260,9 @@ main() {
 
 main "${@}"
 
-# wsl ./buildUserscript.sh src/NuoFlix/EnhancedNuoFlix/base.js dist/NuoFlix/EnhancedNuoFlix/EnhancedNuoFlix.js
-# wsl ./buildUserscript.sh src/FooPage/FooUserscript/base.txt dist/FooPage/FooUserscript/generatedResult.txt
-
+##
+## WSL example calls
+##
+## wsl ./buildUserscript.sh src/NuoFlix/EnhancedNuoFlix/base.js dist/NuoFlix/EnhancedNuoFlix/EnhancedNuoFlix.js
+## wsl ./buildUserscript.sh src/FooPage/FooUserscript/base.txt dist/FooPage/FooUserscript/generatedResult.txt
+##
