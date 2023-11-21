@@ -701,7 +701,21 @@ function getNextSiblingCount(element) {
   }
   return cnt;
 }
-
+
+
+
+/**
+ * Calculates the line count of an given text element.
+ * Note, that this will only return correct values if the element contains only text nodes
+ * or elements which have no impact on the elements total height.
+ * 
+ * @param {HTMLElement} element  - Target element
+ * 
+ * @return {int}  - Line count
+ */
+function countElementLines(element) {
+  return Math.floor(element.offsetHeight / parseInt(window.getComputedStyle(element).lineHeight));
+}
   
 /**
  * Uses the predefined route mappings to determine the route name
@@ -1628,7 +1642,7 @@ input[type="date"] {
   font-weight: bold;
 }
 
-#language_container {
+.customDropdown {
   --borderColor: #555;
   --borderWidth: 1px;
   --totalWidth: 8rem;
@@ -1642,11 +1656,11 @@ input[type="date"] {
   border-bottom: 0;
 }
 
-#language_container:hover > #language_dropdown_toggler > span:last-of-type  {
+.customDropdown:hover > .customDropdownToggler > span:last-of-type  {
   transform: rotate(90deg);
 }
 
-#language_dropdown_toggler {
+.customDropdownToggler {
   position: absolute;
   height: inherit;
   width: inherit;
@@ -1659,12 +1673,12 @@ input[type="date"] {
   border-bottom: var(--borderWidth) solid var(--borderColor);
 }
 
-#language_dropdown_toggler:hover + #language_dropdown_menu,
-#language_dropdown_menu:hover {
+.customDropdownToggler:hover + .customDropdownMenu,
+.customDropdownMenu:hover {
   display: block;
 }
 
-#language_dropdown_toggler > span {
+.customDropdownToggler > span {
   width: calc(100% - 1.75rem);
   display: flex;
   height: inherit;
@@ -1672,12 +1686,12 @@ input[type="date"] {
   align-items: center;
 }
 
-#activeLanguage {
+#customDropdown_ActiveVal {
   border: var(--borderWidth) solid var(--borderColor);
   border-bottom-width: 0;
 }
 
-#language_dropdown_toggler > span:last-of-type {
+.customDropdownToggler > span:last-of-type {
   border-radius: 1px 1px 0 0;
   width: 1.5rem;
   text-align: center;
@@ -1688,7 +1702,7 @@ input[type="date"] {
   justify-content: center;
 }
 
-#language_dropdown_menu {
+.customDropdownMenu {
   position: relative;
   top: 100%;
   border-radius: 0 0 1px 1px;
@@ -1699,7 +1713,7 @@ input[type="date"] {
   display: none;
 }
 
-#language_dropdown_menu > div {
+.customDropdownMenu > div {
   background-color: #252525;
   font-weight: bold;
   padding-left: .4rem;
@@ -1710,11 +1724,11 @@ input[type="date"] {
   border-top: var(--borderWidth) solid var(--borderColor);
 }
 
-#language_dropdown_menu > div:hover {
+.customDropdownMenu > div:hover {
   background-color: #f0cbc2;
 }
 
-#language_dropdown_menu svg {
+.customDropdownMenu svg {
   margin-right: .6rem;
   height: 1rem;
   width: 2rem;
@@ -2712,12 +2726,12 @@ function buildPaginationControl(suffix= '') {
 
 function insertLanguageDropdown() {
   const languageContainerHtml = `
-    <div id="language_container" class="row">
-      <div id="language_dropdown_toggler">
-        <span id="activeLanguage">${i18n.get(activeLanguage).get('__metadata__').displayName}</span>
+    <div id="language_container" class="row customDropdown">
+      <div class="customDropdownToggler">
+        <span id="activeLanguage" class="customDropdown_ActiveVal">${i18n.get(activeLanguage).get('__metadata__').displayName}</span>
         <span>&gt;</span>
       </div>
-      <div id="language_dropdown_menu"></div>
+      <div class="customDropdownMenu"></div>
     </div>
   `.parseHTML();
 
@@ -2748,6 +2762,36 @@ function insertLanguageDropdown() {
       insertLanguageDropdown();
     });
   }
+}
+
+
+
+/**
+ * Generates the comment sorting dropdown in default state (no "relevance" option) and adds it to the DOM.
+ * Must be inserted after the pagination container since it uses it as reference for the insert location.
+ */
+function insertSortingMenu() {
+  const sortingContainerHtml = `
+    <div id="sorting_container" class="row customDropdown" style="position: relative;top: 2rem;margin-top: -2rem;">
+      <div class="customDropdownToggler">
+        <span id="activeSorting" class="customDropdown_ActiveVal">${t('Neueste zuerst')}</span>
+        <span>&gt;</span>
+      </div>
+      <div class="customDropdownMenu">
+        <div id="sortByActivity">${t('Neueste zuerst')}</div>
+        <div id="sortByUserOption">${t('Nach User')}</div>
+        <div id="sortByVideo">${t('Nach Video')}</div>
+        <div id="sortByReplyCnt">${t('Nach Antwortzahl')}</div>
+      </div>
+    </div>
+  `.parseHTML();
+
+  // TODO: option handlers + click (rebuild menu) handler (see language menu)
+  
+  
+  
+  
+  addToDOM(sortingContainerHtml, paginationContainer, InsertionService.Before, true, 'sortingController');
 }
 
 
@@ -3039,6 +3083,69 @@ function updateComments() {
 
 
 
+
+/**
+ * Applies a defined order function on the comment data. The default order is 'activity' which orders the comments
+ * by date in descending order (it also takes the reply dates into account)
+ * 
+ * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount, relevance
+ */
+function doOrderCommentData(orderType = 'activity') {
+  if (orderType === 'user') {
+    // compares the comment authors (no replies) and orders from A to Z
+    commentData.sort((a, b) => {
+      const valA = a.user.toUpperCase();
+      const valB = b.user.toUpperCase();
+      if (valA === '') return 1; // set empty user names to the end
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+  } else if (orderType === 'activity') {
+    // this is the original order so we can simply compare the comment id's to restore that order
+    commentData.sort((a, b) => {
+      const valA = a.id;
+      const valB = b.id;
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+  } else if (orderType === 'video') {
+    // compares the video titles and orders from A to Z (case-insensitive)
+    commentData.sort((a, b) => {
+      const valA = a.video.title.toUpperCase();
+      const valB = b.video.title.toUpperCase();
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+  } else if (orderType === 'relevance') {
+    // special order type only after a text search with OR logic was done - will compare the match values (orders from best matches to worst)
+    if (!commentData[0].matchValue) {
+      log(t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!'), 'warn');
+      return;
+    }
+    commentData.sort((a, b) => {
+      const valA = a.matchValue;
+      const valB = b.matchValue;
+      if (valA < valB) return -1;
+      if (valA > valB) return 1;
+      return 0;
+    });
+   } else if (orderType === 'replyCount') {
+    commentData.sort((a, b) => {
+      const valA = a.reply_cnt;
+      const valB = b.reply_cnt;
+      if (valA < valB) return 1;
+      if (valA > valB) return -1;
+      return 0;
+    });
+  }
+}
+
+
+
+
 /**
  * This function is responsible for update all strings of elements,
  * which aren't rebuild when updatePage() is called which applies to
@@ -3081,8 +3188,36 @@ execute_genericPage()
  * Main function of this route
  */
 function execute_genericPage() {
+  // add link overlays over suggested videos to enable "open in new tab" function
+  let foundSuggestedVideos = false;
+  for (const suggestion of document.getElementsByClassName('folgenItem')) {
+    // generate full URI
+    let uri = suggestion.getAttribute('onClick').replace("folgenItem('", '');
+    uri = window.location.origin + '/' + uri.substr(0, uri.length-2);
+    const overlay = `<a href="${uri}" class="overlayLink" style="position: absolute;left: 0;top: 0;height: 100%;width: 100%;"></a>`;
+    suggestion.removeAttribute('onClick');
+    suggestion.appendChild(overlay.parseHTML());
+    foundSuggestedVideos = true;
+  }
+  // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
+  if (foundSuggestedVideos) {
+    window.addEventListener('beforeunload', function(ev) {
+      debugger;
+      // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
+      const callee = ev.originalTarget.activeElement;
+      if (callee.classList.contains('overlayLink')) {
+        let permalink = ev.originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
+        permalink = permalink.substring(1, permalink.length);
+        if (permalink) {
+          window.onbeforeunload = null;  // prevent infinity loop
+          folgenItem(permalink);
+        }
+      }
+    });
+  }
+  
+  // load list of ignored users and try to apply them
   if (document.getElementById('commentContent')) {
-    // load list of ignored users and try to apply them
     storedIgnoreList = get_value('ignoredUsers');
     comments = document.getElementById('commentContent');
     tryToApply();

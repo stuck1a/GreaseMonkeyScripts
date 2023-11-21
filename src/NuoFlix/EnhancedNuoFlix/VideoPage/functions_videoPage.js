@@ -28,7 +28,6 @@ function execute_genericPage() {
   // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {
-      debugger;
       // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
       const callee = ev.originalTarget.activeElement;
       if (callee.classList.contains('overlayLink')) {
