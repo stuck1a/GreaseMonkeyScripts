@@ -20,36 +20,37 @@
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 
+
 (function() {
+  
   // Unique key used for the GM data storage to avoid naming conflicts across scripts
-const CACHE_KEY = 's1a/enhancednuoflix';
+/**@global*/ const CACHE_KEY = 's1a/enhancednuoflix';
 
 // Logger prefix
-const MSG_PREFIX = 'Enhanced NuoFlix';
+/**@global*/ const MSG_PREFIX = 'Enhanced NuoFlix';
 
 // Fixed configs
-const highlightedCommentsColor = '#4A4A20';
-const highlightedRepliesColor = '#373434';
-const highlightedHasNewRepliesColor = '#52522a';
-const cssClassNewComments = 'newComment';
-const cssClassHasNewReplies = 'hasNewReply';
-const cssClassNewReplies = 'newReply';
-const expandedReplyCount = 3;
+/**@global*/ const highlightedCommentsColor = '#4A4A20';
+/**@global*/ const highlightedRepliesColor = '#373434';
+/**@global*/ const highlightedHasNewRepliesColor = '#52522a';
+/**@global*/ const cssClassNewComments = 'newComment';
+/**@global*/ const cssClassHasNewReplies = 'hasNewReply';
+/**@global*/ const cssClassNewReplies = 'newReply';
+/**@global*/ const expandedReplyCount = 3;
 
 // Defaults
-const defaultStart = 1;
-const defaultLength = 5;
-const defaultLanguage = 'de';
+/**@global*/ const defaultStart = 1;
+/**@global*/ const defaultLength = 5;
+/**@global*/ const defaultLanguage = 'de';
 
 // Map execution flows to pages
-const pageRoutes = new Map([
+/**@global*/ const pageRoutes = new Map([
   // path       route name
   [ '/',        'start'   ],
   [ '/profil',  'profile' ],
   [ '/.+',      'video'   ],
 ]);
-  // Translations
-const i18n = new Map([
+  /**@global*/ const i18n = new Map([
   
   [
     // German (base strings are german, so we need only the metadata here)
@@ -402,7 +403,10 @@ const i18n = new Map([
   ],
   
 ]);
-  /**
+  
+
+
+/**
  * Works like sprintf in PHP. Use {n} as placeholder, where
  * n is zero-indexed. Excepts n additional arguments of
  * any type.
@@ -1016,6 +1020,10 @@ function registerStaticTranslatable(element, text, args = []) {
  * @param {Event} ev
  */
 function doChangeMainSwitch(ev) {
+  // store new state
+  mainSwitchState = !mainSwitchState;
+  set_value('scriptEnabled', mainSwitchState);
+    
   // toggle visibility of custom elements
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {
@@ -1195,12 +1203,12 @@ function openModal(element, id = null) {
   wrapper.classList.add('customModal');
   wrapper.append(element);
   
-  // middlelayer to darken the background
-  const middlelayer = document.createElement('div');
-  middlelayer.classList.add('customModal_middlelayer');
+  // middle-layer to darken the background
+  const background = document.createElement('div');
+  background.classList.add('customModal_middlelayer');
   
   
-  addToDOM(middlelayer, document.body, InsertionService.AsLastChild, false);
+  addToDOM(background, document.body, InsertionService.AsLastChild, false);
   addToDOM(wrapper, document.body, InsertionService.AsLastChild, true, id);
 }
 // style sheet for modals
@@ -1412,7 +1420,24 @@ input[type="date"] {
 .svgColorized { --color: var(--theme-color); }
 .svgColorized .svgColoredFill { fill: var(--color) }
 .svgColorized .svgColoredStroke { stroke: var(--color) }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  addToDOM(`<style>
+  addToDOM(`<style>/*<SKIP>
+  Styles for FlipFlop-Switch
+  To insert one, use:
+  <div class="flipflop">
+    <span>Caption</span>
+    <label><input type="checkbox" checked="checked" /><span></span></label>
+  </div>
+  
+  To adjust configuration, following css-vars can be set to any element with the .flipflop class.
+  If a variable is not set, it will get a default value.
+  
+  --width
+  --speed
+  --color-thumb
+  --color-on
+  --color-off
+  --label-offset
+<SKIP>*/
 .flipflop {
   /* set defaults for unset variables */
   --_width: var(--width, 3rem);
@@ -1479,21 +1504,27 @@ input[type="date"] {
 .flipflop > label > span:before {
   border-radius: 50%;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  
-  let totalComments;
-  let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
-  let customCommentContainer, originalCommentContainer;
 
-  let customElementsRegister = new Map();
-  let disabledPrimalElementsRegister = new Map();
-  let staticTranslatableElements = new Map();
 
-  let currentStart = defaultStart;
-  let currentLength = defaultLength;
-  let activeLanguage = defaultLanguage;
-  let filteredCommentsCount = 0;
+  /**@global*/ let mainSwitchState;
+  /**@global*/ let customElementsRegister = new Map();
+  /**@global*/ let disabledPrimalElementsRegister = new Map();
+  /**@global*/ let staticTranslatableElements = new Map();
   
-  let commentFilters = new Map([
+  // set up script-wide variables (used in all/multiple routes)
+  /**@global*/ let totalComments;
+  /**@global*/ let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
+  /**@global*/ let customCommentContainer,originalCommentContainer
+
+
+
+  // TODO: Should be profile page specific
+  /**@global*/ let currentStart = defaultStart;
+  /**@global*/ let currentLength = defaultLength;
+  /**@global*/ let activeLanguage = defaultLanguage;
+  /**@global*/ let filteredCommentsCount = 0;
+
+  /**@global*/ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
@@ -1501,12 +1532,23 @@ input[type="date"] {
     [ 'filterDateRange', { active: false, value: [] } ],
   ]);
 
-  // add switch to header which enables/disables all features of this Userscript
-  const mainSwitch = `
+  
+  
+  /* add switch to header which enables/disables all features of this Userscript */
+  // get stored state or initialize it
+  if (has_value('scriptEnabled')) {
+    mainSwitchState = get_value('scriptEnabled');
+  } else {
+    set_value('scriptEnabled', true);
+    mainSwitchState = true;
+  }
+  
+  // insert switch
+  /**@global*/ const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
       <div class="flipflop" style="--color-on: var(--theme-color);">
         <span id="mainSwitchLabel" style="padding-right: 1rem;"></span>
-        <label><input id="mainSwitch" type="checkbox" checked="checked" /><span></span></label>
+        <label><input id="mainSwitch" type="checkbox" ${mainSwitchState ? 'checked="checked" ' : ''}/><span></span></label>
       </div>
     </div>
   `.parseHTML();
@@ -1519,8 +1561,7 @@ input[type="date"] {
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'start') {
-    (function() { 
-// set up route-scoped fields and start the execution flow fo this route
+    (function() { // set up route-scoped fields and start the execution flow fo this route
 execute_startPage();
 /**
  * Main function of this route
@@ -1532,8 +1573,7 @@ function execute_startPage() {
   updateStaticTranslations()
 } })();
   } else if (route === 'profile') {
-    (function() { 
-// set up route-scoped fields and configs, then start the execution flow fo this route
+    (function() { // set up route-scoped fields and configs, then start the execution flow fo this route
 let commentData;
 let storedCommentData;
 const maxCommentHeightBeforeCut = 250;  // in pixel
@@ -1645,6 +1685,9 @@ execute_profilePage();
 
 /**
  * Main function of this route
+ * 
+ * @use module:Base~originalCommentContainer
+ * 
  */
 function execute_profilePage() {
   const style_comments = `
@@ -2374,7 +2417,6 @@ function getReplyCount(btn_id, txt_id) {
       return storedComment.reply_cnt ?? storedComment.replies.length ?? 0;
     }
   }
-  return true;
 }
 
 
@@ -3082,8 +3124,7 @@ function updatePage() {
         updateStaticTranslations();
         return;
       }
-      
-// set up route-scoped fields and start the execution flow fo this route
+      // set up route-scoped fields and start the execution flow fo this route
 const maxRetries = 5;
 const delay = 250;
 let retries = 0;

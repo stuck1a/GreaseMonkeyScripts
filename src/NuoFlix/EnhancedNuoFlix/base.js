@@ -65,7 +65,7 @@
   /* add switch to header which enables/disables all features of this Userscript */
   // get stored state or initialize it
   if (has_value('scriptEnabled')) {
-    mainSwitchState = get_value('scriptEnabled') || true;
+    mainSwitchState = get_value('scriptEnabled');
   } else {
     set_value('scriptEnabled', true);
     mainSwitchState = true;
