@@ -298,6 +298,10 @@ function registerStaticTranslatable(element, text, args = []) {
  * @param {Event} ev
  */
 function doChangeMainSwitch(ev) {
+  // store new state
+  mainSwitchState = !mainSwitchState;
+  set_value('scriptEnabled', mainSwitchState);
+    
   // toggle visibility of custom elements
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {

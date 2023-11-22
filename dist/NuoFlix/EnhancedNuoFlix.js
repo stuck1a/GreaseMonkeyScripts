@@ -3078,7 +3078,10 @@ function updatePage() {
   } else if (route === 'video') {
     (function() {
       // make sure, that it's really a video page (they all have a reload button in all possible states)
-      if (!document.getElementsByClassName('reloadComment')[0]) return;
+      if (!document.getElementsByClassName('reloadComment')[0]) {
+        updateStaticTranslations();
+        return;
+      }
       
 // set up route-scoped fields and start the execution flow fo this route
 const maxRetries = 5;

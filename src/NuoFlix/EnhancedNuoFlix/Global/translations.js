@@ -1,5 +1,4 @@
-// Translations
-const i18n = new Map([
+/**@global*/ const i18n = new Map([
   
   [
     // German (base strings are german, so we need only the metadata here)

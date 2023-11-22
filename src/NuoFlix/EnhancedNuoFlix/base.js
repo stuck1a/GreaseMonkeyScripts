@@ -20,7 +20,9 @@
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 
+
 (function() {
+  
   /*%% Global/configs.js %%*/
   /*%% Global/translations.js %%*/
   /*%% Global/utilFunctions.js %%*/
@@ -30,21 +32,27 @@
   
   addToDOM(`<style>/*%% Global/global.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  
-  let totalComments;
-  let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
-  let customCommentContainer, originalCommentContainer;
 
-  let customElementsRegister = new Map();
-  let disabledPrimalElementsRegister = new Map();
-  let staticTranslatableElements = new Map();
 
-  let currentStart = defaultStart;
-  let currentLength = defaultLength;
-  let activeLanguage = defaultLanguage;
-  let filteredCommentsCount = 0;
+  /**@global*/ let mainSwitchState;
+  /**@global*/ let customElementsRegister = new Map();
+  /**@global*/ let disabledPrimalElementsRegister = new Map();
+  /**@global*/ let staticTranslatableElements = new Map();
   
-  let commentFilters = new Map([
+  // set up script-wide variables (used in all/multiple routes)
+  /**@global*/ let totalComments;
+  /**@global*/ let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
+  /**@global*/ let customCommentContainer,originalCommentContainer
+
+
+
+  // TODO: Should be profile page specific
+  /**@global*/ let currentStart = defaultStart;
+  /**@global*/ let currentLength = defaultLength;
+  /**@global*/ let activeLanguage = defaultLanguage;
+  /**@global*/ let filteredCommentsCount = 0;
+
+  /**@global*/ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
@@ -52,12 +60,23 @@
     [ 'filterDateRange', { active: false, value: [] } ],
   ]);
 
-  // add switch to header which enables/disables all features of this Userscript
-  const mainSwitch = `
+  
+  
+  /* add switch to header which enables/disables all features of this Userscript */
+  // get stored state or initialize it
+  if (has_value('scriptEnabled')) {
+    mainSwitchState = get_value('scriptEnabled') || true;
+  } else {
+    set_value('scriptEnabled', true);
+    mainSwitchState = true;
+  }
+  
+  // insert switch
+  /**@global*/ const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
       <div class="flipflop" style="--color-on: var(--theme-color);">
         <span id="mainSwitchLabel" style="padding-right: 1rem;"></span>
-        <label><input id="mainSwitch" type="checkbox" checked="checked" /><span></span></label>
+        <label><input id="mainSwitch" type="checkbox" ${mainSwitchState ? 'checked="checked" ' : ''}/><span></span></label>
       </div>
     </div>
   `.parseHTML();
@@ -76,7 +95,10 @@
   } else if (route === 'video') {
     (function() {
       // make sure, that it's really a video page (they all have a reload button in all possible states)
-      if (!document.getElementsByClassName('reloadComment')[0]) return;
+      if (!document.getElementsByClassName('reloadComment')[0]) {
+        updateStaticTranslations();
+        return;
+      }
       /*%% VideoPage/functions_videoPage.js %%*/
     })();
   }

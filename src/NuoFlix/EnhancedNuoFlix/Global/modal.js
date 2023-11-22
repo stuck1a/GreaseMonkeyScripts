@@ -11,12 +11,12 @@ function openModal(element, id = null) {
   wrapper.classList.add('customModal');
   wrapper.append(element);
   
-  // middlelayer to darken the background
-  const middlelayer = document.createElement('div');
-  middlelayer.classList.add('customModal_middlelayer');
+  // middle-layer to darken the background
+  const background = document.createElement('div');
+  background.classList.add('customModal_middlelayer');
   
   
-  addToDOM(middlelayer, document.body, InsertionService.AsLastChild, false);
+  addToDOM(background, document.body, InsertionService.AsLastChild, false);
   addToDOM(wrapper, document.body, InsertionService.AsLastChild, true, id);
 }
 

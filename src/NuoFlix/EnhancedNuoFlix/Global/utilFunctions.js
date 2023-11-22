@@ -1,3 +1,11 @@
+/*<SKIP>*/
+/** @const {function} GM_listValues */
+/** @const {function} GM_deleteValue */
+/** @const {function} GM_setValue */
+/** @const {function} GM_getValue */
+/*</SKIP>*/
+
+
 /**
  * Works like sprintf in PHP. Use {n} as placeholder, where
  * n is zero-indexed. Excepts n additional arguments of

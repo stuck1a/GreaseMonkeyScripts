@@ -1,4 +1,3 @@
-
 // set up route-scoped fields and configs, then start the execution flow fo this route
 let commentData;
 let storedCommentData;
@@ -12,6 +11,9 @@ execute_profilePage();
 
 /**
  * Main function of this route
+ * 
+ * @use module:Base~originalCommentContainer
+ * 
  */
 function execute_profilePage() {
   /*%% ProfilePage/style_comments.js %%*/
@@ -545,7 +547,6 @@ function getReplyCount(btn_id, txt_id) {
       return storedComment.reply_cnt ?? storedComment.replies.length ?? 0;
     }
   }
-  return true;
 }
 
 

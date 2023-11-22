@@ -1,25 +1,25 @@
 // Unique key used for the GM data storage to avoid naming conflicts across scripts
-const CACHE_KEY = 's1a/enhancednuoflix';
+/**@global*/ const CACHE_KEY = 's1a/enhancednuoflix';
 
 // Logger prefix
-const MSG_PREFIX = 'Enhanced NuoFlix';
+/**@global*/ const MSG_PREFIX = 'Enhanced NuoFlix';
 
 // Fixed configs
-const highlightedCommentsColor = '#4A4A20';
-const highlightedRepliesColor = '#373434';
-const highlightedHasNewRepliesColor = '#52522a';
-const cssClassNewComments = 'newComment';
-const cssClassHasNewReplies = 'hasNewReply';
-const cssClassNewReplies = 'newReply';
-const expandedReplyCount = 3;
+/**@global*/ const highlightedCommentsColor = '#4A4A20';
+/**@global*/ const highlightedRepliesColor = '#373434';
+/**@global*/ const highlightedHasNewRepliesColor = '#52522a';
+/**@global*/ const cssClassNewComments = 'newComment';
+/**@global*/ const cssClassHasNewReplies = 'hasNewReply';
+/**@global*/ const cssClassNewReplies = 'newReply';
+/**@global*/ const expandedReplyCount = 3;
 
 // Defaults
-const defaultStart = 1;
-const defaultLength = 5;
-const defaultLanguage = 'de';
+/**@global*/ const defaultStart = 1;
+/**@global*/ const defaultLength = 5;
+/**@global*/ const defaultLanguage = 'de';
 
 // Map execution flows to pages
-const pageRoutes = new Map([
+/**@global*/ const pageRoutes = new Map([
   // path       route name
   [ '/',        'start'   ],
   [ '/profil',  'profile' ],
