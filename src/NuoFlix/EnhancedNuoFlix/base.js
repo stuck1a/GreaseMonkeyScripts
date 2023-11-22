@@ -68,7 +68,7 @@
   
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
-  if (route === 'index') {
+  if (route === 'start') {
     (function() { /*%% StartPage/functions_startPage.js %%*/ })();
   } else if (route === 'profile') {
     (function() { /*%% ProfilePage/functions_profilePage.js %%*/ })();
@@ -87,7 +87,5 @@
       // execute all other handler
       existingChangeHandlers.apply(this, arguments);
     }
-    
-
   }
 })();

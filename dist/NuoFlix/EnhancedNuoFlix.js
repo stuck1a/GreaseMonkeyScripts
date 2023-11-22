@@ -820,8 +820,8 @@ class InsertionService {
  * @param {?string} registerId  - ID under which the element is added to the register. 
  *                                If no access is needed later on, can be omitted or set to null (will use random ID).
  *
- * @return {HTMLElement|HTMLElement[]|DocumentFragment}  - Reference (or list of references) of inserted element(s) or the input itself,
- *   if something went wrong.
+ * @return {HTMLElement|HTMLElement[]|DocumentFragment}  - Reference (or list of references) of inserted element(s) or
+ *   the input itself, if something went wrong.
  */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
   if (typeof refElement === 'string' ) refElement = document.getElementById(refElement);
@@ -1033,7 +1033,18 @@ function doChangeMainSwitch(ev) {
       this.checked ? disablePrimalElement(element) : enablePrimalElement(element);
     }
   }
-}
+}
+
+
+
+/**
+ * This function is responsible for update all i18n content.
+ * All those elements which need such a manual update must be registered with {@link registerStaticTranslatable} once.
+ */
+function updateStaticTranslations() {
+  for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
+}
+
   
 /**
  * Marks some comments as new and inserts some fake replies here and there
@@ -1465,7 +1476,7 @@ input[type="date"] {
   
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
-  if (route === 'index') {
+  if (route === 'start') {
     (function() { 
 // set up route-scoped fields and start the execution flow fo this route
 execute_startPage();
@@ -1473,7 +1484,10 @@ execute_startPage();
  * Main function of this route
  */
 function execute_startPage() {
+  // ... do stuff ...
   
+  // initialize i18n strings
+  updateStaticTranslations()
 } })();
   } else if (route === 'profile') {
     (function() { 
@@ -3008,21 +3022,6 @@ function doOrderCommentData(orderType = 'activity') {
 
 
 
-
-/**
- * This function is responsible for update all strings of elements,
- * which aren't rebuild when updatePage() is called which applies to
- * the most elements of the base menu, because those elements are
- * required for the update process itself. All those elements which
- * need such a manual update must be registered in the register
- * inside this function.
- */
-function updateStaticTranslations() {
-  for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
-}
-
-
-
 /**
  * Wrapper which will update all custom stuff
  */
@@ -3084,6 +3083,9 @@ function execute_genericPage() {
     comments = document.getElementById('commentContent');
     tryToApply();
   }
+
+  // initialize i18n strings
+  updateStaticTranslations()
 }
 
 
@@ -3121,12 +3123,12 @@ const removeCommentsFrom = function(username) {
     if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
       if (comment.id.startsWith('comment_')) {
         // also remove spacer if its a reply
-        if (comment.previousElementSibling) comment.previousElementSibling.remove();
+        if (comment.previousElementSibling) disablePrimalElement(comment.previousElementSibling);
       }
       if (comment.parentElement.classList.contains('commentItem')) {
-        comment.parentElement.remove();
+        disablePrimalElement(comment.parentElement);
       } else {
-        comment.remove();
+        disablePrimalElement(comment);
       }
     }
   }
@@ -3144,7 +3146,5 @@ const removeCommentsFrom = function(username) {
       // execute all other handler
       existingChangeHandlers.apply(this, arguments);
     }
-    
-
   }
 })();

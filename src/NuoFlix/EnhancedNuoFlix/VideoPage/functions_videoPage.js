@@ -47,6 +47,9 @@ function execute_genericPage() {
     comments = document.getElementById('commentContent');
     tryToApply();
   }
+
+  // initialize i18n strings
+  updateStaticTranslations()
 }
 
 
@@ -84,12 +87,12 @@ const removeCommentsFrom = function(username) {
     if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
       if (comment.id.startsWith('comment_')) {
         // also remove spacer if its a reply
-        if (comment.previousElementSibling) comment.previousElementSibling.remove();
+        if (comment.previousElementSibling) disablePrimalElement(comment.previousElementSibling);
       }
       if (comment.parentElement.classList.contains('commentItem')) {
-        comment.parentElement.remove();
+        disablePrimalElement(comment.parentElement);
       } else {
-        comment.remove();
+        disablePrimalElement(comment);
       }
     }
   }

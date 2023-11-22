@@ -1235,21 +1235,6 @@ function doOrderCommentData(orderType = 'activity') {
 
 
 
-
-/**
- * This function is responsible for update all strings of elements,
- * which aren't rebuild when updatePage() is called which applies to
- * the most elements of the base menu, because those elements are
- * required for the update process itself. All those elements which
- * need such a manual update must be registered in the register
- * inside this function.
- */
-function updateStaticTranslations() {
-  for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
-}
-
-
-
 /**
  * Wrapper which will update all custom stuff
  */
