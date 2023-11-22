@@ -102,7 +102,7 @@ class InsertionService {
  * @param {?string} registerId  - ID under which the element is added to the register. 
  *                                If no access is needed later on, can be omitted or set to null (will use random ID).
  *
- * @return {HTMLElement|HTMLElement[]}  - Reference (or list of references) of inserted element(s) or the input itself,
+ * @return {HTMLElement|HTMLElement[]|DocumentFragment}  - Reference (or list of references) of inserted element(s) or the input itself,
  *   if something went wrong.
  */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
@@ -200,7 +200,7 @@ function removeFromDOM(elementOrId, force = false) {
  * @requires disabledPrimalElementsRegister
  * @requires Map.prototype.deleteByValue
  * 
- * @param {HTMLElement|string} elementOrId  - Target element or its id
+ * @param {HTMLElement|string} elementOrId  - Target element, its id or register id
  * @param {?string} registerId  - ID under which the element is added to the register.
  *                                If omitted or null, an unique ID will be created.
  *
@@ -208,8 +208,6 @@ function removeFromDOM(elementOrId, force = false) {
  */
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
-    if (element.hasAttribute('data-customElement')) return false;
-    // store the display value as attribute so we can restore it later
     element.classList.add('hidden');
     if (disabledPrimalElementsRegister) {
       if (!id) id = Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -227,16 +225,18 @@ function disablePrimalElement(elementOrId, registerId = null) {
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) return apply(registerId, elementOrId);
   
+  // if we got an register id
+  if (disabledPrimalElementsRegister.has(elementOrId)) return apply(elementOrId, disabledPrimalElementsRegister.get(elementOrId));
+  
   return false;
 }
 
 
 
 /**
- * Restores hidden original page content and removes it from the register of disabled original element.
+ * Restores hidden original page content.
  *
  * @requires disabledPrimalElementsRegister
- * @requires Map.prototype.deleteByValue
  * 
  * @param {HTMLElement|string} elementOrId  - Target element, its element id or register id
  *
@@ -246,16 +246,13 @@ function enablePrimalElement(elementOrId) {
   // if we got an element
   if (elementOrId instanceof HTMLElement) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
     elementOrId.classList.remove('hidden');
-    elementOrId.style.display
     return true;
   }
   
   // if we got an register id
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
-    disabledPrimalElementsRegister.delete(elementOrId);
     element.classList.remove('hidden');
     return true;
   }
@@ -264,7 +261,6 @@ function enablePrimalElement(elementOrId) {
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
     elementOrId.classList.remove('hidden');
     return true;
   }
@@ -290,5 +286,33 @@ function enablePrimalElement(elementOrId) {
 function registerStaticTranslatable(element, text, args = []) {
   if (!staticTranslatableElements.has(element)) {
     staticTranslatableElements.set(element, { text: text, args: args });
+  }
+}
+
+
+
+/**
+ * Click event handler for the global switch which
+ * turns all of this UserScripts features on/off.
+ *
+ * @param {Event} ev
+ */
+function doChangeMainSwitch(ev) {
+  // toggle visibility of custom elements
+  for (const element of customElementsRegister.values()) {
+    if (element instanceof Array) {
+      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
+    } else {
+      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+    }
+  }
+  // toggle visibility of original elements
+  const register = Array.from(disabledPrimalElementsRegister.values());    // avoid infinity loop
+  for (const element of register) {
+    if (element instanceof Array) {
+      for (const entry of element) this.checked ? disablePrimalElement(entry) : enablePrimalElement(entry);
+    } else {
+      this.checked ? disablePrimalElement(element) : enablePrimalElement(element);
+    }
   }
 }

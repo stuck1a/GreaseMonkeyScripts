@@ -154,7 +154,7 @@ const i18n = new Map([
 ],
 [
 'NuoFlix 2.0',
-'Enhanced NuoFlix',
+'NuoFlix 2.0',
 ],
 [
 'Kommentare filtern',
@@ -324,7 +324,7 @@ const i18n = new Map([
 ],
 [
 'NuoFlix 2.0',
-'Uluchshennyy NuoFlix',
+'NuoFlix 2.0',
 ],
 [
 'Kommentare filtern',
@@ -820,7 +820,7 @@ class InsertionService {
  * @param {?string} registerId  - ID under which the element is added to the register. 
  *                                If no access is needed later on, can be omitted or set to null (will use random ID).
  *
- * @return {HTMLElement|HTMLElement[]}  - Reference (or list of references) of inserted element(s) or the input itself,
+ * @return {HTMLElement|HTMLElement[]|DocumentFragment}  - Reference (or list of references) of inserted element(s) or the input itself,
  *   if something went wrong.
  */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
@@ -918,7 +918,7 @@ function removeFromDOM(elementOrId, force = false) {
  * @requires disabledPrimalElementsRegister
  * @requires Map.prototype.deleteByValue
  * 
- * @param {HTMLElement|string} elementOrId  - Target element or its id
+ * @param {HTMLElement|string} elementOrId  - Target element, its id or register id
  * @param {?string} registerId  - ID under which the element is added to the register.
  *                                If omitted or null, an unique ID will be created.
  *
@@ -926,8 +926,6 @@ function removeFromDOM(elementOrId, force = false) {
  */
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
-    if (element.hasAttribute('data-customElement')) return false;
-    // store the display value as attribute so we can restore it later
     element.classList.add('hidden');
     if (disabledPrimalElementsRegister) {
       if (!id) id = Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -945,16 +943,18 @@ function disablePrimalElement(elementOrId, registerId = null) {
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) return apply(registerId, elementOrId);
   
+  // if we got an register id
+  if (disabledPrimalElementsRegister.has(elementOrId)) return apply(elementOrId, disabledPrimalElementsRegister.get(elementOrId));
+  
   return false;
 }
 
 
 
 /**
- * Restores hidden original page content and removes it from the register of disabled original element.
+ * Restores hidden original page content.
  *
  * @requires disabledPrimalElementsRegister
- * @requires Map.prototype.deleteByValue
  * 
  * @param {HTMLElement|string} elementOrId  - Target element, its element id or register id
  *
@@ -964,16 +964,13 @@ function enablePrimalElement(elementOrId) {
   // if we got an element
   if (elementOrId instanceof HTMLElement) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
     elementOrId.classList.remove('hidden');
-    elementOrId.style.display
     return true;
   }
   
   // if we got an register id
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
-    disabledPrimalElementsRegister.delete(elementOrId);
     element.classList.remove('hidden');
     return true;
   }
@@ -982,7 +979,6 @@ function enablePrimalElement(elementOrId) {
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    if (disabledPrimalElementsRegister) disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
     elementOrId.classList.remove('hidden');
     return true;
   }
@@ -1008,6 +1004,34 @@ function enablePrimalElement(elementOrId) {
 function registerStaticTranslatable(element, text, args = []) {
   if (!staticTranslatableElements.has(element)) {
     staticTranslatableElements.set(element, { text: text, args: args });
+  }
+}
+
+
+
+/**
+ * Click event handler for the global switch which
+ * turns all of this UserScripts features on/off.
+ *
+ * @param {Event} ev
+ */
+function doChangeMainSwitch(ev) {
+  // toggle visibility of custom elements
+  for (const element of customElementsRegister.values()) {
+    if (element instanceof Array) {
+      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
+    } else {
+      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+    }
+  }
+  // toggle visibility of original elements
+  const register = Array.from(disabledPrimalElementsRegister.values());    // avoid infinity loop
+  for (const element of register) {
+    if (element instanceof Array) {
+      for (const entry of element) this.checked ? disablePrimalElement(entry) : enablePrimalElement(entry);
+    } else {
+      this.checked ? disablePrimalElement(element) : enablePrimalElement(element);
+    }
   }
 }
   
@@ -1148,103 +1172,259 @@ function getOriginalCommentIds(which) {
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
   
-  addToDOM(`<style>
-.realisticSwitch {
-  --width: 5rem;
+  addToDOM(`<style>:root {
+  --svg-checked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
+  --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
+  --svg-revert: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000"><path fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/><path fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/></svg>');
+  --theme-color: #d53d16;
+  --theme-color-brigthen: #bd8656;
 }
-.realisticSwitch span {
-  --edge-radius: calc(.1*var(--width));
-  position :relative;
-  display: inline-block;
-  width: var(--width);
-  height: calc(1.5*var(--width));
-  background-color: #bbb;
-  -webkit-border-radius: var(--edge-radius);
-  -moz-border-radius: var(--edge-radius);
-  border-radius: var(--edge-radius);
+@-moz-keyframes spinR { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spinR { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spinR { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+@-moz-keyframes spinL { 100% { -moz-transform: rotate(-360deg); } }
+@-webkit-keyframes spinL { 100% { -webkit-transform: rotate(-360deg); } }
+@keyframes spinL { 100% { -webkit-transform: rotate(-360deg); transform:rotate(-360deg); } }
+.spinRightOnHover:hover {
+  --duration: 1s;
+  -webkit-animation: spinR var(--duration) linear infinite;
+  -moz-animation: spinR var(--duration) linear infinite;
+  animation: spinR var(--duration) linear infinite;
+}
+.spinLeftOnHover:hover {
+  --duration: 1s;
+  -webkit-animation: spinL var(--duration) linear infinite;
+  -moz-animation: spinL var(--duration) linear infinite;
+  animation: spinL var(--duration) linear infinite;
+}
+.stretchToParent {
+  height: 100%;
+  width: 100%;
+}
+.clickable {
+  cursor: pointer;
+}
+.container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
+.container-fluid { box-sizing: border-box; width: 100%; margin-inline: auto; padding: 0 }
+.row { display: flex; flex-wrap: wrap }
+.row > * { flex-shrink: 0; max-width: 100%; width: 100% }
+.col-auto,.col-1,.col-2,.col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9,.col-10,.col-11,.col-12 { flex: 0 0 auto }
+.col-auto { width: auto }
+.col { flex: 1 0 0 }
+.col-1 { width: 8.33333333% }
+.col-2 { width: 16.66666667% }
+.col-3 { width: 25% }
+.col-4 { width: 33.33333333% }
+.col-5 { width: 41.66666667% }
+.col-6 { width: 50% }
+.col-7 { width: 58.33333333% }
+.col-8 { width: 66.66666667% }
+.col-9 { width: 75% }
+.col-10 { width: 83.33333333% }
+.col-11 { width: 91.66666667% }
+.col-12 { width: 100% }
+.hidden { display: none !important }
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  word-wrap: break-word;
+  background-clip: border-box;
+  border: 1px solid #949296;
+  border-radius: .25rem;
+  padding: .75rem;
+}
+.card-body { flex: 1 1 auto; padding: 1rem 1rem }
+.card-group { margin-block: 1rem; }
+.card-group > .card { margin-bottom: 1rem; }
+.card-group > .card ~ .card {
+  margin-left: 1rem;
+}
+.card legend {
+  padding-inline: .5rem;
   text-align: center;
 }
-.realisticSwitch input {
-  width: 100%;
-  height: 100%;
-  margin: 0 0;
-  padding: 0 0;
+input[type="date"] {
+  display: inline-block;
+  margin: 7px 0 15px 0;
+  padding: 10px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+}
+.btn-small {
+  font-size: .75rem;
+  padding: .2rem .75rem;
+}
+.buttonGroup {
+  display: inline-block;
+}
+.btn:not(.disabled):hover {
+  font-weight: bold;
+  background-color: var(--theme-color-brigthen);
+}
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+.disabled {
+  background-color: darkgray !important;
+  color: lightgray !important;
+  cursor: default !important;
+  pointer-events: none;
+}
+.customDropdown {
+  --borderColor: #555;
+  --borderWidth: 1px;
+  --totalWidth: 8rem;
+  width: var(--totalWidth);
+  height: 2rem;
+  margin-left: auto;
+  color: var(--theme-color);
+  cursor: pointer;
+  border: var(--borderWidth) solid var(--borderColor);
+  border-top-left-radius: 1px;
+  border-bottom: 0;
+}
+.customDropdown:hover > .customDropdownToggler > span:last-of-type  {
+  transform: rotate(90deg);
+}
+.customDropdownToggler {
   position: absolute;
+  height: inherit;
+  width: inherit;
+  background: linear-gradient(to left, var(--borderColor) var(--borderWidth), var(--theme-color) var(--borderWidth), var(--theme-color) 1.75rem, #fcfcfc 1.75rem);
+  font-weight: bold;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  border-radius: 1px;
+  border-bottom: var(--borderWidth) solid var(--borderColor);
+}
+.customDropdownToggler:hover + .customDropdownMenu,
+.customDropdownMenu:hover {
+  display: block;
+}
+.customDropdownToggler > span {
+  width: calc(100% - 1.75rem);
+  display: flex;
+  height: inherit;
+  padding-left: .4rem;
+  align-items: center;
+}
+.customDropdown_ActiveVal {
+  border: var(--borderWidth) solid var(--borderColor);
+  border-bottom-width: 0;
+}
+.customDropdownToggler > span:last-of-type {
+  border-radius: 1px 1px 0 0;
+  width: 1.5rem;
+  text-align: center;
+  color: #fcfcfc;
+  transition: transform .15s ease-in-out;
+  position: relative;
+  padding-left: calc(2*var(--borderWidth));
+  justify-content: center;
+}
+.customDropdownMenu {
+  position: relative;
+  top: 100%;
+  border-radius: 0 0 1px 1px;
+  border: var(--borderWidth) solid var(--borderColor);
+  left: calc(0px - var(--borderWidth));
+  max-width: unset;
+  width: calc(100% + 3*var(--borderWidth));
+  display: none;
+}
+.customDropdownMenu > div {
+  background-color: #252525;
+  font-weight: bold;
+  padding-left: .4rem;
+  padding-block: .2rem;
+  display: flex;
+  align-items: center;
+  padding-top: .2rem;
+  border-top: var(--borderWidth) solid var(--borderColor);
+}
+.customDropdownMenu > div:hover {
+  background-color: #f0cbc2;
+}
+.customDropdownMenu svg {
+  margin-right: .6rem;
+  height: 1rem;
+  width: 2rem;
+}
+.svgColorized { --color: var(--theme-color); }
+.svgColorized .svgColoredFill { fill: var(--color) }
+.svgColorized .svgColoredStroke { stroke: var(--color) }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  addToDOM(`<style>
+.flipflop {
+  /* set defaults for unset variables */
+  --_width: var(--width, 3rem);
+  --_speed: var(--speed, 0.4s);
+  --_color-thumb: var(--color-thumb, #fff);
+  --_color-on: var(--color-on, #2196F3);
+  --_color-off: var(--color-off, #ccc);
+  --_label-offset: var(--label-offset, 1rem);
+  /* mandatory */
+  --padding-thumb: calc(var(--_width)*.0666666667);
+  --height: calc(var(--_width)/2 + var(--padding-thumb));
+  --size-thumb: calc(var(--height) - 2*var(--padding-thumb));
+  display: inline-flex;
+  align-items: center;
+}
+.flipflop > label {
+  display: inline-block;
+  position: relative;
+  width: var(--_width);
+  height: var(--height);
+  padding: unset !important;
+}
+.flipflop > label input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.flipflop > label > span {
+  position: absolute;
+  cursor: pointer;
   top: 0;
+  left: 0;
   right: 0;
   bottom: 0;
-  left: 0;
-  z-index: 2;
-  cursor: pointer;
-  opacity: 0;
-  filter: alpha(opacity=0);
+  background-color: var(--_color-off);
+  -webkit-transition: var(--_speed);
+  transition: var(--_speed);
 }
-.realisticSwitch label {
-  display: block;
+.flipflop > label > span:before {
   position: absolute;
-  top: 1px;
-  right: 1px;
-  bottom: 1px;
-  left: 1px;
-  background-image: -webkit-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
-  background-image: -moz-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
-  background-image: -ms-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
-  background-image: -o-linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
-  background-image: linear-gradient(top, #fff 0%, #ddd 50%, #fff 50%, #eee 100%);
-  -webkit-box-shadow: 0 2px 3px rgba(0, 0, 0 , 0.4), inset 0 -1px 1px #888, inset 0 -5px 1px #bbb, inset 0 -6px 0 white;
-  -moz-box-shadow:0 2px 3px rgba(0, 0, 0, 0.4), inset 0 -1px 1px #888, inset 0 -5px 1px #bbb, inset 0 -6px 0 white;
-  box-shadow:0 2px 3px rgba(0, 0, 0, 0.4), inset 0 -1px 1px #888, inset 0 -5px 1px #bbb, inset 0 -6px 0 white;
-  -webkit-border-radius: 3px;
-  -moz-border-radius: 3px;
-  border-radius: 3px;
-  font: normal 11px Arial, Sans-Serif;
-  color: #666;
-  text-shadow: 0 1px 0 white;
-  cursor: pointer;
+  content: "";
+  height: var(--size-thumb);
+  width: var(--size-thumb);
+  left: var(--padding-thumb);
+  bottom: var(--padding-thumb);
+  background-color: var(--_color-thumb);
+  -webkit-transition: var(--_speed);
+  transition: var(--_speed);
 }
-/* Oberes Zeichen (OFF) */
-.realisticSwitch label:before {
-  content: attr(data-off);
-  position: absolute;
-  top: 6px;    /* Ausrichtung (Abstand von oben, berechnet aus Höhe und Fontgröße) */
-  right: 0;
-  left: 0;
-  z-index: 4;
+.flipflop > label > input:checked + span {
+  background-color: var(--_color-on);
 }
-/* Unteres Zeichen (ON) */
-.realisticSwitch label:after {
-  content: attr(data-on);
-  position: absolute;
-  right: 0;
-  bottom: 11px; /* Ausrichtung (Abstand von unten, berechnet aus Höhe und Fontgröße) */
-  left: 0;
-  color: gray;  /* Basisfarbe (im ausgeschalteten Zustand) */
-  text-shadow: 0 -1px 0 #eee; /* Fix, um den Kontrast zu erhöhen */
+.flipflop input:focus + span {
+  box-shadow: 0 0 1px var(--_color-on);
 }
-/* Oberer Schalter im ausgeschalteten Zustand */
-.realisticSwitch input:checked + label {
-  /* Abdunkeln der Fläche */
-  background-image: -webkit-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
-  background-image: -moz-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
-  background-image: -ms-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
-  background-image: -o-linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
-  background-image: linear-gradient(top, #eee 0%, #ccc 50%, #fff 50%, #eee 100%);
-  /* Obere Kante durch Abdunkeln erzeugen (3D-Effekt) - Werte berechnet aus Größe/Höhe */
-  -webkit-box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
-  -moz-box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 7px -1px #ccc, inset 0 5px 1px #fafafa, inset 0 6px 0 white;
+.flipflop > label > input:checked + span:before {
+  -webkit-transform: translateX(var(--size-thumb));
+  -ms-transform: translateX(var(--size-thumb));
+  transform: translateX(var(--size-thumb));
 }
-/* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
-.realisticSwitch input:checked + label:before {
-  z-index: 1;
-  top: 11px;   /* Ausgangshöhe + y-Versatz von Oberkante */
+.flipflop > label > span {
+  border-radius: calc(var(--height));
 }
-/* Versetzen des oberen Symbols im eingeschalten Zustand (3D-Effekt) */
-.realisticSwitch input:checked + label:after {
-  z-index: 4;
-  color: #aaa; /* Farbe auch etwas abdunkeln, verstärkt den Kippeffekt */
-  text-shadow: none;
-  bottom: 9px;   /* Ausgangshöhe + y-Versatz von Unterkante */
+.flipflop > label > span:before {
+  border-radius: 50%;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   
   let totalComments;
@@ -1268,6 +1448,21 @@ function getOriginalCommentIds(which) {
     [ 'filterDateRange', { active: false, value: [] } ],
   ]);
 
+  // add switch to header which enables/disables all features of this Userscript
+  const mainSwitch = `
+    <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
+      <div class="flipflop" style="--color-on: var(--theme-color);">
+        <span id="mainSwitchLabel" style="padding-right: 1rem;"></span>
+        <label><input id="mainSwitch" type="checkbox" checked="checked" /><span></span></label>
+      </div>
+    </div>
+  `.parseHTML();
+  addToDOM(mainSwitch, document.getElementById('header').lastElementChild, InsertionService.AsLastChild, false);
+  registerStaticTranslatable(document.getElementById('mainSwitchLabel'), 'NuoFlix 2.0', []);
+  document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
+
+
+  
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'index') {
@@ -1416,128 +1611,7 @@ function execute_profilePage() {
 `.parseHTML();
     
   // insert all style sheets used in this route
-  addToDOM(`<style>:root {
-  --svg-checked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
-  --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
-  --svg-revert: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000"><path fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/><path fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/></svg>');
-  --theme-color: #d53d16;
-  --theme-color-brigthen: #bd8656;
-}
-
-@-moz-keyframes spinR { 100% { -moz-transform: rotate(360deg); } }
-@-webkit-keyframes spinR { 100% { -webkit-transform: rotate(360deg); } }
-@keyframes spinR { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
-@-moz-keyframes spinL { 100% { -moz-transform: rotate(-360deg); } }
-@-webkit-keyframes spinL { 100% { -webkit-transform: rotate(-360deg); } }
-@keyframes spinL { 100% { -webkit-transform: rotate(-360deg); transform:rotate(-360deg); } }
-
-.spinRightOnHover:hover {
-  --duration: 1s;
-  -webkit-animation: spinR var(--duration) linear infinite;
-  -moz-animation: spinR var(--duration) linear infinite;
-  animation: spinR var(--duration) linear infinite;
-}
-.spinLeftOnHover:hover {
-  --duration: 1s;
-  -webkit-animation: spinL var(--duration) linear infinite;
-  -moz-animation: spinL var(--duration) linear infinite;
-  animation: spinL var(--duration) linear infinite;
-}
-
-.stretchToParent {
-  height: 100%;
-  width: 100%;
-}
-
-.clickable {
-  cursor: pointer;
-}
-
-.container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
-.container-fluid { box-sizing: border-box; width: 100%; margin-inline: auto; padding: 0 }
-
-.row { display: flex; flex-wrap: wrap }
-.row > * { flex-shrink: 0; max-width: 100%; width: 100% }
-
-.col-auto,.col-1,.col-2,.col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9,.col-10,.col-11,.col-12 { flex: 0 0 auto }
-.col-auto { width: auto }
-.col { flex: 1 0 0 }
-.col-1 { width: 8.33333333% }
-.col-2 { width: 16.66666667% }
-.col-3 { width: 25% }
-.col-4 { width: 33.33333333% }
-.col-5 { width: 41.66666667% }
-.col-6 { width: 50% }
-.col-7 { width: 58.33333333% }
-.col-8 { width: 66.66666667% }
-.col-9 { width: 75% }
-.col-10 { width: 83.33333333% }
-.col-11 { width: 91.66666667% }
-.col-12 { width: 100% }
-
-.hidden { display: none !important }
-
-.card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 12rem;
-  word-wrap: break-word;
-  background-clip: border-box;
-  border: 1px solid #949296;
-  border-radius: .25rem;
-  padding: .75rem;
-}
-
-.card-body { flex: 1 1 auto; padding: 1rem 1rem }
-.card-group { margin-block: 1rem; }
-.card-group > .card { margin-bottom: 1rem; }
-.card-group > .card ~ .card {
-  margin-left: 1rem;
-}
-
-.card legend {
-  padding-inline: .5rem;
-  text-align: center;
-}
-
-input[type="date"] {
-  display: inline-block;
-  margin: 7px 0 15px 0;
-  padding: 10px;
-  -webkit-border-radius: 10px;
-  -moz-border-radius: 10px;
-  border-radius: 10px;
-}
-
-.btn-small {
-  font-size: .75rem;
-  padding: .2rem .75rem;
-}
-
-.buttonGroup {
-  display: inline-block;
-}
-
-.btn:not(.disabled):hover {
-  font-weight: bold;
-  background-color: var(--theme-color-brigthen);
-}
-
-.clearfix::after {
-  content: "";
-  clear: both;
-  display: table;
-}
-
-.disabled {
-  background-color: darkgray !important;
-  color: lightgray !important;
-  cursor: default !important;
-  pointer-events: none;
-}
-
-#ignoredUsers {
+  addToDOM(`<style>#ignoredUsers {
   width: 100%;
 }
 
@@ -1637,101 +1711,8 @@ input[type="date"] {
   cursor: pointer;
   color: var(--theme-color);
 }
-
 .expander:hover {
   font-weight: bold;
-}
-
-.customDropdown {
-  --borderColor: #555;
-  --borderWidth: 1px;
-  --totalWidth: 8rem;
-  width: var(--totalWidth);
-  height: 2rem;
-  margin-left: auto;
-  color: var(--theme-color);
-  cursor: pointer;
-  border: var(--borderWidth) solid var(--borderColor);
-  border-top-left-radius: 1px;
-  border-bottom: 0;
-}
-
-.customDropdown:hover > .customDropdownToggler > span:last-of-type  {
-  transform: rotate(90deg);
-}
-
-.customDropdownToggler {
-  position: absolute;
-  height: inherit;
-  width: inherit;
-  background: linear-gradient(to left, var(--borderColor) var(--borderWidth), var(--theme-color) var(--borderWidth), var(--theme-color) 1.75rem, #fcfcfc 1.75rem);
-  font-weight: bold;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  border-radius: 1px;
-  border-bottom: var(--borderWidth) solid var(--borderColor);
-}
-
-.customDropdownToggler:hover + .customDropdownMenu,
-.customDropdownMenu:hover {
-  display: block;
-}
-
-.customDropdownToggler > span {
-  width: calc(100% - 1.75rem);
-  display: flex;
-  height: inherit;
-  padding-left: .4rem;
-  align-items: center;
-}
-
-#customDropdown_ActiveVal {
-  border: var(--borderWidth) solid var(--borderColor);
-  border-bottom-width: 0;
-}
-
-.customDropdownToggler > span:last-of-type {
-  border-radius: 1px 1px 0 0;
-  width: 1.5rem;
-  text-align: center;
-  color: #fcfcfc;
-  transition: transform .15s ease-in-out;
-  position: relative;
-  padding-left: calc(2*var(--borderWidth));
-  justify-content: center;
-}
-
-.customDropdownMenu {
-  position: relative;
-  top: 100%;
-  border-radius: 0 0 1px 1px;
-  border: var(--borderWidth) solid var(--borderColor);
-  left: calc(0px - var(--borderWidth));
-  max-width: unset;
-  width: calc(100% + 3*var(--borderWidth));
-  display: none;
-}
-
-.customDropdownMenu > div {
-  background-color: #252525;
-  font-weight: bold;
-  padding-left: .4rem;
-  padding-block: .2rem;
-  display: flex;
-  align-items: center;
-  padding-top: .2rem;
-  border-top: var(--borderWidth) solid var(--borderColor);
-}
-
-.customDropdownMenu > div:hover {
-  background-color: #f0cbc2;
-}
-
-.customDropdownMenu svg {
-  margin-right: .6rem;
-  height: 1rem;
-  width: 2rem;
 }
 
 #moreFilterTrigger {
@@ -1787,10 +1768,6 @@ input[type="date"] {
   align-items: center;
 }
 
-.svgColorized { --color: var(--theme-color); }
-.svgColorized .svgColoredFill { fill: var(--color) }
-.svgColorized .svgColoredStroke { stroke: var(--color) }
-
 .commentText.hasOverflow,
 .replyText.hasOverflow {
   --linesBeforeCut: 10;
@@ -1814,73 +1791,6 @@ input[type="date"] {
 .replyText + .showFullLength {
   padding-bottom: 0;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  addToDOM(`<style>
-.flipflop {
-  /* set defaults for unset variables */
-  --_width: var(--width, 3rem);
-  --_speed: var(--speed, 0.4s);
-  --_color-thumb: var(--color-thumb, #fff);
-  --_color-on: var(--color-on, #2196F3);
-  --_color-off: var(--color-off, #ccc);
-  --_label-offset: var(--label-offset, 1rem);
-  /* mandatory */
-  --padding-thumb: calc(var(--_width)*.0666666667);
-  --height: calc(var(--_width)/2 + var(--padding-thumb));
-  --size-thumb: calc(var(--height) - 2*var(--padding-thumb));
-  display: inline-flex;
-  align-items: center;
-}
-.flipflop > label {
-  display: inline-block;
-  position: relative;
-  width: var(--_width);
-  height: var(--height);
-  padding: unset !important;
-}
-.flipflop > label input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.flipflop > label > span {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--_color-off);
-  -webkit-transition: var(--_speed);
-  transition: var(--_speed);
-}
-.flipflop > label > span:before {
-  position: absolute;
-  content: "";
-  height: var(--size-thumb);
-  width: var(--size-thumb);
-  left: var(--padding-thumb);
-  bottom: var(--padding-thumb);
-  background-color: var(--_color-thumb);
-  -webkit-transition: var(--_speed);
-  transition: var(--_speed);
-}
-.flipflop > label > input:checked + span {
-  background-color: var(--_color-on);
-}
-.flipflop input:focus + span {
-  box-shadow: 0 0 1px var(--_color-on);
-}
-.flipflop > label > input:checked + span:before {
-  -webkit-transform: translateX(var(--size-thumb));
-  -ms-transform: translateX(var(--size-thumb));
-  transform: translateX(var(--size-thumb));
-}
-.flipflop > label > span {
-  border-radius: calc(var(--height));
-}
-.flipflop > label > span:before {
-  border-radius: 50%;
-}</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(style_comments, document.body, InsertionService.AsLastChild, false);
   
   // insert the additional UI section
@@ -2109,18 +2019,6 @@ input[type="date"] {
       : deleteButton.classList.remove('disabled');
   });
   
-  // insert the main switch to disable EnhancedNuoFlix
-  const mainSwitchContainer = `
-    <div class="realisticSwitch">
-      <span><input id="mainSwitch" type="checkbox" checked="checked" />
-        <label data-off="&#10006;" data-on="&#10004;"></label>
-      </span>
-    </div>
-  `.parseHTML();
-  
-  addToDOM(mainSwitchContainer, enhancedUiContainer, InsertionService.Before, false);
-  document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-
   // mount handler for the "new only" filter button
   document.getElementById('filterOnlyNew').addEventListener('change', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
@@ -2131,14 +2029,6 @@ input[type="date"] {
       document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
     }
   });
-
-  // mount handlers for setting the checked attribute of flip flop switches
-  for (const flipflop of document.getElementsByClassName('flipflop')) {
-    flipflop.addEventListener('change', function() {
-      const input = this.getElementsByTagName('input')[0];
-      input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
-    });
-  }
   
   // initially generate and insert all dynamic components
   updatePage();
@@ -2817,34 +2707,7 @@ function doChangeLength(ev) {
 
 
 
-/**
- * TODO: Build a facade for inserting elements to the dom, then we can auto-generate
- *       those lists and generalize this function. We will need it at every route if
- *       the switch were moved to the header
- *
- * Click event handler for the global switch which
- * turns all of this UserScripts features on/off.
- *
- * @param {Event} ev
- */
-function doChangeMainSwitch(ev) {
-  // toggle visibility of custom elements
-  for (const element of customElementsRegister.values()) {
-    if (element instanceof Array) {
-      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
-    } else {
-      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
-    }
-  }
-  // toggle visibility of original elements
-  for (const element of disabledPrimalElementsRegister.entries()) {
-    if (element[1] instanceof Array) {
-      for (const entry of element) this.checked ? enablePrimalElement(entry[0]) :enablePrimalElement(entry[0]);
-    } else {
-      this.checked ? enablePrimalElement(element[0]) :enablePrimalElement(element[0]);
-    }
-  }
-}
+
 
 
 
@@ -3202,7 +3065,6 @@ function execute_genericPage() {
   // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {
-      debugger;
       // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
       const callee = ev.originalTarget.activeElement;
       if (callee.classList.contains('overlayLink')) {
@@ -3269,5 +3131,20 @@ const removeCommentsFrom = function(username) {
     }
   }
 } })();
+  }
+
+  // mount handlers for setting the checked attribute of flip flop switches
+  for (const flipflop of document.getElementsByClassName('flipflop')) {
+    // execute before all other handlers
+    let existingChangeHandlers = flipflop.onChange;
+    flipflop.onChange = function() {
+      // toggle checked attribute
+      const input = this.getElementsByTagName('input')[0];
+      input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
+      // execute all other handler
+      existingChangeHandlers.apply(this, arguments);
+    }
+    
+
   }
 })();

@@ -126,7 +126,7 @@
 
 [
 'NuoFlix 2.0',
-'Enhanced NuoFlix',
+'NuoFlix 2.0',
 ],
 
 

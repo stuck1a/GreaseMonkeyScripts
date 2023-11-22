@@ -27,7 +27,8 @@
   /*%% Global/functions_global.js %%*/
   /*%% Global/functions_debug.js %%*/
   
-  addToDOM(`<style>/*%% Global/realisticSwitch.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  addToDOM(`<style>/*%% Global/global.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   
   let totalComments;
   let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
@@ -50,6 +51,21 @@
     [ 'filterDateRange', { active: false, value: [] } ],
   ]);
 
+  // add switch to header which enables/disables all features of this Userscript
+  const mainSwitch = `
+    <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
+      <div class="flipflop" style="--color-on: var(--theme-color);">
+        <span id="mainSwitchLabel" style="padding-right: 1rem;"></span>
+        <label><input id="mainSwitch" type="checkbox" checked="checked" /><span></span></label>
+      </div>
+    </div>
+  `.parseHTML();
+  addToDOM(mainSwitch, document.getElementById('header').lastElementChild, InsertionService.AsLastChild, false);
+  registerStaticTranslatable(document.getElementById('mainSwitchLabel'), 'NuoFlix 2.0', []);
+  document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
+
+
+  
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'index') {
@@ -58,5 +74,20 @@
     (function() { /*%% ProfilePage/functions_profilePage.js %%*/ })();
   } else if (route === 'video') {
     (function() { /*%% VideoPage/functions_videoPage.js %%*/ })();
+  }
+
+  // mount handlers for setting the checked attribute of flip flop switches
+  for (const flipflop of document.getElementsByClassName('flipflop')) {
+    // execute before all other handlers
+    let existingChangeHandlers = flipflop.onChange;
+    flipflop.onChange = function() {
+      // toggle checked attribute
+      const input = this.getElementsByTagName('input')[0];
+      input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
+      // execute all other handler
+      existingChangeHandlers.apply(this, arguments);
+    }
+    
+
   }
 })();

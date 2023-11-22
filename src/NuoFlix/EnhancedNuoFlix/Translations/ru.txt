@@ -126,7 +126,7 @@
 
 [
 'NuoFlix 2.0',
-'Uluchshennyy NuoFlix',
+'NuoFlix 2.0',
 ],
 
 

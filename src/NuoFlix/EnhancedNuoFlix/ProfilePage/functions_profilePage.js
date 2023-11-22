@@ -18,7 +18,6 @@ function execute_profilePage() {
     
   // insert all style sheets used in this route
   addToDOM(`<style>/*%% ProfilePage/profilePage.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(style_comments, document.body, InsertionService.AsLastChild, false);
   
   // insert the additional UI section
@@ -247,18 +246,6 @@ function execute_profilePage() {
       : deleteButton.classList.remove('disabled');
   });
   
-  // insert the main switch to disable EnhancedNuoFlix
-  const mainSwitchContainer = `
-    <div class="realisticSwitch">
-      <span><input id="mainSwitch" type="checkbox" checked="checked" />
-        <label data-off="&#10006;" data-on="&#10004;"></label>
-      </span>
-    </div>
-  `.parseHTML();
-  
-  addToDOM(mainSwitchContainer, enhancedUiContainer, InsertionService.Before, false);
-  document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-
   // mount handler for the "new only" filter button
   document.getElementById('filterOnlyNew').addEventListener('change', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
@@ -269,14 +256,6 @@ function execute_profilePage() {
       document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
     }
   });
-
-  // mount handlers for setting the checked attribute of flip flop switches
-  for (const flipflop of document.getElementsByClassName('flipflop')) {
-    flipflop.addEventListener('change', function() {
-      const input = this.getElementsByTagName('input')[0];
-      input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
-    });
-  }
   
   // initially generate and insert all dynamic components
   updatePage();
@@ -955,34 +934,7 @@ function doChangeLength(ev) {
 
 
 
-/**
- * TODO: Build a facade for inserting elements to the dom, then we can auto-generate
- *       those lists and generalize this function. We will need it at every route if
- *       the switch were moved to the header
- *
- * Click event handler for the global switch which
- * turns all of this UserScripts features on/off.
- *
- * @param {Event} ev
- */
-function doChangeMainSwitch(ev) {
-  // toggle visibility of custom elements
-  for (const element of customElementsRegister.values()) {
-    if (element instanceof Array) {
-      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
-    } else {
-      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
-    }
-  }
-  // toggle visibility of original elements
-  for (const element of disabledPrimalElementsRegister.entries()) {
-    if (element[1] instanceof Array) {
-      for (const entry of element) this.checked ? enablePrimalElement(entry[0]) :enablePrimalElement(entry[0]);
-    } else {
-      this.checked ? enablePrimalElement(element[0]) :enablePrimalElement(element[0]);
-    }
-  }
-}
+
 
 
 
