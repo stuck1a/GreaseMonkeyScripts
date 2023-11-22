@@ -3241,7 +3241,7 @@ const hideCommentsOfUser = function(username) {
     })();
   }
 
-  // mount handlers for setting the checked attribute of flip flop switches
+  // mount handlers for setting the checked attribute of flip flop switches // TODO: Checken, ob das überhaupt funzt so...
   for (const flipflop of document.getElementsByClassName('flipflop')) {
     // execute before all other handlers
     let existingChangeHandlers = flipflop.onChange;
@@ -3253,4 +3253,10 @@ const hideCommentsOfUser = function(username) {
       existingChangeHandlers.apply(this, arguments);
     }
   }
+
+
+  // reset to default page state if script was disabled 
+  // TODO: Really cancel script if initially disabled but mount handler of switch before exit which will execute the whole script IIFS
+  if (!mainSwitchState) doChangeMainSwitch(null);
+
 })();
