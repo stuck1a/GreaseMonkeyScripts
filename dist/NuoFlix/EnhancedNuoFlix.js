@@ -3036,8 +3036,8 @@ function updatePage() {
   } else if (route === 'video') {
     (function() { 
 // set up route-scoped fields and start the execution flow fo this route
-const maxRetries = 3;
-const delay = 1000;
+const maxRetries = 5;
+const delay = 250;
 let retries = 0;
 let storedIgnoreList;
 let comments;
@@ -3076,14 +3076,15 @@ function execute_genericPage() {
       }
     });
   }
-  
-  // load list of ignored users and try to apply them
-  if (document.getElementById('commentContent')) {
-    storedIgnoreList = get_value('ignoredUsers');
-    comments = document.getElementById('commentContent');
-    tryToApply();
-  }
 
+  // Try to find content of blocked users and hide them
+  hideCommentsOfBlockedUsers(true);
+  
+  // add handler to the reload button, otherwise it would display hidden content again
+  document.getElementsByClassName('reloadComment')[0].addEventListener('click', function(ev) {
+    hideCommentsOfBlockedUsers(true);
+  });
+  
   // initialize i18n strings
   updateStaticTranslations()
 }
@@ -3092,23 +3093,38 @@ function execute_genericPage() {
 
 
 /**
- * Calls removeCommentsFrom after a delay as long as the maximal retry count is not reached yet.
+ * Loads the list of blocked users and hide all their comment texts and replies.
+ * 
+ * @param {boolean} [delayed=true]  - Wait some time before searching for the comments (required for the initial call)
  */
-function tryToApply() {
-  setTimeout(function() {
-    if (comments.childElementCount > 0) {
-      for (const user of storedIgnoreList) removeCommentsFrom(user);
-    } else {
-      // retry it up to 3 times after waiting one second after each try
-      if (retries < maxRetries - 1) {
-        retries++;
-        tryToApply();
-      }
+function hideCommentsOfBlockedUsers(delayed = false) {
+  if (delayed) {
+    const tryToApply = function() {
+      setTimeout(function() {
+        if (comments.childElementCount > 0) {
+          for (const user of storedIgnoreList) hideCommentsOfUser(user);
+        } else {
+          // retry it up to 3 times after waiting one second after each try
+          if (retries < maxRetries - 1) {
+            retries++;
+            tryToApply();
+          }
+        }
+      }, delay);
     }
-  }, delay);
+
+    if (document.getElementById('commentContent')) {
+      storedIgnoreList = get_value('ignoredUsers');
+      comments = document.getElementById('commentContent');
+      tryToApply();
+    }
+  } else {
+    if (document.getElementById('commentContent')) {
+      storedIgnoreList = get_value('ignoredUsers');
+      for (const user of storedIgnoreList) hideCommentsOfUser(user);
+    }
+  }
 }
-
-
 
 
 /**
@@ -3116,7 +3132,7 @@ function tryToApply() {
  * 
  * @param username
  */
-const removeCommentsFrom = function(username) {
+const hideCommentsOfUser = function(username) {
   const allComments = document.querySelectorAll('.profilName');
   for (let i = allComments.length - 1; i >= 0; i--) {
     const comment = allComments[i];
