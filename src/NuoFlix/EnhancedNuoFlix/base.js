@@ -26,6 +26,7 @@
   /*%% Global/utilFunctions.js %%*/
   /*%% Global/functions_global.js %%*/
   /*%% Global/functions_debug.js %%*/
+  /*%% Global/modal.js %%*/
   
   addToDOM(`<style>/*%% Global/global.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
@@ -73,7 +74,11 @@
   } else if (route === 'profile') {
     (function() { /*%% ProfilePage/functions_profilePage.js %%*/ })();
   } else if (route === 'video') {
-    (function() { /*%% VideoPage/functions_videoPage.js %%*/ })();
+    (function() {
+      // make sure, that it's really a video page (they all have a reload button in all possible states)
+      if (!document.getElementsByClassName('reloadComment')[0]) return;
+      /*%% VideoPage/functions_videoPage.js %%*/
+    })();
   }
 
   // mount handlers for setting the checked attribute of flip flop switches

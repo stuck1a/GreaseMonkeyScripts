@@ -1183,6 +1183,48 @@ function getOriginalCommentIds(which) {
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
   
+/**
+ * Generates and opens an element as pop-up.
+ * 
+ * @param {HTMLElement} element  - Element which contains the the modal content
+ * @param {?string} [id=null]  - If set, the value will be used as modal element id and register id
+ */
+function openModal(element, id = null) {
+  // wrap the content to ensure correct displaying no matter of the elements display value
+  const wrapper = document.createElement('div');
+  wrapper.classList.add('customModal');
+  wrapper.append(element);
+  
+  // middlelayer to darken the background
+  const middlelayer = document.createElement('div');
+  middlelayer.classList.add('customModal_middlelayer');
+  
+  
+  addToDOM(middlelayer, document.body, InsertionService.AsLastChild, false);
+  addToDOM(wrapper, document.body, InsertionService.AsLastChild, true, id);
+}
+// style sheet for modals
+addToDOM(`
+  <style>
+    .customModal {
+      position: fixed;
+      min-height: max(10%, 3rem);
+      max-height: 70%;
+      min-width: max(10%, 3rem);
+      max-width: 70%;
+      margin: auto;
+    }
+    .customModal_middlelayer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #0004; /* 25% transparency */
+    }
+  </style>
+`.parseHTML(), document.body, InsertionService.AsLastChild, false);
+  
   addToDOM(`<style>:root {
   --svg-checked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
   --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
@@ -3034,7 +3076,10 @@ function updatePage() {
 
  })();
   } else if (route === 'video') {
-    (function() { 
+    (function() {
+      // make sure, that it's really a video page (they all have a reload button in all possible states)
+      if (!document.getElementsByClassName('reloadComment')[0]) return;
+      
 // set up route-scoped fields and start the execution flow fo this route
 const maxRetries = 5;
 const delay = 250;
@@ -3148,7 +3193,8 @@ const hideCommentsOfUser = function(username) {
       }
     }
   }
-} })();
+}
+    })();
   }
 
   // mount handlers for setting the checked attribute of flip flop switches
