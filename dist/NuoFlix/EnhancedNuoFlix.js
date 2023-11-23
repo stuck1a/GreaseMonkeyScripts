@@ -24,33 +24,33 @@
 (function() {
   
   // Unique key used for the GM data storage to avoid naming conflicts across scripts
-/**@global*/ const CACHE_KEY = 's1a/enhancednuoflix';
+/** @global */ const CACHE_KEY = 's1a/enhancednuoflix';
 
 // Logger prefix
-/**@global*/ const MSG_PREFIX = 'Enhanced NuoFlix';
+/** @global */ const MSG_PREFIX = 'Enhanced NuoFlix';
 
 // Fixed configs
-/**@global*/ const highlightedCommentsColor = '#4A4A20';
-/**@global*/ const highlightedRepliesColor = '#373434';
-/**@global*/ const highlightedHasNewRepliesColor = '#52522a';
-/**@global*/ const cssClassNewComments = 'newComment';
-/**@global*/ const cssClassHasNewReplies = 'hasNewReply';
-/**@global*/ const cssClassNewReplies = 'newReply';
-/**@global*/ const expandedReplyCount = 3;
+/** @global */ const highlightedCommentsColor = '#4A4A20';
+/** @global */ const highlightedRepliesColor = '#373434';
+/** @global */ const highlightedHasNewRepliesColor = '#52522a';
+/** @global */ const cssClassNewComments = 'newComment';
+/** @global */ const cssClassHasNewReplies = 'hasNewReply';
+/** @global */ const cssClassNewReplies = 'newReply';
+/** @global */ const expandedReplyCount = 3;
 
 // Defaults
-/**@global*/ const defaultStart = 1;
-/**@global*/ const defaultLength = 5;
-/**@global*/ const defaultLanguage = 'de';
+/** @global */ const defaultStart = 1;
+/** @global */ const defaultLength = 5;
+/** @global */ const defaultLanguage = 'de';
 
 // Map execution flows to pages
-/**@global*/ const pageRoutes = new Map([
+/** @global */ const pageRoutes = new Map([
   // path       route name
   [ '/',        'start'   ],
   [ '/profil',  'profile' ],
   [ '/.+',      'video'   ],
 ]);
-  /**@global*/ const i18n = new Map([
+  /** @global */ const i18n = new Map([
   
   [
     // German (base strings are german, so we need only the metadata here)
@@ -891,7 +891,7 @@ class InsertionService {
  * @param {?string} registerId  - ID under which the element is added to the register. 
  *                                If no access is needed later on, can be omitted or set to null (will use random ID).
  *
- * @return {HTMLElement|HTMLElement[]|DocumentFragment}  - Reference (or list of references) of inserted element(s) or
+ * @return {HTMLElement|HTMLElement[]|Node|DocumentFragment}  - Reference (or list of references) of inserted element(s) or
  *   the input itself, if something went wrong.
  */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
@@ -1084,13 +1084,15 @@ function registerStaticTranslatable(element, text, args = []) {
  * Click event handler for the global switch which
  * turns all of this UserScripts features on/off.
  *
- * @param {Event} ev
+ * @param [toggleState=true]  - If false, the internal state won't be toggled (used only for the manual call when script is disabled on page load)
  */
-function doChangeMainSwitch(ev) {
-  // store new state
-  mainSwitchState = !mainSwitchState;
-  set_value('scriptEnabled', mainSwitchState);
-    
+function doChangeMainSwitch(toggleState = false) {
+  // toggle state flag
+  if (toggleState) {
+    mainSwitchState = !mainSwitchState;
+    set_value('scriptEnabled', mainSwitchState);
+  }
+  
   // toggle visibility of custom elements
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {
@@ -1487,33 +1489,14 @@ input[type="date"] {
 .svgColorized { --color: var(--theme-color); }
 .svgColorized .svgColoredFill { fill: var(--color) }
 .svgColorized .svgColoredStroke { stroke: var(--color) }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  addToDOM(`<style>/*<SKIP>
-  Styles for FlipFlop-Switch
-  To insert one, use:
-  <div class="flipflop">
-    <span>Caption</span>
-    <label><input type="checkbox" checked="checked" /><span></span></label>
-  </div>
-  
-  To adjust configuration, following css-vars can be set to any element with the .flipflop class.
-  If a variable is not set, it will get a default value.
-  
-  --width
-  --speed
-  --color-thumb
-  --color-on
-  --color-off
-  --label-offset
-<SKIP>*/
+  addToDOM(`<style>
 .flipflop {
-  /* set defaults for unset variables */
   --_width: var(--width, 3rem);
   --_speed: var(--speed, 0.4s);
   --_color-thumb: var(--color-thumb, #fff);
-  --_color-on: var(--color-on, #2196F3);
+  --_color-on: var(--color-on, #2196f3);
   --_color-off: var(--color-off, #ccc);
   --_label-offset: var(--label-offset, 1rem);
-  /* mandatory */
   --padding-thumb: calc(var(--_width)*.0666666667);
   --height: calc(var(--_width)/2 + var(--padding-thumb));
   --size-thumb: calc(var(--height) - 2*var(--padding-thumb));
@@ -1573,25 +1556,25 @@ input[type="date"] {
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
 
 
-  /**@global*/ let mainSwitchState;
-  /**@global*/ let customElementsRegister = new Map();
-  /**@global*/ let disabledPrimalElementsRegister = new Map();
-  /**@global*/ let staticTranslatableElements = new Map();
+  /** @global */ let mainSwitchState;
+  /** @global */ let customElementsRegister = new Map();
+  /** @global */ let disabledPrimalElementsRegister = new Map();
+  /** @global */ let staticTranslatableElements = new Map();
   
   // set up script-wide variables (used in all/multiple routes)
-  /**@global*/ let totalComments;
-  /**@global*/ let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
-  /**@global*/ let customCommentContainer,originalCommentContainer
+  // OPTIMIZE: COULD be profile page specific
+  /** @global */ let totalComments;
+  /** @global */ let paginationContainer, paginationContainerBottom;
+  /** @global */ let paginationControlContainer, paginationControlContainerBottom;
+  /** @global */ let customCommentContainer, originalCommentContainer;
+  
+  // OPTIMIZE: SHOULD be profile page specific
+  /** @global */ let currentStart = defaultStart;
+  /** @global */ let currentLength = defaultLength;
+  /** @global */ let activeLanguage = defaultLanguage;
+  /** @global */ let filteredCommentsCount = 0;
 
-
-
-  // TODO: Should be profile page specific
-  /**@global*/ let currentStart = defaultStart;
-  /**@global*/ let currentLength = defaultLength;
-  /**@global*/ let activeLanguage = defaultLanguage;
-  /**@global*/ let filteredCommentsCount = 0;
-
-  /**@global*/ let commentFilters = new Map([
+  /** @global */ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
@@ -1611,7 +1594,7 @@ input[type="date"] {
   }
   
   // insert switch
-  /**@global*/ const mainSwitch = `
+  /** @global */ const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
       <div class="flipflop" style="--color-on: var(--theme-color);">
         <span id="mainSwitchLabel" style="padding-right: 1rem;"></span>
@@ -1639,9 +1622,9 @@ function execute_startPage() {
 } })();
   } else if (route === 'profile') {
     (function() { // set up route-scoped fields and configs, then start the execution flow fo this route
-let commentData;
-let storedCommentData;
-const maxCommentHeightBeforeCut = 250;  // in pixel
+/** @type object[] */ let commentData;
+/** @type object[] */ let storedCommentData;
+/** @type number   */ const maxCommentHeightBeforeCut = 250;  // in pixel
 
 let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
@@ -1992,7 +1975,7 @@ function execute_profilePage() {
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
   commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
-  set_value('commentData', commentData);
+  set_value('commentData', commentData);    // FIXME: Regarding debugger, we use value scriptEnabled here... check that
 
   // count comments
   totalComments = commentData.length;
@@ -2041,7 +2024,7 @@ function execute_profilePage() {
   
   // mount handler for the text search filter
   let textFilterDelayActive = false;
-  document.getElementById('filterByText').oninput = function(ev) {
+  document.getElementById('filterByText').oninput = function() {
     const revertFilterTextInput = document.getElementById('revertFilterTextInput');
     let textFilter = commentFilters.get('filterTextSearch');
     if (this.value) {
@@ -2068,10 +2051,10 @@ function execute_profilePage() {
   
   
   // mount handlers for the date search filter
-  document.getElementById('filterByDateFrom').oninput = function(ev) {
+  document.getElementById('filterByDateFrom').oninput = function() {
     doUpdateDateFilter(this, document.getElementById('filterByDateTo'));
   };
-  document.getElementById('filterByDateTo').oninput = function(ev) {
+  document.getElementById('filterByDateTo').oninput = function() {
     doUpdateDateFilter(document.getElementById('filterByDateFrom'), this);
   };
 
@@ -2095,7 +2078,7 @@ function execute_profilePage() {
 
   
   // mount handler for the reset button of the user filter
-  document.getElementById('revertFilterUserInput').addEventListener('click', function(ev) {
+  document.getElementById('revertFilterUserInput').addEventListener('click', function() {
     // clear the displayed filter values
     const filteredUserList = document.getElementById('filteredUserList');
     while (filteredUserList.firstChild) filteredUserList.removeChild(filteredUserList.lastChild);
@@ -2111,7 +2094,7 @@ function execute_profilePage() {
 
   
   // mount handler for the reset button of the text filter
-  document.getElementById('revertFilterTextInput').addEventListener('click', function(ev) {
+  document.getElementById('revertFilterTextInput').addEventListener('click', function() {
     // clear the displayed filter values
     document.getElementById('filterByText').value = '';
     // clear the filter
@@ -2803,7 +2786,7 @@ function insertLanguageDropdown() {
   }
   // mount handler for all language entries
   for (const langItem of languageContainer.lastElementChild.children) {
-    langItem.addEventListener('click', function(ev) {
+    langItem.addEventListener('click', function() {
       const langId = this.getAttribute('data-lang');
       if (i18n.has(langId)) {
         activeLanguage = langId;
@@ -3190,17 +3173,18 @@ function updatePage() {
         return;
       }
       /*<SKIP*/
-/** @var {function} folgenItem */
-/** @var {EventTarget} BeforeUnloadEvent.originalTarget */
+/** @var {function} folgenItem  - Funktion von NuoFlix */
+/** @typedef {EventTarget} BeforeUnloadEvent.originalTarget  - Non-standard property, but available in many browsers */
 /*</SKIP>*/
 
 
 // set up route-scoped fields and start the execution flow fo this route
-const maxRetries = 5;
-const delay = 250;
-let retries = 0;
-let storedIgnoreList;
-let comments;
+/** @type number      */ const searchComments_maxRetries = 5;
+/** @type number      */ const searchComments_delayBeforeRetry = 250;
+/** @type number      */ let searchComments_retryCounter = 0;
+/** @type string[]    */ let storedIgnoreList;
+/** @type HTMLElement */ let commentContainer;
+
 execute_genericPage()
 
 
@@ -3225,21 +3209,25 @@ function execute_genericPage() {
  * Replace the original tiles for suggested videos with tiles, which allow to use the "open in new tab" function.
  */
 function replaceSuggestedVideoTiles() {
-  
-  /* ALTE VERSION, DIE DIE VORHANDENEN ELEMENT MODIFIZIERT */
-  
   // add link overlays over suggested videos to enable "open in new tab" function
   let foundSuggestedVideos = false;
-  for (const suggestion of document.getElementsByClassName('folgenItem')) {
+  const tiles = Array.from(document.getElementsByClassName('folgenItem'));
+  for (const i in tiles) {
+    const originalTile = tiles[i];
     // generate full URI
-    let uri = suggestion.getAttribute('onClick').replace("folgenItem('", '');
-    uri = window.location.origin + '/' + uri.substr(0, uri.length-2);
-    const overlay = `<a href="${uri}" class="overlayLink" style="position: absolute;left: 0;top: 0;height: 100%;width: 100%;"></a>`;
-    suggestion.removeAttribute('onClick');
-    suggestion.appendChild(overlay.parseHTML());
+    let uri = originalTile.getAttribute('onClick').replace("folgenItem('", '');
+    uri = window.location.origin + '/' + uri.substr(0, uri.length - 2);
+    // generate clone of the tile with an real link as overlay
+    const customTile = originalTile.cloneNode(true);
+    customTile.removeAttribute('onClick');
+    customTile.appendChild(`<a href="${uri}" class="overlayLink" style="position:absolute;left:0;top:0;height:100%;width:100%"></a>`.parseHTML());
+    addToDOM(customTile, originalTile, InsertionService.Before);
+    disablePrimalElement(originalTile);
     foundSuggestedVideos = true;
   }
+  
   // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
+  // OPTIMIZE: Möglichkeit finden, wie das auch dann noch zuverlässig durchgeführt wird, wenn "Open in new Tab" benutzt wird
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {
       // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
@@ -3249,15 +3237,13 @@ function replaceSuggestedVideoTiles() {
         let permalink = originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
         permalink = permalink.substring(1, permalink.length);
         if (permalink) {
-          window.onbeforeunload = null;  // prevent infinity loop
+          window.onbeforeunload = null;    // otherwise might lead to an infinity loop in some exotic browsers
           folgenItem(permalink);
         }
       }
     });
   }
-  
-  /* NEUE VERSION, DIE DIE ORIGINALEN ELEMENTE DURCH MODIFIZIERTE KLONE ERSETZT */
-  // TODO
+
 }
 
 
@@ -3269,7 +3255,7 @@ function replaceSuggestedVideoTiles() {
 function replaceReloadButton() {
   const originalButton = document.getElementsByClassName('reloadComment')[0];
   const modifiedButton = originalButton.cloneNode(true);
-  modifiedButton.addEventListener('click', function(ev) {
+  modifiedButton.addEventListener('click', function() {
     hideCommentsOfBlockedUsers(true);
   });
   addToDOM(modifiedButton, originalButton, InsertionService.Before, true, 'customReloadButton');
@@ -3287,21 +3273,21 @@ function hideCommentsOfBlockedUsers(delayed = false) {
   if (delayed) {
     const tryToApply = function() {
       setTimeout(function() {
-        if (comments.childElementCount > 0) {
+        if (commentContainer.childElementCount > 0) {
           for (const user of storedIgnoreList) hideCommentsOfUser(user);
         } else {
           // retry it up to 3 times after waiting one second after each try
-          if (retries < maxRetries - 1) {
-            retries++;
+          if (searchComments_retryCounter < searchComments_maxRetries - 1) {
+            searchComments_retryCounter++;
             tryToApply();
           }
         }
-      }, delay);
+      }, searchComments_delayBeforeRetry);
     }
 
     if (document.getElementById('commentContent')) {
       storedIgnoreList = get_value('ignoredUsers');
-      comments = document.getElementById('commentContent');
+      commentContainer = document.getElementById('commentContent');
       tryToApply();
     }
   } else {
@@ -3351,6 +3337,6 @@ const hideCommentsOfUser = function(username) {
 
 
   // reset to default page state if script was disabled on page load
-  if (!mainSwitchState) doChangeMainSwitch(null);
+  if (!mainSwitchState) doChangeMainSwitch( false);
 
 })();

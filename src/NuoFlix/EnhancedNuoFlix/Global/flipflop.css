@@ -1,34 +1,29 @@
-/*<SKIP>
+/*<SKIP>*/ /*
 
-  Styles for FlipFlop-Switch
-  To insert one, use:
-
+Styles for FlipFlop-Switch
+To insert one, use:
   <div class="flipflop">
     <span>Caption</span>
     <label><input type="checkbox" checked="checked" /><span></span></label>
   </div>
-  
-  To adjust configuration, following css-vars can be set to any element with the .flipflop class.
-  If a variable is not set, it will get a default value.
-  
-  --width
-  --speed
-  --color-thumb
-  --color-on
-  --color-off
-  --label-offset
 
-<SKIP>*/
+To adjust configuration, following css-vars can be set to any element with class "flipflop":
+  --width           [Default: 3rem]
+  --speed           [Default: 0.4s]
+  --color-thumb     [Default: #fff]
+  --color-on        [Default: #2196f3]
+  --color-off       [Default: #ccc]
+  --label-offset    [Default: 1rem]
+  
+*/ /*</SKIP>*/
 
 .flipflop {
-  /* set defaults for unset variables */
   --_width: var(--width, 3rem);
   --_speed: var(--speed, 0.4s);
   --_color-thumb: var(--color-thumb, #fff);
-  --_color-on: var(--color-on, #2196F3);
+  --_color-on: var(--color-on, #2196f3);
   --_color-off: var(--color-off, #ccc);
   --_label-offset: var(--label-offset, 1rem);
-  /* mandatory */
   --padding-thumb: calc(var(--_width)*.0666666667);
   --height: calc(var(--_width)/2 + var(--padding-thumb));
   --size-thumb: calc(var(--height) - 2*var(--padding-thumb));

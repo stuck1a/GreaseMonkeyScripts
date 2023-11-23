@@ -34,25 +34,25 @@
   addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
 
 
-  /**@global*/ let mainSwitchState;
-  /**@global*/ let customElementsRegister = new Map();
-  /**@global*/ let disabledPrimalElementsRegister = new Map();
-  /**@global*/ let staticTranslatableElements = new Map();
+  /** @global */ let mainSwitchState;
+  /** @global */ let customElementsRegister = new Map();
+  /** @global */ let disabledPrimalElementsRegister = new Map();
+  /** @global */ let staticTranslatableElements = new Map();
   
   // set up script-wide variables (used in all/multiple routes)
-  /**@global*/ let totalComments;
-  /**@global*/ let paginationContainer, paginationContainerBottom, paginationControlContainer, paginationControlContainerBottom;
-  /**@global*/ let customCommentContainer,originalCommentContainer
+  // OPTIMIZE: COULD be profile page specific
+  /** @global */ let totalComments;
+  /** @global */ let paginationContainer, paginationContainerBottom;
+  /** @global */ let paginationControlContainer, paginationControlContainerBottom;
+  /** @global */ let customCommentContainer, originalCommentContainer;
+  
+  // OPTIMIZE: SHOULD be profile page specific
+  /** @global */ let currentStart = defaultStart;
+  /** @global */ let currentLength = defaultLength;
+  /** @global */ let activeLanguage = defaultLanguage;
+  /** @global */ let filteredCommentsCount = 0;
 
-
-
-  // TODO: Should be profile page specific
-  /**@global*/ let currentStart = defaultStart;
-  /**@global*/ let currentLength = defaultLength;
-  /**@global*/ let activeLanguage = defaultLanguage;
-  /**@global*/ let filteredCommentsCount = 0;
-
-  /**@global*/ let commentFilters = new Map([
+  /** @global */ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
@@ -72,7 +72,7 @@
   }
   
   // insert switch
-  /**@global*/ const mainSwitch = `
+  /** @global */ const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
       <div class="flipflop" style="--color-on: var(--theme-color);">
         <span id="mainSwitchLabel" style="padding-right: 1rem;"></span>
@@ -113,6 +113,6 @@
 
 
   // reset to default page state if script was disabled on page load
-  if (!mainSwitchState) doChangeMainSwitch(null);
+  if (!mainSwitchState) doChangeMainSwitch( false);
 
 })();

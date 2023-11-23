@@ -1,15 +1,16 @@
 /*<SKIP*/
-/** @var {function} folgenItem */
-/** @var {EventTarget} BeforeUnloadEvent.originalTarget */
+/** @var {function} folgenItem  - Funktion von NuoFlix */
+/** @typedef {EventTarget} BeforeUnloadEvent.originalTarget  - Non-standard property, but available in many browsers */
 /*</SKIP>*/
 
 
 // set up route-scoped fields and start the execution flow fo this route
-const maxRetries = 5;
-const delay = 250;
-let retries = 0;
-let storedIgnoreList;
-let comments;
+/** @type number      */ const searchComments_maxRetries = 5;
+/** @type number      */ const searchComments_delayBeforeRetry = 250;
+/** @type number      */ let searchComments_retryCounter = 0;
+/** @type string[]    */ let storedIgnoreList;
+/** @type HTMLElement */ let commentContainer;
+
 execute_genericPage()
 
 
@@ -34,21 +35,25 @@ function execute_genericPage() {
  * Replace the original tiles for suggested videos with tiles, which allow to use the "open in new tab" function.
  */
 function replaceSuggestedVideoTiles() {
-  
-  /* ALTE VERSION, DIE DIE VORHANDENEN ELEMENT MODIFIZIERT */
-  
   // add link overlays over suggested videos to enable "open in new tab" function
   let foundSuggestedVideos = false;
-  for (const suggestion of document.getElementsByClassName('folgenItem')) {
+  const tiles = Array.from(document.getElementsByClassName('folgenItem'));
+  for (const i in tiles) {
+    const originalTile = tiles[i];
     // generate full URI
-    let uri = suggestion.getAttribute('onClick').replace("folgenItem('", '');
-    uri = window.location.origin + '/' + uri.substr(0, uri.length-2);
-    const overlay = `<a href="${uri}" class="overlayLink" style="position: absolute;left: 0;top: 0;height: 100%;width: 100%;"></a>`;
-    suggestion.removeAttribute('onClick');
-    suggestion.appendChild(overlay.parseHTML());
+    let uri = originalTile.getAttribute('onClick').replace("folgenItem('", '');
+    uri = window.location.origin + '/' + uri.substr(0, uri.length - 2);
+    // generate clone of the tile with an real link as overlay
+    const customTile = originalTile.cloneNode(true);
+    customTile.removeAttribute('onClick');
+    customTile.appendChild(`<a href="${uri}" class="overlayLink" style="position:absolute;left:0;top:0;height:100%;width:100%"></a>`.parseHTML());
+    addToDOM(customTile, originalTile, InsertionService.Before);
+    disablePrimalElement(originalTile);
     foundSuggestedVideos = true;
   }
+  
   // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
+  // OPTIMIZE: Möglichkeit finden, wie das auch dann noch zuverlässig durchgeführt wird, wenn "Open in new Tab" benutzt wird
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {
       // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
@@ -58,15 +63,13 @@ function replaceSuggestedVideoTiles() {
         let permalink = originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
         permalink = permalink.substring(1, permalink.length);
         if (permalink) {
-          window.onbeforeunload = null;  // prevent infinity loop
+          window.onbeforeunload = null;    // otherwise might lead to an infinity loop in some exotic browsers
           folgenItem(permalink);
         }
       }
     });
   }
-  
-  /* NEUE VERSION, DIE DIE ORIGINALEN ELEMENTE DURCH MODIFIZIERTE KLONE ERSETZT */
-  // TODO
+
 }
 
 
@@ -78,7 +81,7 @@ function replaceSuggestedVideoTiles() {
 function replaceReloadButton() {
   const originalButton = document.getElementsByClassName('reloadComment')[0];
   const modifiedButton = originalButton.cloneNode(true);
-  modifiedButton.addEventListener('click', function(ev) {
+  modifiedButton.addEventListener('click', function() {
     hideCommentsOfBlockedUsers(true);
   });
   addToDOM(modifiedButton, originalButton, InsertionService.Before, true, 'customReloadButton');
@@ -96,21 +99,21 @@ function hideCommentsOfBlockedUsers(delayed = false) {
   if (delayed) {
     const tryToApply = function() {
       setTimeout(function() {
-        if (comments.childElementCount > 0) {
+        if (commentContainer.childElementCount > 0) {
           for (const user of storedIgnoreList) hideCommentsOfUser(user);
         } else {
           // retry it up to 3 times after waiting one second after each try
-          if (retries < maxRetries - 1) {
-            retries++;
+          if (searchComments_retryCounter < searchComments_maxRetries - 1) {
+            searchComments_retryCounter++;
             tryToApply();
           }
         }
-      }, delay);
+      }, searchComments_delayBeforeRetry);
     }
 
     if (document.getElementById('commentContent')) {
       storedIgnoreList = get_value('ignoredUsers');
-      comments = document.getElementById('commentContent');
+      commentContainer = document.getElementById('commentContent');
       tryToApply();
     }
   } else {

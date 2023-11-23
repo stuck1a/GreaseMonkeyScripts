@@ -1,7 +1,7 @@
 // set up route-scoped fields and configs, then start the execution flow fo this route
-let commentData;
-let storedCommentData;
-const maxCommentHeightBeforeCut = 250;  // in pixel
+/** @type object[] */ let commentData;
+/** @type object[] */ let storedCommentData;
+/** @type number   */ const maxCommentHeightBeforeCut = 250;  // in pixel
 
 /*%% ProfilePage/mainUI.js %%*/
 
@@ -57,7 +57,7 @@ function execute_profilePage() {
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
   commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
-  set_value('commentData', commentData);
+  set_value('commentData', commentData);    // FIXME: Regarding debugger, we use value scriptEnabled here... check that
 
   // count comments
   totalComments = commentData.length;
@@ -106,7 +106,7 @@ function execute_profilePage() {
   
   // mount handler for the text search filter
   let textFilterDelayActive = false;
-  document.getElementById('filterByText').oninput = function(ev) {
+  document.getElementById('filterByText').oninput = function() {
     const revertFilterTextInput = document.getElementById('revertFilterTextInput');
     let textFilter = commentFilters.get('filterTextSearch');
     if (this.value) {
@@ -133,10 +133,10 @@ function execute_profilePage() {
   
   
   // mount handlers for the date search filter
-  document.getElementById('filterByDateFrom').oninput = function(ev) {
+  document.getElementById('filterByDateFrom').oninput = function() {
     doUpdateDateFilter(this, document.getElementById('filterByDateTo'));
   };
-  document.getElementById('filterByDateTo').oninput = function(ev) {
+  document.getElementById('filterByDateTo').oninput = function() {
     doUpdateDateFilter(document.getElementById('filterByDateFrom'), this);
   };
 
@@ -160,7 +160,7 @@ function execute_profilePage() {
 
   
   // mount handler for the reset button of the user filter
-  document.getElementById('revertFilterUserInput').addEventListener('click', function(ev) {
+  document.getElementById('revertFilterUserInput').addEventListener('click', function() {
     // clear the displayed filter values
     const filteredUserList = document.getElementById('filteredUserList');
     while (filteredUserList.firstChild) filteredUserList.removeChild(filteredUserList.lastChild);
@@ -176,7 +176,7 @@ function execute_profilePage() {
 
   
   // mount handler for the reset button of the text filter
-  document.getElementById('revertFilterTextInput').addEventListener('click', function(ev) {
+  document.getElementById('revertFilterTextInput').addEventListener('click', function() {
     // clear the displayed filter values
     document.getElementById('filterByText').value = '';
     // clear the filter
@@ -868,7 +868,7 @@ function insertLanguageDropdown() {
   }
   // mount handler for all language entries
   for (const langItem of languageContainer.lastElementChild.children) {
-    langItem.addEventListener('click', function(ev) {
+    langItem.addEventListener('click', function() {
       const langId = this.getAttribute('data-lang');
       if (i18n.has(langId)) {
         activeLanguage = langId;

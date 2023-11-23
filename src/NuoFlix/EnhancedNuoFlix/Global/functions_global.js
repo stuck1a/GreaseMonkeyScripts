@@ -102,7 +102,7 @@ class InsertionService {
  * @param {?string} registerId  - ID under which the element is added to the register. 
  *                                If no access is needed later on, can be omitted or set to null (will use random ID).
  *
- * @return {HTMLElement|HTMLElement[]|DocumentFragment}  - Reference (or list of references) of inserted element(s) or
+ * @return {HTMLElement|HTMLElement[]|Node|DocumentFragment}  - Reference (or list of references) of inserted element(s) or
  *   the input itself, if something went wrong.
  */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
@@ -295,13 +295,15 @@ function registerStaticTranslatable(element, text, args = []) {
  * Click event handler for the global switch which
  * turns all of this UserScripts features on/off.
  *
- * @param {Event} ev
+ * @param [toggleState=true]  - If false, the internal state won't be toggled (used only for the manual call when script is disabled on page load)
  */
-function doChangeMainSwitch(ev) {
-  // store new state
-  mainSwitchState = !mainSwitchState;
-  set_value('scriptEnabled', mainSwitchState);
-    
+function doChangeMainSwitch(toggleState = false) {
+  // toggle state flag
+  if (toggleState) {
+    mainSwitchState = !mainSwitchState;
+    set_value('scriptEnabled', mainSwitchState);
+  }
+  
   // toggle visibility of custom elements
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {
