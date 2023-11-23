@@ -405,6 +405,41 @@
 ]);
   
 
+Element.prototype._addEventListener = Element.prototype.addEventListener;
+Element.prototype.addEventListener = function(type, listener, options) {
+  if (options === undefined) options = false;
+  this._addEventListener(type, listener, options);
+  if (!this.eventListenerList) this.eventListenerList = new Map();
+  if (!this.eventListenerList.has(type)) this.eventListenerList.set(type, []);
+  this.eventListenerList.get(type).push({ listener: listener, options: options });
+};
+
+
+Element.prototype._removeEventListener = Element.prototype.removeEventListener;
+Element.prototype.removeEventListener = function(type, listener, options) {
+  if (options === undefined) options = false;
+  this._removeEventListener(type, listener, options);
+  if (!this.eventListenerList) this.eventListenerList = new Map;
+  if (!this.eventListenerList.has(type)) this.eventListenerList.set(type, []);
+  for (let i = 0; i < this.eventListenerList.get(type).length; i++) {
+    if (this.eventListenerList.get(type)[i].listener === listener, this.eventListenerList.get(type)[i].options === options) {
+      this.eventListenerList[type].splice(i, 1);
+      break;
+    }
+  }
+  if (this.eventListenerList[type].length === 0) delete this.eventListenerList[type];
+};
+
+
+Element.prototype.getEventListeners = function(type) {
+  if (!this.eventListenerList) this.eventListenerList = new Map();
+  if (type === undefined) { return this.eventListenerList; }
+  return this.eventListenerList.get(type).sort();
+};
+
+
+
+
 
 /**
  * Works like sprintf in PHP. Use {n} as placeholder, where
@@ -1420,24 +1455,7 @@ input[type="date"] {
 .svgColorized { --color: var(--theme-color); }
 .svgColorized .svgColoredFill { fill: var(--color) }
 .svgColorized .svgColoredStroke { stroke: var(--color) }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  addToDOM(`<style>/*<SKIP>
-  Styles for FlipFlop-Switch
-  To insert one, use:
-  <div class="flipflop">
-    <span>Caption</span>
-    <label><input type="checkbox" checked="checked" /><span></span></label>
-  </div>
-  
-  To adjust configuration, following css-vars can be set to any element with the .flipflop class.
-  If a variable is not set, it will get a default value.
-  
-  --width
-  --speed
-  --color-thumb
-  --color-on
-  --color-off
-  --label-offset
-<SKIP>*/
+  addToDOM(`<style>
 .flipflop {
   /* set defaults for unset variables */
   --_width: var(--width, 3rem);
@@ -3257,6 +3275,6 @@ const hideCommentsOfUser = function(username) {
 
   // reset to default page state if script was disabled 
   // TODO: Really cancel script if initially disabled but mount handler of switch before exit which will execute the whole script IIFS
-  if (!mainSwitchState) doChangeMainSwitch(null);
+  //if (!mainSwitchState) doChangeMainSwitch(null);
 
 })();

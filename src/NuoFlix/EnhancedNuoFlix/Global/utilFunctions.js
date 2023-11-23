@@ -1,9 +1,39 @@
-/*<SKIP>*/
-/** @const {function} GM_listValues */
-/** @const {function} GM_deleteValue */
-/** @const {function} GM_setValue */
-/** @const {function} GM_getValue */
-/*</SKIP>*/
+
+
+Element.prototype._addEventListener = Element.prototype.addEventListener;
+Element.prototype.addEventListener = function(type, listener, options) {
+  if (options === undefined) options = false;
+  this._addEventListener(type, listener, options);
+  if (!this.eventListenerList) this.eventListenerList = new Map();
+  if (!this.eventListenerList.has(type)) this.eventListenerList.set(type, []);
+  this.eventListenerList.get(type).push({ listener: listener, options: options });
+};
+
+
+Element.prototype._removeEventListener = Element.prototype.removeEventListener;
+Element.prototype.removeEventListener = function(type, listener, options) {
+  if (options === undefined) options = false;
+  this._removeEventListener(type, listener, options);
+  if (!this.eventListenerList) this.eventListenerList = new Map;
+  if (!this.eventListenerList.has(type)) this.eventListenerList.set(type, []);
+  for (let i = 0; i < this.eventListenerList.get(type).length; i++) {
+    if (this.eventListenerList.get(type)[i].listener === listener, this.eventListenerList.get(type)[i].options === options) {
+      this.eventListenerList[type].splice(i, 1);
+      break;
+    }
+  }
+  if (this.eventListenerList[type].length === 0) delete this.eventListenerList[type];
+};
+
+
+Element.prototype.getEventListeners = function(type) {
+  if (!this.eventListenerList) this.eventListenerList = new Map();
+  if (type === undefined) { return this.eventListenerList; }
+  return this.eventListenerList.get(type).sort();
+};
+
+
+
 
 
 /**
