@@ -35,8 +35,8 @@ class InsertionService {
   /**
    * Applies the insertion.
    * 
-   * @param {HTMLElement} element
-   * @param {HTMLElement} refElement
+   * @param {HTMLElement|Node} element
+   * @param {HTMLElement|Node} refElement
    * @param {InsertionService} method
    */
   static insert(element, refElement, method) {
@@ -95,7 +95,7 @@ class InsertionService {
  * @requires log
  * @requires t
  * 
- * @param {DocumentFragment|HTMLElement} element  - Element to insert
+ * @param {DocumentFragment|HTMLElement|Node} element  - Element to insert
  * @param {HTMLElement|string} refElement  - Reference element for the placement (can be an element id as well)
  * @param {InsertionService} method  - Insertion logic to use
  * @param {boolean} [register=true]  - Whether the element shall be added to the register of custom elements
@@ -116,7 +116,7 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
       insertedElements.push(rootElement);
     }
     if (element.childElementCount === 1) insertedElements = element.children[0];
-  } else if (element instanceof HTMLElement) {
+  } else if (element instanceof HTMLElement || element instanceof Node) {
     element.setAttribute('data-customElement', 'true');
     insertedElements = element;
   }
@@ -150,7 +150,7 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
  */
 function removeFromDOM(elementOrId, force = false) {
   // if we got the element itself
-  if (elementOrId instanceof HTMLElement) {
+  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
     if (force || elementOrId.hasAttribute('data-customElement')) {
       if (disabledPrimalElementsRegister && !elementOrId.hasAttribute('data-customElement')) {
@@ -165,7 +165,7 @@ function removeFromDOM(elementOrId, force = false) {
   // if we got the register id
   if (customElementsRegister && customElementsRegister.has(elementOrId)) {
     const element = customElementsRegister.get(elementOrId);
-    if (element instanceof HTMLElement) element.remove();
+    if (element instanceof HTMLElement || element instanceof Node) element.remove();
     customElementsRegister.delete(elementOrId);
     return true;
   }
@@ -200,7 +200,7 @@ function removeFromDOM(elementOrId, force = false) {
  * @requires disabledPrimalElementsRegister
  * @requires Map.prototype.deleteByValue
  * 
- * @param {HTMLElement|string} elementOrId  - Target element, its id or register id
+ * @param {Node|HTMLElement|string} elementOrId  - Target element, its id or register id
  * @param {?string} registerId  - ID under which the element is added to the register.
  *                                If omitted or null, an unique ID will be created.
  *
@@ -219,7 +219,7 @@ function disablePrimalElement(elementOrId, registerId = null) {
   };
   
   // if we got an element
-  if (elementOrId instanceof HTMLElement) return apply(registerId, elementOrId);
+  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) return apply(registerId, elementOrId);
   
   // if we got an element id
   elementOrId = document.getElementById(elementOrId);
@@ -244,7 +244,7 @@ function disablePrimalElement(elementOrId, registerId = null) {
  */
 function enablePrimalElement(elementOrId) {
   // if we got an element
-  if (elementOrId instanceof HTMLElement) {
+  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
     elementOrId.classList.remove('hidden');
     return true;

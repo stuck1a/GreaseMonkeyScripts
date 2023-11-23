@@ -404,6 +404,8 @@
   
 ]);
   
+
+
 /**
  * Alter the addEventListener function and introduce a register of all mounted listener functions.
  */
@@ -822,8 +824,8 @@ class InsertionService {
   /**
    * Applies the insertion.
    * 
-   * @param {HTMLElement} element
-   * @param {HTMLElement} refElement
+   * @param {HTMLElement|Node} element
+   * @param {HTMLElement|Node} refElement
    * @param {InsertionService} method
    */
   static insert(element, refElement, method) {
@@ -882,7 +884,7 @@ class InsertionService {
  * @requires log
  * @requires t
  * 
- * @param {DocumentFragment|HTMLElement} element  - Element to insert
+ * @param {DocumentFragment|HTMLElement|Node} element  - Element to insert
  * @param {HTMLElement|string} refElement  - Reference element for the placement (can be an element id as well)
  * @param {InsertionService} method  - Insertion logic to use
  * @param {boolean} [register=true]  - Whether the element shall be added to the register of custom elements
@@ -903,7 +905,7 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
       insertedElements.push(rootElement);
     }
     if (element.childElementCount === 1) insertedElements = element.children[0];
-  } else if (element instanceof HTMLElement) {
+  } else if (element instanceof HTMLElement || element instanceof Node) {
     element.setAttribute('data-customElement', 'true');
     insertedElements = element;
   }
@@ -937,7 +939,7 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
  */
 function removeFromDOM(elementOrId, force = false) {
   // if we got the element itself
-  if (elementOrId instanceof HTMLElement) {
+  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
     if (force || elementOrId.hasAttribute('data-customElement')) {
       if (disabledPrimalElementsRegister && !elementOrId.hasAttribute('data-customElement')) {
@@ -952,7 +954,7 @@ function removeFromDOM(elementOrId, force = false) {
   // if we got the register id
   if (customElementsRegister && customElementsRegister.has(elementOrId)) {
     const element = customElementsRegister.get(elementOrId);
-    if (element instanceof HTMLElement) element.remove();
+    if (element instanceof HTMLElement || element instanceof Node) element.remove();
     customElementsRegister.delete(elementOrId);
     return true;
   }
@@ -987,7 +989,7 @@ function removeFromDOM(elementOrId, force = false) {
  * @requires disabledPrimalElementsRegister
  * @requires Map.prototype.deleteByValue
  * 
- * @param {HTMLElement|string} elementOrId  - Target element, its id or register id
+ * @param {Node|HTMLElement|string} elementOrId  - Target element, its id or register id
  * @param {?string} registerId  - ID under which the element is added to the register.
  *                                If omitted or null, an unique ID will be created.
  *
@@ -1006,7 +1008,7 @@ function disablePrimalElement(elementOrId, registerId = null) {
   };
   
   // if we got an element
-  if (elementOrId instanceof HTMLElement) return apply(registerId, elementOrId);
+  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) return apply(registerId, elementOrId);
   
   // if we got an element id
   elementOrId = document.getElementById(elementOrId);
@@ -1031,7 +1033,7 @@ function disablePrimalElement(elementOrId, registerId = null) {
  */
 function enablePrimalElement(elementOrId) {
   // if we got an element
-  if (elementOrId instanceof HTMLElement) {
+  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
     elementOrId.classList.remove('hidden');
     return true;
@@ -1485,7 +1487,24 @@ input[type="date"] {
 .svgColorized { --color: var(--theme-color); }
 .svgColorized .svgColoredFill { fill: var(--color) }
 .svgColorized .svgColoredStroke { stroke: var(--color) }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  addToDOM(`<style>
+  addToDOM(`<style>/*<SKIP>
+  Styles for FlipFlop-Switch
+  To insert one, use:
+  <div class="flipflop">
+    <span>Caption</span>
+    <label><input type="checkbox" checked="checked" /><span></span></label>
+  </div>
+  
+  To adjust configuration, following css-vars can be set to any element with the .flipflop class.
+  If a variable is not set, it will get a default value.
+  
+  --width
+  --speed
+  --color-thumb
+  --color-on
+  --color-off
+  --label-offset
+<SKIP>*/
 .flipflop {
   /* set defaults for unset variables */
   --_width: var(--width, 3rem);
@@ -1603,8 +1622,6 @@ input[type="date"] {
   addToDOM(mainSwitch, document.getElementById('header').lastElementChild, InsertionService.AsLastChild, false);
   registerStaticTranslatable(document.getElementById('mainSwitchLabel'), 'NuoFlix 2.0', []);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-
-
   
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
@@ -3172,7 +3189,13 @@ function updatePage() {
         updateStaticTranslations();
         return;
       }
-      // set up route-scoped fields and start the execution flow fo this route
+      /*<SKIP*/
+/** @var {function} folgenItem */
+/** @var {EventTarget} BeforeUnloadEvent.originalTarget */
+/*</SKIP>*/
+
+
+// set up route-scoped fields and start the execution flow fo this route
 const maxRetries = 5;
 const delay = 250;
 let retries = 0;
@@ -3187,6 +3210,24 @@ execute_genericPage()
  * Main function of this route
  */
 function execute_genericPage() {
+  // replace all elements which need to be modified
+  replaceSuggestedVideoTiles();
+  replaceReloadButton();
+  // Try to find content of blocked users and hide them
+  hideCommentsOfBlockedUsers(true);
+  // initialize i18n strings
+  updateStaticTranslations();
+}
+
+
+
+/**
+ * Replace the original tiles for suggested videos with tiles, which allow to use the "open in new tab" function.
+ */
+function replaceSuggestedVideoTiles() {
+  
+  /* ALTE VERSION, DIE DIE VORHANDENEN ELEMENT MODIFIZIERT */
+  
   // add link overlays over suggested videos to enable "open in new tab" function
   let foundSuggestedVideos = false;
   for (const suggestion of document.getElementsByClassName('folgenItem')) {
@@ -3202,9 +3243,10 @@ function execute_genericPage() {
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {
       // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
-      const callee = ev.originalTarget.activeElement;
+      const originalTarget = ev.originalTarget || ev.srcElement;
+      const callee = originalTarget.activeElement;
       if (callee.classList.contains('overlayLink')) {
-        let permalink = ev.originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
+        let permalink = originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
         permalink = permalink.substring(1, permalink.length);
         if (permalink) {
           window.onbeforeunload = null;  // prevent infinity loop
@@ -3213,25 +3255,32 @@ function execute_genericPage() {
       }
     });
   }
-
-  // Try to find content of blocked users and hide them
-  hideCommentsOfBlockedUsers(true);
   
-  // add handler to the reload button, otherwise it would display hidden content again
-  document.getElementsByClassName('reloadComment')[0].addEventListener('click', function(ev) {
-    hideCommentsOfBlockedUsers(true);
-  });
-  
-  // initialize i18n strings
-  updateStaticTranslations()
+  /* NEUE VERSION, DIE DIE ORIGINALEN ELEMENTE DURCH MODIFIZIERTE KLONE ERSETZT */
+  // TODO
 }
 
+
+
+/**
+ * Replace the original "Reload" button of the comment section is one, which applies the list of blocked users
+ * after reloading.
+ */
+function replaceReloadButton() {
+  const originalButton = document.getElementsByClassName('reloadComment')[0];
+  const modifiedButton = originalButton.cloneNode(true);
+  modifiedButton.addEventListener('click', function(ev) {
+    hideCommentsOfBlockedUsers(true);
+  });
+  addToDOM(modifiedButton, originalButton, InsertionService.Before, true, 'customReloadButton');
+  disablePrimalElement(originalButton, 'originalReloadButton');
+}
 
 
 
 /**
  * Loads the list of blocked users and hide all their comment texts and replies.
- * 
+ *
  * @param {boolean} [delayed=true]  - Wait some time before searching for the comments (required for the initial call)
  */
 function hideCommentsOfBlockedUsers(delayed = false) {
@@ -3264,9 +3313,10 @@ function hideCommentsOfBlockedUsers(delayed = false) {
 }
 
 
+
 /**
  * Deletes all comments and replies of a given user
- * 
+ *
  * @param username
  */
 const hideCommentsOfUser = function(username) {
@@ -3300,8 +3350,7 @@ const hideCommentsOfUser = function(username) {
   }
 
 
-  // reset to default page state if script was disabled 
-  // TODO: Really cancel script if initially disabled but mount handler of switch before exit which will execute the whole script IIFS
-  //if (!mainSwitchState) doChangeMainSwitch(null);
+  // reset to default page state if script was disabled on page load
+  if (!mainSwitchState) doChangeMainSwitch(null);
 
 })();

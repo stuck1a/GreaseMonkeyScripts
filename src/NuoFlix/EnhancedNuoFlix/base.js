@@ -84,14 +84,6 @@
   registerStaticTranslatable(document.getElementById('mainSwitchLabel'), 'NuoFlix 2.0', []);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
   
-  
-  // stop here, if the script is disabled
-  if (!mainSwitchState) {
-    // but mount a handler which will execute the script when it gets enabled
-    
-  }
-  
-  
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'start') {
@@ -120,8 +112,7 @@
   }
 
 
-  // reset to default page state if script was disabled 
-  // TODO: Really cancel script if initially disabled but mount handler of switch before exit which will execute the whole script IIFS
-  //if (!mainSwitchState) doChangeMainSwitch(null);
+  // reset to default page state if script was disabled on page load
+  if (!mainSwitchState) doChangeMainSwitch(null);
 
 })();

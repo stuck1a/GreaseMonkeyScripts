@@ -1,3 +1,10 @@
+/*<SKIP>*/
+/** @var {function} GM_getValue */
+/** @var {function} GM_setValue */
+/** @var {function} GM_listValues */
+/** @var {function} GM_deleteValue */
+/*</SKIP>*/
+
 
 /**
  * Alter the addEventListener function and introduce a register of all mounted listener functions.

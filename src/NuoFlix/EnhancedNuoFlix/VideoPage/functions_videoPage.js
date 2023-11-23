@@ -1,3 +1,9 @@
+/*<SKIP*/
+/** @var {function} folgenItem */
+/** @var {EventTarget} BeforeUnloadEvent.originalTarget */
+/*</SKIP>*/
+
+
 // set up route-scoped fields and start the execution flow fo this route
 const maxRetries = 5;
 const delay = 250;
@@ -13,6 +19,24 @@ execute_genericPage()
  * Main function of this route
  */
 function execute_genericPage() {
+  // replace all elements which need to be modified
+  replaceSuggestedVideoTiles();
+  replaceReloadButton();
+  // Try to find content of blocked users and hide them
+  hideCommentsOfBlockedUsers(true);
+  // initialize i18n strings
+  updateStaticTranslations();
+}
+
+
+
+/**
+ * Replace the original tiles for suggested videos with tiles, which allow to use the "open in new tab" function.
+ */
+function replaceSuggestedVideoTiles() {
+  
+  /* ALTE VERSION, DIE DIE VORHANDENEN ELEMENT MODIFIZIERT */
+  
   // add link overlays over suggested videos to enable "open in new tab" function
   let foundSuggestedVideos = false;
   for (const suggestion of document.getElementsByClassName('folgenItem')) {
@@ -28,9 +52,10 @@ function execute_genericPage() {
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {
       // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
-      const callee = ev.originalTarget.activeElement;
+      const originalTarget = ev.originalTarget || ev.srcElement;
+      const callee = originalTarget.activeElement;
       if (callee.classList.contains('overlayLink')) {
-        let permalink = ev.originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
+        let permalink = originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
         permalink = permalink.substring(1, permalink.length);
         if (permalink) {
           window.onbeforeunload = null;  // prevent infinity loop
@@ -39,25 +64,32 @@ function execute_genericPage() {
       }
     });
   }
-
-  // Try to find content of blocked users and hide them
-  hideCommentsOfBlockedUsers(true);
   
-  // add handler to the reload button, otherwise it would display hidden content again
-  document.getElementsByClassName('reloadComment')[0].addEventListener('click', function(ev) {
-    hideCommentsOfBlockedUsers(true);
-  });
-  
-  // initialize i18n strings
-  updateStaticTranslations()
+  /* NEUE VERSION, DIE DIE ORIGINALEN ELEMENTE DURCH MODIFIZIERTE KLONE ERSETZT */
+  // TODO
 }
 
+
+
+/**
+ * Replace the original "Reload" button of the comment section is one, which applies the list of blocked users
+ * after reloading.
+ */
+function replaceReloadButton() {
+  const originalButton = document.getElementsByClassName('reloadComment')[0];
+  const modifiedButton = originalButton.cloneNode(true);
+  modifiedButton.addEventListener('click', function(ev) {
+    hideCommentsOfBlockedUsers(true);
+  });
+  addToDOM(modifiedButton, originalButton, InsertionService.Before, true, 'customReloadButton');
+  disablePrimalElement(originalButton, 'originalReloadButton');
+}
 
 
 
 /**
  * Loads the list of blocked users and hide all their comment texts and replies.
- * 
+ *
  * @param {boolean} [delayed=true]  - Wait some time before searching for the comments (required for the initial call)
  */
 function hideCommentsOfBlockedUsers(delayed = false) {
@@ -90,9 +122,10 @@ function hideCommentsOfBlockedUsers(delayed = false) {
 }
 
 
+
 /**
  * Deletes all comments and replies of a given user
- * 
+ *
  * @param username
  */
 const hideCommentsOfUser = function(username) {
