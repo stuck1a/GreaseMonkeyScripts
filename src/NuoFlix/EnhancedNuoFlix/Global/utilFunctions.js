@@ -1,23 +1,28 @@
 
-
+/**
+ * Alter the addEventListener function and introduce a register of all mounted listener functions.
+ */
 Element.prototype._addEventListener = Element.prototype.addEventListener;
 Element.prototype.addEventListener = function(type, listener, options) {
   if (options === undefined) options = false;
   this._addEventListener(type, listener, options);
-  if (!this.eventListenerList) this.eventListenerList = new Map();
-  if (!this.eventListenerList.has(type)) this.eventListenerList.set(type, []);
-  this.eventListenerList.get(type).push({ listener: listener, options: options });
+  if (!this.eventListenerList) this.eventListenerList = [];
+  if (!this.eventListenerList[type]) this.eventListenerList[type] = [];
+  this.eventListenerList[type].push({ listener: listener, options: options });
 };
 
-
+/**
+ * Alter the removeEventListener function and maintain the custom register of all mounted listener functions.
+ */
 Element.prototype._removeEventListener = Element.prototype.removeEventListener;
 Element.prototype.removeEventListener = function(type, listener, options) {
   if (options === undefined) options = false;
   this._removeEventListener(type, listener, options);
-  if (!this.eventListenerList) this.eventListenerList = new Map;
-  if (!this.eventListenerList.has(type)) this.eventListenerList.set(type, []);
-  for (let i = 0; i < this.eventListenerList.get(type).length; i++) {
-    if (this.eventListenerList.get(type)[i].listener === listener, this.eventListenerList.get(type)[i].options === options) {
+  if (!this.eventListenerList) this.eventListenerList = [];
+  if (!this.eventListenerList[type]) this.eventListenerList[type] = [];
+  const list = this.eventListenerList[type];
+  for (let i = 0; i < list.length; i++) {
+    if (this.eventListenerList[type][i].listener === listener && this.eventListenerList[type][i].options === options) {
       this.eventListenerList[type].splice(i, 1);
       break;
     }
@@ -25,12 +30,37 @@ Element.prototype.removeEventListener = function(type, listener, options) {
   if (this.eventListenerList[type].length === 0) delete this.eventListenerList[type];
 };
 
-
+/**
+ * Returns an array with references to all listeners of the given event type.
+ * Note, that this list only returns listeners which where added with addEventListener()!
+ * 
+ * @param {string} type  - Event type, e.g. "click"
+ * 
+ * @return {function[]}  - List of listener functions in the order they are mounted/fired
+ */
 Element.prototype.getEventListeners = function(type) {
-  if (!this.eventListenerList) this.eventListenerList = new Map();
-  if (type === undefined) { return this.eventListenerList; }
-  return this.eventListenerList.get(type).sort();
+  if (!this.eventListenerList) this.eventListenerList = [];
+  const result = this.eventListenerList[type];
+  return result ? result.sort() : [];
 };
+
+/**
+ * Modified version of addEventListener. This will insert an listener which is executed
+ * before all other listeners which are already mounted at this time.
+ * Note, that this won't work if an already mounted listener was added with through an
+ * elements event attribute.
+ * 
+ * @param type
+ * @param listener
+ * @param options
+ */
+Element.prototype.prependEventListener = function (type, listener, options) {
+  if (options === undefined) options = false;
+  const existingListeners = Array.from(this.getEventListeners(type));
+  for (let i=0; i<existingListeners.length; i++) this.removeEventListener(type, existingListeners[i]['listener'], existingListeners[i]['options']);
+  this.addEventListener(type, listener, options);
+  for (let i=0; i<existingListeners.length; i++) this.addEventListener(type, existingListeners[i]['listener'], existingListeners[i]['options']);
+}
 
 
 
