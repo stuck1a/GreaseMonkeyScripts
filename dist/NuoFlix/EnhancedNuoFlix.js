@@ -19,16 +19,11 @@
 // @downloadURL     https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/NuoFlix/EnhancedNuoFlix.js
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
-
-
 (function() {
-  
   // Unique key used for the GM data storage to avoid naming conflicts across scripts
 /** @global */ const CACHE_KEY = 's1a/enhancednuoflix';
-
 // Logger prefix
 /** @global */ const MSG_PREFIX = 'Enhanced NuoFlix';
-
 // Fixed configs
 /** @global */ const highlightedCommentsColor = '#4A4A20';
 /** @global */ const highlightedRepliesColor = '#373434';
@@ -37,12 +32,10 @@
 /** @global */ const cssClassHasNewReplies = 'hasNewReply';
 /** @global */ const cssClassNewReplies = 'newReply';
 /** @global */ const expandedReplyCount = 3;
-
 // Defaults
 /** @global */ const defaultStart = 1;
 /** @global */ const defaultLength = 5;
 /** @global */ const defaultLanguage = 'de';
-
 // Map execution flows to pages
 /** @global */ const pageRoutes = new Map([
   // path       route name
@@ -51,7 +44,6 @@
   [ '/.+',      'video'   ],
 ]);
   /** @global */ const i18n = new Map([
-  
   [
     // German (base strings are german, so we need only the metadata here)
     'de', new Map([
@@ -61,7 +53,6 @@
       }],
     ])
   ],
-
   [
     // English
     'en', new Map([
@@ -231,7 +222,6 @@
 ],
     ])
   ],
-  
   [
     // Russian
     'ru', new Map([
@@ -401,11 +391,7 @@
 ],
     ])
   ],
-  
 ]);
-  
-
-
 /**
  * Alter the addEventListener function and introduce a register of all mounted listener functions.
  */
@@ -417,7 +403,6 @@ Element.prototype.addEventListener = function(type, listener, options) {
   if (!this.eventListenerList[type]) this.eventListenerList[type] = [];
   this.eventListenerList[type].push({ listener: listener, options: options });
 };
-
 /**
  * Alter the removeEventListener function and maintain the custom register of all mounted listener functions.
  */
@@ -436,7 +421,6 @@ Element.prototype.removeEventListener = function(type, listener, options) {
   }
   if (this.eventListenerList[type].length === 0) delete this.eventListenerList[type];
 };
-
 /**
  * Returns an array with references to all listeners of the given event type.
  * Note, that this list only returns listeners which where added with addEventListener()!
@@ -450,7 +434,6 @@ Element.prototype.getEventListeners = function(type) {
   const result = this.eventListenerList[type];
   return result ? result.sort() : [];
 };
-
 /**
  * Modified version of addEventListener. This will insert an listener which is executed
  * before all other listeners which are already mounted at this time.
@@ -468,11 +451,6 @@ Element.prototype.prependEventListener = function(type, listener, options = null
   this.addEventListener(type, listener, options);
   for (let i=0; i<existingListeners.length; i++) this.addEventListener(type, existingListeners[i]['listener'], existingListeners[i]['options']);
 }
-
-
-
-
-
 /**
  * Works like sprintf in PHP. Use {n} as placeholder, where
  * n is zero-indexed. Excepts n additional arguments of
@@ -488,9 +466,6 @@ String.sprintf = function(format) {
     return typeof args[number] !== typeof undefined ? args[number].toString() : match;
   });
 };
-
-
-
 /**
  * @return {DocumentFragment}
  */
@@ -499,9 +474,6 @@ String.prototype.parseHTML = function() {
   t.innerHTML = this;
   return t.content;
 };
-
-
-
 /**
  * Delete entries with a given value.
  * 
@@ -522,9 +494,6 @@ Map.prototype.deleteByValue = function(value, limit = null) {
   }
   return deleted;
 };
-
-
-
 /**
  * Search the Map for an given value.
  * 
@@ -538,9 +507,6 @@ Map.prototype.hasValue = function(value) {
   }
   return false;
 };
-
-
-
 /**
  * Returns an array of keys whose values equals the target value.
  * 
@@ -555,9 +521,6 @@ Map.prototype.getKeysByValue = function(value) {
   }
   return keys;
 };
-
-
-
 /**
  * Robust and distinct merge of two arrays. The original arrays are not affected.
  * Note, that the distinction only targets the second array! If the first array
@@ -576,9 +539,6 @@ const mergeArraysDistinct = (a, b, predicate = (a, b) => a === b) => {
   b.forEach((bItem) => (c.some((cItem) => predicate(bItem, cItem)) ? null : c.push(bItem)))
   return c;
 }
-
-
-
 /**
  * Robust JSON parseable checker.
  *
@@ -595,9 +555,6 @@ function isJson(item) {
   }
   return typeof value === 'object' && value !== null;
 }
-
-
-
 /**
  * Returns the value stored under given key from the persistent data storage.
  * If the key does not exist, an empty string is returned instead.
@@ -615,9 +572,6 @@ function get_value(key, global = false) {
   if (isJson(val)) val = JSON.parse(val);
   return val ?? '';
 }
-
-
-
 /**
  * Adds a value to the persistence data storage under the given key.
  *
@@ -638,8 +592,6 @@ function set_value(key, value, global = false) {
   }
   GM_setValue(key, value);
 }
-
-
 /**
  * Checks, whether the persistent data storage contains the given key.
  * Note, that this will only check for the key existence itself and will
@@ -656,8 +608,6 @@ function has_value(key, global = false) {
   if (!global) key = CACHE_KEY + '_' + key;
   return GM_listValues().indexOf(key) >= 0;
 }
-
-
 /**
  * Deletes value stored under given key from the persistent data storage.
  *
@@ -669,8 +619,6 @@ function delete_value(key, global = false) {
   if (!global) key = CACHE_KEY + '_' + key;
   GM_deleteValue(key);
 }
-
-
 /**
  * Returns an array with all stored key-value-pairs.
  * If no value is stored, an empty array is returned instead.
@@ -699,9 +647,6 @@ function list_values(global = false) {
   }
   return result;
 }
-
-
-
 /**
  * Robust logger.
  * <br />Valid values for type are:<ul>
@@ -739,9 +684,6 @@ function log(msg, type = 'log', context = [], prefix = MSG_PREFIX) {
     case 'log': default: if (console.log) console.log(msg);
   }
 }
-
-
-
 /**
  * Translates the given string to the active language.
  * If no corresponding translation exist, the input string is returned instead.
@@ -754,10 +696,6 @@ function t(string, ...args) {
   if (!i18n.has(lang) || !i18n.get(lang).has(string)) return String.sprintf(string, ...args);
   return String.sprintf(i18n.get(lang).get(string), ...args);
 }
-
-
-
-
 /**
  * Count the amount of next siblings an element has.
  * @param {HTMLElement|DocumentFragment} element  - Target element
@@ -772,9 +710,6 @@ function getNextSiblingCount(element) {
   }
   return cnt;
 }
-
-
-
 /**
  * Calculates the line count of an given text element.
  * Note, that this will only return correct values if the element contains only text nodes
@@ -787,7 +722,6 @@ function getNextSiblingCount(element) {
 function countElementLines(element) {
   return Math.floor(element.offsetHeight / parseInt(window.getComputedStyle(element).lineHeight));
 }
-  
 /**
  * Uses the predefined route mappings to determine the route name
  * to decide the path of the further execution flow.
@@ -800,9 +734,6 @@ function getActiveRoute() {
   }
   return '';
 }
-
-
-
 /**
  * @class InsertionService
  * @description Injects new elements to the DOM. Use {@link addToDOM} to access this service.
@@ -818,9 +749,7 @@ class InsertionService {
   static Before = new InsertionService('Before');
   /** Insert like <code>ref.parentElement.insertAfter(elem, ref)</code> */
   static After = new InsertionService('After');
-
   constructor(name = '') { this.name = name }
-  
   /**
    * Applies the insertion.
    * 
@@ -836,7 +765,6 @@ class InsertionService {
         t('Verwendete Methode:'), method.name
       ];
     }
-    
     switch (method) {
       // as first child
       case this.AsFirstChild:
@@ -873,9 +801,6 @@ class InsertionService {
     }
   }
 }
-
-
-
 /**
  * Insert a custom element to the DOM and add its reference to the global register of custom elements.
  * 
@@ -897,7 +822,6 @@ class InsertionService {
 function addToDOM(element, refElement, method, register = true, registerId = null) {
   if (typeof refElement === 'string' ) refElement = document.getElementById(refElement);
   let insertedElements = [];
-  
   if (element instanceof DocumentFragment) {
     if (element.childElementCount === 0) return element.children[0];
     for (const rootElement of element.children) {
@@ -909,9 +833,7 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
     element.setAttribute('data-customElement', 'true');
     insertedElements = element;
   }
-  
   InsertionService.insert(element, refElement, method);
-  
   if (register) {
     if (!registerId) registerId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     if (!customElementsRegister) {
@@ -920,12 +842,8 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
     }
     customElementsRegister.set(registerId, insertedElements);
   }
-  
   return insertedElements;
 }
-
-
-
 /**
  * Deletes a custom element from the DOM and from the register, if it was a registered element.
  * 
@@ -950,7 +868,6 @@ function removeFromDOM(elementOrId, force = false) {
     }
     return false;
   }
-  
   // if we got the register id
   if (customElementsRegister && customElementsRegister.has(elementOrId)) {
     const element = customElementsRegister.get(elementOrId);
@@ -958,7 +875,6 @@ function removeFromDOM(elementOrId, force = false) {
     customElementsRegister.delete(elementOrId);
     return true;
   }
-  
   // if we got the element id
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
@@ -972,12 +888,8 @@ function removeFromDOM(elementOrId, force = false) {
     }
     return false;
   }
-  
   return false;
 }
-
-
-
 /**
  * Hides original content of the page and registers the hidden element, so we
  * always know all disabled primal content to allow features like disabling the user script.
@@ -1006,22 +918,15 @@ function disablePrimalElement(elementOrId, registerId = null) {
     }
     return true;
   };
-  
   // if we got an element
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) return apply(registerId, elementOrId);
-  
   // if we got an element id
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) return apply(registerId, elementOrId);
-  
   // if we got an register id
   if (disabledPrimalElementsRegister.has(elementOrId)) return apply(elementOrId, disabledPrimalElementsRegister.get(elementOrId));
-  
   return false;
 }
-
-
-
 /**
  * Restores hidden original page content.
  *
@@ -1038,14 +943,12 @@ function enablePrimalElement(elementOrId) {
     elementOrId.classList.remove('hidden');
     return true;
   }
-  
   // if we got an register id
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
     element.classList.remove('hidden');
     return true;
   }
-  
   // if we got an element id
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
@@ -1053,12 +956,8 @@ function enablePrimalElement(elementOrId) {
     elementOrId.classList.remove('hidden');
     return true;
   }
-  
   return false;
 }
-
-
-
 /**
  * Adds a new element to the list of elements which aren't rebuilt on updates
  * but contains text which need to translated when the active language is changed.
@@ -1077,9 +976,6 @@ function registerStaticTranslatable(element, text, args = []) {
     staticTranslatableElements.set(element, { text: text, args: args });
   }
 }
-
-
-
 /**
  * Click event handler for the global switch which
  * turns all of this UserScripts features on/off.
@@ -1092,7 +988,6 @@ function doChangeMainSwitch(toggleState = false) {
     mainSwitchState = !mainSwitchState;
     set_value('scriptEnabled', mainSwitchState);
   }
-  
   // toggle visibility of custom elements
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {
@@ -1111,9 +1006,6 @@ function doChangeMainSwitch(toggleState = false) {
     }
   }
 }
-
-
-
 /**
  * This function is responsible for update all i18n content.
  * All those elements which need such a manual update must be registered with {@link registerStaticTranslatable} once.
@@ -1121,8 +1013,6 @@ function doChangeMainSwitch(toggleState = false) {
 function updateStaticTranslations() {
   for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
 }
-
-  
 /**
  * Marks some comments as new and inserts some fake replies here and there
  */
@@ -1240,12 +1130,8 @@ function DEBUG_setSomeFakeData(commentData) {
     text: "Fake Kommentar D (hatte davor keine Replies)",
     isNew: true
   });
-  
   return commentData;
 }
-
-
-
 /**
  * Get txt_id, btn_id and the text from an original comment block
  *
@@ -1259,7 +1145,6 @@ function getOriginalCommentIds(which) {
     const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
-  
 /**
  * Generates and opens an element as pop-up.
  * 
@@ -1271,12 +1156,9 @@ function openModal(element, id = null) {
   const wrapper = document.createElement('div');
   wrapper.classList.add('customModal');
   wrapper.append(element);
-  
   // middle-layer to darken the background
   const background = document.createElement('div');
   background.classList.add('customModal_middlelayer');
-  
-  
   addToDOM(background, document.body, InsertionService.AsLastChild, false);
   addToDOM(wrapper, document.body, InsertionService.AsLastChild, true, id);
 }
@@ -1301,11 +1183,7 @@ addToDOM(`
     }
   </style>
 `.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  
   addToDOM(`<style>:root {
-  --svg-checked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%2332CD32" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>');
-  --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
-  --svg-revert: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000"><path fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/><path fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/></svg>');
   --theme-color: #d53d16;
 }
 @-moz-keyframes spinR { 100% { -moz-transform: rotate(360deg); } }
@@ -1553,26 +1431,12 @@ input[type="date"] {
 .flipflop > label > span:before {
   border-radius: 50%;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-
-
+  // set up script-wide variables (used in all/multiple routes)
   /** @global */ let mainSwitchState;
   /** @global */ let customElementsRegister = new Map();
   /** @global */ let disabledPrimalElementsRegister = new Map();
   /** @global */ let staticTranslatableElements = new Map();
-  
-  // set up script-wide variables (used in all/multiple routes)
-  // OPTIMIZE: COULD be profile page specific
-  /** @global */ let totalComments;
-  /** @global */ let paginationContainer, paginationContainerBottom;
-  /** @global */ let paginationControlContainer, paginationControlContainerBottom;
-  /** @global */ let customCommentContainer, originalCommentContainer;
-  
-  // OPTIMIZE: SHOULD be profile page specific
-  /** @global */ let currentStart = defaultStart;
-  /** @global */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
   /** @global */ let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
-  /** @global */ let filteredCommentsCount = 0;
-
   /** @global */ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
@@ -1580,9 +1444,6 @@ input[type="date"] {
     [ 'filterTextSearch', { active: false, value: [] } ],
     [ 'filterDateRange', { active: false, value: [] } ],
   ]);
-
-  
-  
   /* add switch to header which enables/disables all features of this Userscript */
   // get stored state or initialize it
   if (has_value('scriptEnabled')) {
@@ -1591,7 +1452,6 @@ input[type="date"] {
     set_value('scriptEnabled', true);
     mainSwitchState = true;
   }
-  
   // insert switch
   /** @global */ const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
@@ -1604,7 +1464,6 @@ input[type="date"] {
   addToDOM(mainSwitch, document.getElementById('header').lastElementChild, InsertionService.AsLastChild, false);
   registerStaticTranslatable(document.getElementById('mainSwitchLabel'), 'NuoFlix 2.0', []);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-  
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'start') {
@@ -1615,16 +1474,21 @@ execute_startPage();
  */
 function execute_startPage() {
   // ... do stuff ...
-  
   // initialize i18n strings
   updateStaticTranslations()
 } })();
   } else if (route === 'profile') {
     (function() { // set up route-scoped fields and configs, then start the execution flow fo this route
-/** @type object[] */ let commentData;
-/** @type object[] */ let storedCommentData;
-/** @type number   */ const maxCommentHeightBeforeCut = 250;  // in pixel
-
+/** @type {number} pixel  */ const maxCommentHeightBeforeCut = 250;
+/** @type {object[]}      */ let commentData;
+/** @type {object[]}      */ let storedCommentData;
+/** @type {number}        */ let totalComments;
+/** @type {HTMLElement}   */ let paginationContainer, paginationContainerBottom;
+/** @type {HTMLElement}   */ let paginationControlContainer, paginationControlContainerBottom;
+/** @type {HTMLElement}   */ let customCommentContainer, originalCommentContainer;
+/** @type {number}        */ let currentStart = defaultStart;
+/** @type {number|string} */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
+/** @type {number}        */ let filteredCommentsCount = 0;
 let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
       <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
@@ -1634,7 +1498,6 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
       <div class="rowHeadlineBreakerRight breakerHeight">&nbsp;</div>
     </div>  
     <div class="row card-group">
-    
       <fieldset class="card col-4">
         <legend id="ignoredLabel"></legend>
         <select id="ignoredUsers" name="ignoredUsers" size="5"></select>
@@ -1648,7 +1511,6 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
           </div>
         </div>
       </fieldset>
-      
       <fieldset class="card col">
         <legend id="filterLabel"></legend>
         <div class="row">
@@ -1713,9 +1575,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
           </ul>
         </details>
       </fieldset>
-      
     </div>
-    
     <div class="row card-group">
       <fieldset id="settingsContainer" class="card col-5">
         <legend id="settingsLabel"></legend>
@@ -1725,20 +1585,12 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
       </fieldset>
     </div>
   </div>`.parseHTML();
-
 execute_profilePage();
-
-
-
 /**
  * Main function of this route
- * 
- * @use module:Base~originalCommentContainer
- * 
  */
 function execute_profilePage() {
   const style_comments = `
-  
 <style id="style_newComment">
   .${cssClassNewComments} {
   background-color: ${highlightedCommentsColor};
@@ -1755,53 +1607,44 @@ function execute_profilePage() {
 }
 </style>
 `.parseHTML();
-    
   // insert all style sheets used in this route
   addToDOM(`<style>#ignoredUsers {
   width: 100%;
 }
-
 #paginationContainer {
   text-align: center;
   margin-top: .8rem;
 }
-
 #paginationContainerBottom {
   text-align: center;
   margin-bottom: 1rem;
 }
-
 #paginationNext {
   margin-inline: 0 !important;
   padding-inline: 2rem;
   border-radius: 10% 25% 25% 10%;
 }
-
 #paginationLast {
   border-radius: 20% 50% 50% 20%;
   padding-inline: 1rem;
   padding-block: 0 !important;
   margin-inline-start: 0 !important;
 }
-
 #paginationBack {
   margin-inline: 0 !important;
   padding-inline: 2rem;
   border-radius: 25% 10% 10% 25%;
 }
-
 #paginationFirst {
   border-radius: 50% 20% 20% 50%;
   padding-inline: 1rem;
   padding-block: 0 !important;
   margin-inline-start: 0 !important;
 }
-
 .pageNrBtn {
   padding-inline: max(1vw, 10px);
   margin-inline: .25rem !important;
 }
-
 .pageNrBtn.activePage {
   cursor: default !important;
   font-weight: bold !important;
@@ -1809,30 +1652,24 @@ function execute_profilePage() {
   filter: brightness(.5) !important;
   -webkit-filter: brightness(.5) !important;
 }
-
 #paginationControl {
   margin-bottom: .5rem;
 }
-
 #paginationControl, #paginationControlBottom {
   display: flow-root;
 }
-
 #commentsFromToContainer, #commentsFromToContainerBottom {
   float: left;
 }
-
 #commentsPerPageContainer, #commentsPerPageContainerBottom {
   float: right;
   display: flex;
 }
-
 #commentsPerPageContainer small, #commentsPerPageContainerBottom small {
   align-self: center;
   white-space: pre;
   margin-inline-end: .75rem;
 }
-
 #commentsPerPageContainer .select, #commentsPerPageContainerBottom .select {
   background-color: #eee;
   margin-block: auto;
@@ -1841,17 +1678,14 @@ function execute_profilePage() {
   text-align: center;
   text-align-last: center;
 }
-
 .msgNoResults {
   margin-block: 2rem;
   text-align: center;
   font-style: italic;
 }
-
 .repliesCollapsed .replyContainer:nth-last-child(n+4) {
   display: none;
 }
-
 .expander {
   padding-top: 1rem;
   margin-left: 75px;
@@ -1862,7 +1696,6 @@ function execute_profilePage() {
 .expander:hover {
   font-weight: bold;
 }
-
 #moreFilterTrigger {
   float: right;
 }
@@ -1870,15 +1703,12 @@ function execute_profilePage() {
   font-weight: bold;
   cursor: pointer;
 }
-
 #moreFilterMenu {
   margin-inline-start: 1rem;
 }
-
 #enhancedUi label {
   padding-block: .75rem;
 }
-
 .selectedUserFilter {
   margin-right: .75rem;
   margin-bottom: .5rem;
@@ -1911,11 +1741,9 @@ function execute_profilePage() {
 #filteredUserList {
   justify-content: end;
 }
-
 #settingsLanguage {
   align-items: center;
 }
-
 .commentText.hasOverflow,
 .replyText.hasOverflow {
   --linesBeforeCut: 10;
@@ -1924,7 +1752,6 @@ function execute_profilePage() {
   -webkit-mask-image: linear-gradient(to bottom, #000, #0000);
   mask-image: linear-gradient(to bottom, #000, #0000);
 }
-
 .showFullLength {
   padding-bottom: 1rem;
   color: #205bca;
@@ -1935,15 +1762,12 @@ function execute_profilePage() {
   color: #4e7cd5;
   cursor: pointer;
 }
-
 .replyText + .showFullLength {
   padding-bottom: 0;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(style_comments, document.body, InsertionService.AsLastChild, false);
-  
   // insert the additional UI section
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
-  
   // register all static elements from enhancedUiContainer with text to translate
   registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer');
   registerStaticTranslatable(document.getElementById('addIgnoreUser'), 'Hinzufügen...');
@@ -1958,7 +1782,6 @@ function execute_profilePage() {
   registerStaticTranslatable(document.getElementById('searchByDateLabel'), 'nach Datum:');
   registerStaticTranslatable(document.getElementById('settingsLabel'), 'Einstellungen');
   registerStaticTranslatable(document.getElementById('settingsLanguageLabel'), 'Sprache:');
-  
   // restore list of blocked users
   for (const user of get_value('ignoredUsers')) {
     addToDOM(`<option>${user}</option>`.parseHTML(), 'ignoredUsers', InsertionService.AsLastChild, false);
@@ -1966,24 +1789,19 @@ function execute_profilePage() {
     ignoreFilter.value.push(user);
     ignoreFilter.active = true;
   }
-  
   // disable the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
   if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
   disablePrimalElement(originalCommentContainer, 'originalCommentContainer');
-  
   // get last state of stored comments (to identify new comments), then update the storage
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
   commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
   set_value('commentData', commentData);
-
   // count comments
   totalComments = commentData.length;
-  
   // remap setting commentsPerPage='all'
   if (currentLength === 'all') currentLength = totalComments;
-  
   // build and insert our own comment container
   customCommentContainer = addToDOM(
     '<div id="customCommentContainer" class="profilContentInner"></div>'.parseHTML(),
@@ -1992,11 +1810,8 @@ function execute_profilePage() {
     true, 
     'customCommentContainer'
   );
-
   // generate datalist for autocompletion of user filter input
   addUserFilterAutocompletionList();
-  
-  
   // mount handler for adding a user to the list of users to search for
   document.getElementById('filterByUser').onkeypress = function(ev) {
     if (!ev) ev = window.event;
@@ -2024,8 +1839,6 @@ function execute_profilePage() {
       }
     }
   };
-  
-  
   // mount handler for the text search filter
   let textFilterDelayActive = false;
   document.getElementById('filterByText').oninput = function() {
@@ -2052,8 +1865,6 @@ function execute_profilePage() {
       }.bind(this), 150);
     }
   };
-  
-  
   // mount handlers for the date search filter
   document.getElementById('filterByDateFrom').oninput = function() {
     doUpdateDateFilter(this, document.getElementById('filterByDateTo'));
@@ -2061,14 +1872,10 @@ function execute_profilePage() {
   document.getElementById('filterByDateTo').oninput = function() {
     doUpdateDateFilter(document.getElementById('filterByDateFrom'), this);
   };
-
-  
   // mount handler for changing the text search logic
   document.getElementById('filterAllWords').addEventListener('change', function() {
     if (document.getElementById('filterByText').textLength > 0) updatePage();
   });
-  
-  
   // mount handler for the reset button of the date range filter
   document.getElementById('revertDateRangeInputs').addEventListener('click', function() {
     document.getElementById('filterByDateFrom').value = '';
@@ -2079,8 +1886,6 @@ function execute_profilePage() {
     this.classList.add('hidden');
     updatePage();
   });
-
-  
   // mount handler for the reset button of the user filter
   document.getElementById('revertFilterUserInput').addEventListener('click', function() {
     // clear the displayed filter values
@@ -2095,8 +1900,6 @@ function execute_profilePage() {
     this.classList.add('hidden');
     updatePage();
   });
-
-  
   // mount handler for the reset button of the text filter
   document.getElementById('revertFilterTextInput').addEventListener('click', function() {
     // clear the displayed filter values
@@ -2108,8 +1911,6 @@ function execute_profilePage() {
     this.classList.add('hidden');
     updatePage();
   });
-
-
   // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
     let user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:'));
@@ -2138,7 +1939,6 @@ function execute_profilePage() {
     // update page
     updatePage();
   });
-
   document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
     const selectElement = document.getElementById('ignoredUsers');
     if (selectElement.selectedOptions.length > 0) {
@@ -2161,7 +1961,6 @@ function execute_profilePage() {
       updatePage();
     }
   });
-
   // only enable the button for deleting users from block list if an entry is selected
   document.getElementById('ignoredUsers').addEventListener('change', function() {
     const deleteButton = document.getElementById('deleteIgnoreUser');
@@ -2169,7 +1968,6 @@ function execute_profilePage() {
       ? deleteButton.classList.add('disabled')
       : deleteButton.classList.remove('disabled');
   });
-  
   // mount handler for the "new only" filter button
   document.getElementById('filterOnlyNew').addEventListener('change', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
@@ -2180,19 +1978,13 @@ function execute_profilePage() {
       document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
     }
   });
-  
   // initially generate and insert all dynamic components
   updatePage();
   insertLanguageDropdown();
-
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
 }
-
-
-
-
 /**
  * Event handler hooked to the input event on both date inputs.
  * 
@@ -2226,10 +2018,6 @@ function doUpdateDateFilter(fromInput, toInput) {
   // update page
   updatePage();
 }
-
-
-
-
 /**
  * Generates the data object for storing existing comments
  * by parsing the container holding which contains all the
@@ -2242,7 +2030,6 @@ function generateCommentObject() {
   let RawData = document.getElementsByClassName('profilContentInner')[0];
   if (!RawData) return [];
   let commentBlocksRaw = RawData.getElementsByClassName('commentItem');
-
   // generate data array for each raw comment
   let commentDataCollection = [];
   let counter = 0;
@@ -2250,7 +2037,6 @@ function generateCommentObject() {
   for (const commentRaw of commentBlocksRaw) {
     let commentItemData = {};
     commentItemData.id = ++counter;
-
     // section 'form'
     commentItemData.form = {};
     tmp = commentRaw.getElementsByClassName('sendReplyProfil')[0];
@@ -2280,7 +2066,6 @@ function generateCommentObject() {
     commentItemData.text = commentRaw.children[3].children[2].innerText;
     let storedReplyCount = getReplyCount(commentItemData.form.btn_id, commentItemData.form.txt_id);
     let replyCounter = 0;
-
     // section 'replies'
     commentItemData.replies = [];
     tmp = commentRaw.children[3].children[3];
@@ -2295,18 +2080,12 @@ function generateCommentObject() {
       replyData.isNew = replyCounter > storedReplyCount;
       commentItemData.replies.push(replyData);
     }
-
     commentItemData.reply_cnt = replyCounter;
     commentItemData.hasNewReplies = replyCounter > storedReplyCount;
     commentDataCollection.push(commentItemData);
   }
-
   return commentDataCollection;
 }
-
-
-
-
 /**
  * (Re-)creates and inserts the datalist element which will be used for autocompletion of the user filter input.
  */
@@ -2316,7 +2095,6 @@ function addUserFilterAutocompletionList() {
   if (oldList) {
     removeFromDOM(oldList);
   }
-  
   const availableUsersForFilter = addToDOM(
     '<datalist id="availableUsers"></datalist>'.parseHTML(),
     document.body,
@@ -2341,10 +2119,6 @@ function addUserFilterAutocompletionList() {
     }
   }
 }
-
-
-
-
 /**
  * Uses the data of a single comment including all
  * its replies to generate an HTML comment with
@@ -2357,7 +2131,6 @@ function addUserFilterAutocompletionList() {
  */
 function buildCommentBlock(commentData) {
   if (!commentData) return;
-
   // generate replies
   let cnt = 0;
   let repliesBlock = '';
@@ -2369,7 +2142,6 @@ function buildCommentBlock(commentData) {
         if (ignoredUser === replyData.user) continue outer;
       }
     }
-
     repliesBlock += `
       <div class="replyContainer${replyData.isNew ? ' ' + cssClassNewReplies : ''}">
         <div class="spacer25" data-reply-id="${++cnt}"></div>
@@ -2383,7 +2155,6 @@ function buildCommentBlock(commentData) {
       </div>
     `;
   }
-
   // generate comment including the pre-generated replies
   const commentBlock = `
     <div data-comment-id="${commentData.id}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
@@ -2404,13 +2175,8 @@ function buildCommentBlock(commentData) {
       </div>
     </div>
   `;
-
   return commentBlock.parseHTML();
 }
-
-
-
-
 /**
  * Search in the stored comment data for the comment matching
  * both given id's checks, whether it's a new comment or not.
@@ -2439,9 +2205,6 @@ function isNewComment(btn_id, txt_id) {
   }
   return true;
 }
-
-
-
 /**
  * Search in the stored comment data for the comment matching
  * both given id's and count its replies, if found.
@@ -2470,9 +2233,6 @@ function getReplyCount(btn_id, txt_id) {
     }
   }
 }
-
-
-
 /**
  * Count how many comments are filtered overall
  *
@@ -2485,9 +2245,6 @@ function getFilteredCount() {
   }
   return count;
 }
-
-
-
 /**
  * Adds fade out effect to a comment or reply text element and adds a "Show More" button next to it
  *  
@@ -2509,9 +2266,6 @@ function addFadeOutEffect(textElement) {
     removeFromDOM(this);
   });
 }
-
-
-
 function insertPaginatedComments() {
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let insertedComments = 0;
@@ -2541,10 +2295,6 @@ function insertPaginatedComments() {
     counter++;
   }
 }
-
-
-
-
 /**
  * @param {object} commentData
  *
@@ -2624,18 +2374,14 @@ function applyFilters(commentData) {
       if (!wordsFound) return false;
     }
   }
-  
   /* apply date range filter */
   if (commentFilters.get('filterDateRange').active) {
     const filterDateRangeValues = commentFilters.get('filterDateRange').value;
     const commentDate = new Date(convertGermanDate(commentData.date));
     if (filterDateRangeValues[0] > commentDate || filterDateRangeValues[1] < commentDate) return false;
   }
-  
   return true;
 }
-
-
 /**
  * Reorders a date string formatted as dd.mm.yyyy [hh:mm][:ss] into JS standard date format.
  * 
@@ -2665,9 +2411,6 @@ function convertGermanDate(string) {
   }
   return result;
 }
-
-
-
 function buildPaginationUi() {
   // use local copy to adjust the value after filter were applied
   let _totalComments = totalComments - filteredCommentsCount;
@@ -2675,14 +2418,12 @@ function buildPaginationUi() {
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let firstPageButton = currentPage >= 4 ? currentPage - 2 : 1;
   let highestPageButton = totalPages >= 5 ? firstPageButton + 4 : totalPages;
-
   // adjust if upper bound reached
   if (highestPageButton > totalPages) {
     firstPageButton -= (highestPageButton - totalPages);
     firstPageButton = firstPageButton < 1 ? 1 : firstPageButton;
     highestPageButton = totalPages;
   }
-
   highestPageButton = highestPageButton > totalPages ? totalPages : highestPageButton;
   let buttons = '';
   let buttonStart;
@@ -2707,10 +2448,6 @@ function buildPaginationUi() {
     </div>
   `;
 }
-
-
-
-
 /**
  * Generates a single page button (a numbered one, none
  * of the jumps buttons like "next" or "first")
@@ -2724,9 +2461,6 @@ function buildPaginationUi() {
 function buildPageButton(pageNr, buttonStart, isActivePage = false) {
   return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}">${pageNr}</a>`;
 }
-
-
-
 /**
  * @param {string} suffix  - If set, appends this string to all element IDs
  * @return {string}
@@ -2760,10 +2494,6 @@ function buildPaginationControl(suffix= '') {
     </div>
   `;
 }
-
-
-
-
 function insertLanguageDropdown() {
   const languageContainerHtml = `
     <div id="language_container" class="row customDropdown">
@@ -2774,14 +2504,11 @@ function insertLanguageDropdown() {
       <div class="customDropdownMenu"></div>
     </div>
   `.parseHTML();
-  
   // insert as first element after the section headline
   const settingsLanguageLabel = document.getElementById('settingsLanguageLabel');
-
   // Some weird side effect causes that we have the DocumentFragment here so lets simply get the element from the register again
   enhancedUiContainer = customElementsRegister.get('enhancedUiContainer');
   const languageContainer = addToDOM(languageContainerHtml, settingsLanguageLabel, InsertionService.After, true, 'language_container');
-
   // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
     const metadata = language[1].get('__metadata__');
@@ -2797,16 +2524,12 @@ function insertLanguageDropdown() {
         set_value('setting_language', activeLanguage);
         updatePage();
       }
-
       // rebuild the language menu so the hover effect loses its effect causing the menu to close
       languageContainer.remove();
       insertLanguageDropdown();
     });
   }
 }
-
-
-
 /**
  * Generates the comment sorting dropdown in default state (no "relevance" option) and adds it to the DOM.
  * Must be inserted after the pagination container since it uses it as reference for the insert location.
@@ -2826,18 +2549,9 @@ function insertSortingMenu() {
       </div>
     </div>
   `.parseHTML();
-
   // TODO: option handlers + click (rebuild menu) handler (see language menu)
-  
-  
-  
-  
   addToDOM(sortingContainerHtml, paginationContainer, InsertionService.Before, true, 'sortingController');
 }
-
-
-
-
 /**
  * Click event handler for the "comments per page"
  * select box of the pagination control.
@@ -2856,15 +2570,6 @@ function doChangeLength(ev) {
     : set_value('commentsPerPage', currentLength);
   updatePage();
 }
-
-
-
-
-
-
-
-
-
 /**
  * Event handler for all buttons within the pagination.
  * Excepts attributes 'data-start' and 'data-length' in the received element.
@@ -2879,10 +2584,6 @@ function doClickedPagination(ev, clickedBtn) {
   updatePage();
   paginationContainer.previousElementSibling.scrollIntoView()
 }
-
-
-
-
 /**
  * Event handler that is called whenever a new user is added to the list of users whose comments shall be searched for.
  * The current input value is cut out of the input field and added as new element to the div which shows all selected
@@ -2894,7 +2595,6 @@ function doAddUserToFilterList(input) {
   let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span></span></span>`.parseHTML();
   const filterOnlyUser = commentFilters.get('filterOnlyUser');
   userElement = addToDOM(userElement, document.getElementById('filteredUserList'), InsertionService.AsLastChild, false);
-  
   // remove this username from autocompletion list
   const availableUsersForFilter = customElementsRegister.get('availableUsersForFilter');
   for (const entry of availableUsersForFilter.children) {
@@ -2903,10 +2603,8 @@ function doAddUserToFilterList(input) {
       break;
     }
   }
-  
   // show revert button
   document.getElementById('revertFilterUserInput').classList.remove('hidden');
-  
   // mount event handler for removing this user from the filter list again
   userElement.lastElementChild.addEventListener('click', function() {
     const targetUsername = this.previousElementSibling.innerText;
@@ -2931,7 +2629,6 @@ function doAddUserToFilterList(input) {
     // update comments
     updatePage();
   });
-  
   // add the username to the filter values
   let currentFilterList = filterOnlyUser.value;
   currentFilterList.push(input.value);
@@ -2940,10 +2637,6 @@ function doAddUserToFilterList(input) {
   // apply filter and update comments
   changeFilter('filterOnlyUser', currentFilterList);
 }
-
-
-
-
 /**
  * Transformer for values from filter UI elements to filter data.
  * Used by all event handlers invoked through changing a filter value.
@@ -2961,14 +2654,6 @@ function changeFilter(filterName, newValue) {
   }
   updatePage();
 }
-
-
-
-
-
-
-
-
 /**
  * Deletes the pagination UI from DOM, if exists. Then rebuild + insert it again,
  * based on the values from the global variables currentStart and currentLength.
@@ -2978,7 +2663,6 @@ function updatePaginationUI() {
   if (typeof paginationContainerBottom !== typeof undefined && paginationContainerBottom instanceof HTMLElement) paginationContainerBottom.remove();
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
   if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
-  
   paginationContainer = addToDOM(
     buildPaginationUi().parseHTML(),
     document.getElementsByClassName('rowHeadlineHolder')[1],
@@ -2986,7 +2670,6 @@ function updatePaginationUI() {
     true,
     'paginationContainer'
   );
-  
   const paginationButtons = paginationContainer.getElementsByClassName('btn');
   for (const paginationBtn of paginationButtons) {
     paginationBtn.addEventListener('click', function (e) {
@@ -3019,7 +2702,6 @@ function updatePaginationUI() {
     'paginationControlContainer'
   );
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
-  
   // insert a second pagination control after the comments
   paginationControlContainerBottom = addToDOM(
     buildPaginationControl('Bottom').parseHTML(),
@@ -3029,17 +2711,12 @@ function updatePaginationUI() {
     'paginationControlContainerBottom'
   );
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
-  
   // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
     paginationContainer.classList.add('hidden');
     paginationContainerBottom.classList.add('hidden');
   }
 }
-
-
-
-
 /**
  * Deletes all comments from DOM and rebuild + insert them again based
  * on the values from the global variables currentStart and currentLength.
@@ -3096,15 +2773,12 @@ function updateComments() {
     })
   }
 }
-
-
-
-
 /**
  * Applies a defined order function on the comment data. The default order is 'activity' which orders the comments
  * by date in descending order (it also takes the reply dates into account)
  * 
- * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount, relevance
+ * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount,
+ *   relevance
  */
 function doOrderCommentData(orderType = 'activity') {
   if (orderType === 'user') {
@@ -3158,9 +2832,6 @@ function doOrderCommentData(orderType = 'activity') {
     });
   }
 }
-
-
-
 /**
  * Wrapper which will update all custom stuff
  */
@@ -3170,7 +2841,6 @@ function updatePage() {
   updatePaginationUI();
   updateStaticTranslations();
 }
-
  })();
   } else if (route === 'video') {
     (function() {
@@ -3179,24 +2849,13 @@ function updatePage() {
         updateStaticTranslations();
         return;
       }
-      /*<SKIP*/
-/** @var {function} folgenItem  - Funktion von NuoFlix */
-/** @typedef {EventTarget} BeforeUnloadEvent.originalTarget  - Non-standard property, but available in many browsers */
-/*</SKIP>*/
-
-
 // set up route-scoped fields and start the execution flow fo this route
-/** @type number      */ const searchComments_maxRetries = 5;
-/** @type number      */ const searchComments_delayBeforeRetry = 250;
-/** @type number      */ let searchComments_retryCounter = 0;
-/** @type string[]    */ let storedIgnoreList;
-/** @type HTMLElement */ let commentContainer;
-
+/** @type {number}      */ const searchComments_maxRetries = 5;
+/** @type {number}      */ const searchComments_delayBeforeRetry = 250;
+/** @type {number}      */ let searchComments_retryCounter = 0;
+/** @type {string[]}    */ let storedIgnoreList;
+/** @type {HTMLElement} */ let commentContainer;
 execute_genericPage()
-
-
-
-
 /**
  * Main function of this route
  */
@@ -3209,9 +2868,6 @@ function execute_genericPage() {
   // initialize i18n strings
   updateStaticTranslations();
 }
-
-
-
 /**
  * Replace the original tiles for suggested videos with tiles, which allow to use the "open in new tab" function.
  */
@@ -3232,7 +2888,6 @@ function replaceSuggestedVideoTiles() {
     disablePrimalElement(originalTile);
     foundSuggestedVideos = true;
   }
-  
   // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
   // OPTIMIZE: Möglichkeit finden, wie das auch dann noch zuverlässig durchgeführt wird, wenn "Open in new Tab" benutzt wird
   if (foundSuggestedVideos) {
@@ -3250,11 +2905,7 @@ function replaceSuggestedVideoTiles() {
       }
     });
   }
-
 }
-
-
-
 /**
  * Replace the original "Reload" button of the comment section is one, which applies the list of blocked users
  * after reloading.
@@ -3268,9 +2919,6 @@ function replaceReloadButton() {
   addToDOM(modifiedButton, originalButton, InsertionService.Before, true, 'customReloadButton');
   disablePrimalElement(originalButton, 'originalReloadButton');
 }
-
-
-
 /**
  * Loads the list of blocked users and hide all their comment texts and replies.
  *
@@ -3291,7 +2939,6 @@ function hideCommentsOfBlockedUsers(delayed = false) {
         }
       }, searchComments_delayBeforeRetry);
     }
-
     if (document.getElementById('commentContent')) {
       storedIgnoreList = get_value('ignoredUsers');
       commentContainer = document.getElementById('commentContent');
@@ -3304,15 +2951,12 @@ function hideCommentsOfBlockedUsers(delayed = false) {
     }
   }
 }
-
-
-
 /**
  * Deletes all comments and replies of a given user
  *
- * @param username
+ * @param {string} username  - Target username
  */
-const hideCommentsOfUser = function(username) {
+function hideCommentsOfUser(username) {
   const allComments = document.querySelectorAll('.profilName');
   for (let i = allComments.length - 1; i >= 0; i--) {
     const comment = allComments[i];
@@ -3331,7 +2975,6 @@ const hideCommentsOfUser = function(username) {
 }
     })();
   }
-
   // mount handlers for setting the checked attribute of flip flop switches
   for (const flipflop of document.getElementsByClassName('flipflop')) {
     // execute before all other handlers
@@ -3341,9 +2984,6 @@ const hideCommentsOfUser = function(username) {
       input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
     });
   }
-
-
   // reset to default page state if script was disabled on page load
   if (!mainSwitchState) doChangeMainSwitch( false);
-
 })();

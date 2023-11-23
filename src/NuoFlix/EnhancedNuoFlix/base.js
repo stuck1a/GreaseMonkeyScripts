@@ -33,25 +33,12 @@
   addToDOM(`<style>/*%% Global/global.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
 
-
+  // set up script-wide variables (used in all/multiple routes)
   /** @global */ let mainSwitchState;
   /** @global */ let customElementsRegister = new Map();
   /** @global */ let disabledPrimalElementsRegister = new Map();
   /** @global */ let staticTranslatableElements = new Map();
-  
-  // set up script-wide variables (used in all/multiple routes)
-  // OPTIMIZE: COULD be profile page specific
-  /** @global */ let totalComments;
-  /** @global */ let paginationContainer, paginationContainerBottom;
-  /** @global */ let paginationControlContainer, paginationControlContainerBottom;
-  /** @global */ let customCommentContainer, originalCommentContainer;
-  
-  // OPTIMIZE: SHOULD be profile page specific
-  /** @global */ let currentStart = defaultStart;
-  /** @global */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
   /** @global */ let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
-  /** @global */ let filteredCommentsCount = 0;
-
   /** @global */ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
@@ -59,8 +46,6 @@
     [ 'filterTextSearch', { active: false, value: [] } ],
     [ 'filterDateRange', { active: false, value: [] } ],
   ]);
-
-  
   
   /* add switch to header which enables/disables all features of this Userscript */
   // get stored state or initialize it
@@ -70,7 +55,6 @@
     set_value('scriptEnabled', true);
     mainSwitchState = true;
   }
-  
   // insert switch
   /** @global */ const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">

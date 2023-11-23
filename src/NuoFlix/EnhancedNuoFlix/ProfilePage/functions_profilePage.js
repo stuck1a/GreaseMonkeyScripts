@@ -1,7 +1,14 @@
 // set up route-scoped fields and configs, then start the execution flow fo this route
-/** @type object[] */ let commentData;
-/** @type object[] */ let storedCommentData;
-/** @type number   */ const maxCommentHeightBeforeCut = 250;  // in pixel
+/** @type {number} pixel  */ const maxCommentHeightBeforeCut = 250;
+/** @type {object[]}      */ let commentData;
+/** @type {object[]}      */ let storedCommentData;
+/** @type {number}        */ let totalComments;
+/** @type {HTMLElement}   */ let paginationContainer, paginationContainerBottom;
+/** @type {HTMLElement}   */ let paginationControlContainer, paginationControlContainerBottom;
+/** @type {HTMLElement}   */ let customCommentContainer, originalCommentContainer;
+/** @type {number}        */ let currentStart = defaultStart;
+/** @type {number|string} */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
+/** @type {number}        */ let filteredCommentsCount = 0;
 
 /*%% ProfilePage/mainUI.js %%*/
 
@@ -11,9 +18,6 @@ execute_profilePage();
 
 /**
  * Main function of this route
- * 
- * @use module:Base~originalCommentContainer
- * 
  */
 function execute_profilePage() {
   /*%% ProfilePage/style_comments.js %%*/
@@ -1185,7 +1189,8 @@ function updateComments() {
  * Applies a defined order function on the comment data. The default order is 'activity' which orders the comments
  * by date in descending order (it also takes the reply dates into account)
  * 
- * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount, relevance
+ * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount,
+ *   relevance
  */
 function doOrderCommentData(orderType = 'activity') {
   if (orderType === 'user') {

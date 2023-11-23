@@ -1,15 +1,15 @@
-/*<SKIP*/
+/*<SKIP>*/
 /** @var {function} folgenItem  - Funktion von NuoFlix */
 /** @typedef {EventTarget} BeforeUnloadEvent.originalTarget  - Non-standard property, but available in many browsers */
 /*</SKIP>*/
 
 
 // set up route-scoped fields and start the execution flow fo this route
-/** @type number      */ const searchComments_maxRetries = 5;
-/** @type number      */ const searchComments_delayBeforeRetry = 250;
-/** @type number      */ let searchComments_retryCounter = 0;
-/** @type string[]    */ let storedIgnoreList;
-/** @type HTMLElement */ let commentContainer;
+/** @type {number}      */ const searchComments_maxRetries = 5;
+/** @type {number}      */ const searchComments_delayBeforeRetry = 250;
+/** @type {number}      */ let searchComments_retryCounter = 0;
+/** @type {string[]}    */ let storedIgnoreList;
+/** @type {HTMLElement} */ let commentContainer;
 
 execute_genericPage()
 
@@ -129,9 +129,9 @@ function hideCommentsOfBlockedUsers(delayed = false) {
 /**
  * Deletes all comments and replies of a given user
  *
- * @param username
+ * @param {string} username  - Target username
  */
-const hideCommentsOfUser = function(username) {
+function hideCommentsOfUser(username) {
   const allComments = document.querySelectorAll('.profilName');
   for (let i = allComments.length - 1; i >= 0; i--) {
     const comment = allComments[i];

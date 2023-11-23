@@ -152,6 +152,7 @@ remove_skip_blocks() {
 
 ## Function to process operation 'lineComments'
 remove_line_comments() {
+  # FIXME: remove_line_comments does not work yet
   local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
   echo "${result}" > "${output_file}"
   return 0
@@ -178,7 +179,7 @@ remove_doc_comments() {
 
 ## Function to process operation 'emptyLines'
 remove_blank_lines() {
-  sed -i '/./!d' "${output_file}"
+  sed -i '/^[[:space:]]*$/d' "${output_file}"
   return 0
 }
 
