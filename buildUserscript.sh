@@ -152,9 +152,9 @@ remove_skip_blocks() {
 
 ## Function to process operation 'lineComments'
 remove_line_comments() {
-  # FIXME: remove_line_comments does not work yet
-  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
-  echo "${result}" > "${output_file}"
+  # FIXME: insert configured arguments
+  #open_tag="$(str_escape "${open_tag}")"
+  sed -i '22,$s/\/\/[^*].*/ /' "${output_file}"
   return 0
 }
 
