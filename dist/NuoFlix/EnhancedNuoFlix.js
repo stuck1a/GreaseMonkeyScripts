@@ -1806,8 +1806,8 @@ function execute_profilePage() {
   cursor: default !important;
   font-weight: bold !important;
   background-color: var(--theme-color) !important;
-  filter: brightness(.5);
-  -webkit-filter: brightness(.5);
+  filter: brightness(.5) !important;
+  -webkit-filter: brightness(.5) !important;
 }
 
 #paginationControl {
