@@ -50,12 +50,12 @@ Element.prototype.getEventListeners = function(type) {
  * Note, that this won't work if an already mounted listener was added with through an
  * elements event attribute.
  * 
- * @param type
- * @param listener
- * @param options
+ * @param {string} type  - Event name
+ * @param {function} listener  - Callback function
+ * @param {null|boolean|AddEventListenerOptions} options  - Listener options
  */
-Element.prototype.prependEventListener = function (type, listener, options) {
-  if (options === undefined) options = false;
+Element.prototype.prependEventListener = function(type, listener, options = null) {
+  if (!options) options = false;
   const existingListeners = Array.from(this.getEventListeners(type));
   for (let i=0; i<existingListeners.length; i++) this.removeEventListener(type, existingListeners[i]['listener'], existingListeners[i]['options']);
   this.addEventListener(type, listener, options);

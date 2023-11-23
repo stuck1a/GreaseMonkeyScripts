@@ -83,8 +83,14 @@
   addToDOM(mainSwitch, document.getElementById('header').lastElementChild, InsertionService.AsLastChild, false);
   registerStaticTranslatable(document.getElementById('mainSwitchLabel'), 'NuoFlix 2.0', []);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-
-
+  
+  
+  // stop here, if the script is disabled
+  if (!mainSwitchState) {
+    // but mount a handler which will execute the script when it gets enabled
+    
+  }
+  
   
   // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
@@ -103,17 +109,14 @@
     })();
   }
 
-  // mount handlers for setting the checked attribute of flip flop switches // TODO: Checken, ob das überhaupt funzt so...
+  // mount handlers for setting the checked attribute of flip flop switches
   for (const flipflop of document.getElementsByClassName('flipflop')) {
     // execute before all other handlers
-    let existingChangeHandlers = flipflop.onChange;
-    flipflop.onChange = function() {
+    flipflop.prependEventListener('change', function() {
       // toggle checked attribute
       const input = this.getElementsByTagName('input')[0];
       input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
-      // execute all other handler
-      existingChangeHandlers.apply(this, arguments);
-    }
+    });
   }
 
 
