@@ -171,7 +171,7 @@ remove_block_comments() {
 remove_doc_comments() {
   open_tag="$(str_escape_given "${open_tag}" '*')"
   close_tag="$(str_escape_given "${close_tag}" '*')"
-  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{}sg" "${output_file}")"
+  local result="$(perl -0777 -pe "s{\R?${open_tag}.*?${close_tag}}{\n}sg" "${output_file}")"
   echo "${result}" > "${output_file}"
   return 0
 }
@@ -180,6 +180,13 @@ remove_doc_comments() {
 ## Function to process operation 'emptyLines'
 remove_blank_lines() {
   sed -i '/^[[:space:]]*$/d' "${output_file}"
+  return 0
+}
+
+
+## Function to process operation 'trimSpaces'
+trim_spaces() {
+  sed -i 's/^[ \t]*//;s/[ \t]*$//' "${output_file}"
   return 0
 }
 

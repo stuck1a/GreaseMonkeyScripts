@@ -21,29 +21,29 @@
 // ==/UserScript==
 (function() {
   // Unique key used for the GM data storage to avoid naming conflicts across scripts
-/** @global */ const CACHE_KEY = 's1a/enhancednuoflix';
+ const CACHE_KEY = 's1a/enhancednuoflix';
 // Logger prefix
-/** @global */ const MSG_PREFIX = 'Enhanced NuoFlix';
+ const MSG_PREFIX = 'Enhanced NuoFlix';
 // Fixed configs
-/** @global */ const highlightedCommentsColor = '#4A4A20';
-/** @global */ const highlightedRepliesColor = '#373434';
-/** @global */ const highlightedHasNewRepliesColor = '#52522a';
-/** @global */ const cssClassNewComments = 'newComment';
-/** @global */ const cssClassHasNewReplies = 'hasNewReply';
-/** @global */ const cssClassNewReplies = 'newReply';
-/** @global */ const expandedReplyCount = 3;
+ const highlightedCommentsColor = '#4A4A20';
+ const highlightedRepliesColor = '#373434';
+ const highlightedHasNewRepliesColor = '#52522a';
+ const cssClassNewComments = 'newComment';
+ const cssClassHasNewReplies = 'hasNewReply';
+ const cssClassNewReplies = 'newReply';
+ const expandedReplyCount = 3;
 // Defaults
-/** @global */ const defaultStart = 1;
-/** @global */ const defaultLength = 5;
-/** @global */ const defaultLanguage = 'de';
+ const defaultStart = 1;
+ const defaultLength = 5;
+ const defaultLanguage = 'de';
 // Map execution flows to pages
-/** @global */ const pageRoutes = new Map([
+ const pageRoutes = new Map([
   // path       route name
   [ '/',        'start'   ],
   [ '/profil',  'profile' ],
   [ '/.+',      'video'   ],
 ]);
-  /** @global */ const i18n = new Map([
+ const i18n = new Map([
   [
     // German (base strings are german, so we need only the metadata here)
     'de', new Map([
@@ -392,9 +392,6 @@
     ])
   ],
 ]);
-/**
- * Alter the addEventListener function and introduce a register of all mounted listener functions.
- */
 Element.prototype._addEventListener = Element.prototype.addEventListener;
 Element.prototype.addEventListener = function(type, listener, options) {
   if (options === undefined) options = false;
@@ -403,9 +400,6 @@ Element.prototype.addEventListener = function(type, listener, options) {
   if (!this.eventListenerList[type]) this.eventListenerList[type] = [];
   this.eventListenerList[type].push({ listener: listener, options: options });
 };
-/**
- * Alter the removeEventListener function and maintain the custom register of all mounted listener functions.
- */
 Element.prototype._removeEventListener = Element.prototype.removeEventListener;
 Element.prototype.removeEventListener = function(type, listener, options) {
   if (options === undefined) options = false;
@@ -421,29 +415,11 @@ Element.prototype.removeEventListener = function(type, listener, options) {
   }
   if (this.eventListenerList[type].length === 0) delete this.eventListenerList[type];
 };
-/**
- * Returns an array with references to all listeners of the given event type.
- * Note, that this list only returns listeners which where added with addEventListener()!
- * 
- * @param {string} type  - Event type, e.g. "click"
- * 
- * @return {function[]}  - List of listener functions in the order they are mounted/fired
- */
 Element.prototype.getEventListeners = function(type) {
   if (!this.eventListenerList) this.eventListenerList = [];
   const result = this.eventListenerList[type];
   return result ? result.sort() : [];
 };
-/**
- * Modified version of addEventListener. This will insert an listener which is executed
- * before all other listeners which are already mounted at this time.
- * Note, that this won't work if an already mounted listener was added with through an
- * elements event attribute.
- * 
- * @param {string} type  - Event name
- * @param {function} listener  - Callback function
- * @param {null|boolean|AddEventListenerOptions} options  - Listener options
- */
 Element.prototype.prependEventListener = function(type, listener, options = null) {
   if (!options) options = false;
   const existingListeners = Array.from(this.getEventListeners(type));
@@ -451,37 +427,17 @@ Element.prototype.prependEventListener = function(type, listener, options = null
   this.addEventListener(type, listener, options);
   for (let i=0; i<existingListeners.length; i++) this.addEventListener(type, existingListeners[i]['listener'], existingListeners[i]['options']);
 }
-/**
- * Works like sprintf in PHP. Use {n} as placeholder, where
- * n is zero-indexed. Excepts n additional arguments of
- * any type.
- *
- * @param {string} format  - String to format
- *
- * @return {string}
- */
 String.sprintf = function(format) {
   const args = Array.prototype.slice.call(arguments, 1);
   return format.replace(/{(\d+)}/g, function(match, number) {
     return typeof args[number] !== typeof undefined ? args[number].toString() : match;
   });
 };
-/**
- * @return {DocumentFragment}
- */
 String.prototype.parseHTML = function() {
   let t = document.createElement('template');
   t.innerHTML = this;
   return t.content;
 };
-/**
- * Delete entries with a given value.
- * 
- * @param {any} value  - Target value
- * @param {?int|string} [limit=null]  - Limit amount of deleted entries, if multiple matches
- * 
- * @return {int}  - Amount of deleted entries
- */
 Map.prototype.deleteByValue = function(value, limit = null) {
   let deleted = 0;
   limit = parseInt(limit);
@@ -494,26 +450,12 @@ Map.prototype.deleteByValue = function(value, limit = null) {
   }
   return deleted;
 };
-/**
- * Search the Map for an given value.
- * 
- * @param {any} value  - Target value
- * 
- * @return {boolean}  - True, if the value was found at least once.
- */
 Map.prototype.hasValue = function(value) {
   for (const entry of this.entries()) {
     if (value === entry[1]) return true;
   }
   return false;
 };
-/**
- * Returns an array of keys whose values equals the target value.
- * 
- * @param {any} value  - Target value
- * 
- * @return {any[]}
- */
 Map.prototype.getKeysByValue = function(value) {
   let keys = [];
   for (const entry of this.entries()) {
@@ -521,31 +463,11 @@ Map.prototype.getKeysByValue = function(value) {
   }
   return keys;
 };
-/**
- * Robust and distinct merge of two arrays. The original arrays are not affected.
- * Note, that the distinction only targets the second array! If the first array
- * already included duplicates in itself, these duplicates will appear in the
- * result as well. To avoid this, use a nested call with an empty array:
- * mergeArraysDistinct(mergeArraysDistinct([], a), b)
- *
- * @param {Array} a
- * @param {Array} b
- * @param predicate
- *
- * @return {Array}
- */
 const mergeArraysDistinct = (a, b, predicate = (a, b) => a === b) => {
   const c = [...a];
   b.forEach((bItem) => (c.some((cItem) => predicate(bItem, cItem)) ? null : c.push(bItem)))
   return c;
 }
-/**
- * Robust JSON parseable checker.
- *
- * @param {any} item  - Object to validate
- *
- * @return {boolean}  - True, if parseable to well-formatted JSON
- */
 function isJson(item) {
   let value = typeof item !== 'string' ? JSON.stringify(item) : item;
   try {
@@ -555,15 +477,6 @@ function isJson(item) {
   }
   return typeof value === 'object' && value !== null;
 }
-/**
- * Returns the value stored under given key from the persistent data storage.
- * If the key does not exist, an empty string is returned instead.
- *
- * @param {string} key  - Target storage key
- * @param {boolean} [global=false]  - Omit script specific cache key
- *
- * @return {any}  - Value stored under given key
- */
 function get_value(key, global = false) {
   if (typeof GM_setValue !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_setValue'), 'fatal');
   if (typeof GM_getValue !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_getValue'), 'fatal');
@@ -572,13 +485,6 @@ function get_value(key, global = false) {
   if (isJson(val)) val = JSON.parse(val);
   return val ?? '';
 }
-/**
- * Adds a value to the persistence data storage under the given key.
- *
- * @param {string} key  - Target key
- * @param {any} value  - Value to store
- * @param {boolean} [global=false]  - Omit script specific cache key
- */
 function set_value(key, value, global = false) {
   if (typeof GM_setValue !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_setValue'), 'fatal');
   if (!global) key = CACHE_KEY + '_' + key;
@@ -592,44 +498,16 @@ function set_value(key, value, global = false) {
   }
   GM_setValue(key, value);
 }
-/**
- * Checks, whether the persistent data storage contains the given key.
- * Note, that this will only check for the key existence itself and will
- * therefore return true if the stored value itself is empty, null or
- * undefined as well.
- *
- * @param {string} key  - Target key
- * @param {boolean} [global=false]  - Omit script specific cache key
- *
- * @return {boolean}  - Whether the target key exists
- */
 function has_value(key, global = false) {
   if (typeof GM_listValues !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_listValues'), 'fatal');
   if (!global) key = CACHE_KEY + '_' + key;
   return GM_listValues().indexOf(key) >= 0;
 }
-/**
- * Deletes value stored under given key from the persistent data storage.
- *
- * @param {string} key  - Target key
- * @param {boolean} [global=false]  - Omit script specific cache key
- */
 function delete_value(key, global = false) {
   if (typeof GM_deleteValue !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_deleteValue'), 'fatal');
   if (!global) key = CACHE_KEY + '_' + key;
   GM_deleteValue(key);
 }
-/**
- * Returns an array with all stored key-value-pairs.
- * If no value is stored, an empty array is returned instead.
- * If you request global keys, you will get the real keys
- * (with the cache key prefix), otherwise the cache key
- * will be hidden.
- *
- * @param {boolean} [global=false]  - Omit script specific cache key
- *
- * @return {Object[{key: string, value: any}]}  - List of key-value-objects
- */
 function list_values(global = false) {
   if (typeof GM_listValues !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_listValues'), 'fatal');
   if (typeof GM_getValue !== 'function') log(t('GreaseMonkey-Funktion {0}() nicht gefunden! Füge "@grant {0}" in den Skript-Header ein, um den Fehler zu beheben.', 'GM_getValue'), 'fatal');
@@ -647,26 +525,6 @@ function list_values(global = false) {
   }
   return result;
 }
-/**
- * Robust logger.
- * <br />Valid values for type are:<ul>
- *   <li>log</li>
- *   <li>info</li>
- *   <li>warn</li>
- *   <li>debug</li>
- *   <li>error</li>
- *   <li>exception</li>
- *   <li>dialog</li>
- *   <li>fatal</li>
- * </ul>
- *
- * <strong>Important:<br />Type <i>fatal</i> will throw an exception and stop the execution!</strong>
- *
- * @param {any} msg  - Log message or object
- * @param {string} [type='log']  - Message type
- * @param {any[]} [context=[]]  - Logging context (like function, args, etc)
- * @param {string} [prefix=${MSG_PREFIX}]  - Message prefix
- */
 function log(msg, type = 'log', context = [], prefix = MSG_PREFIX) {
   msg = (prefix ? `[${prefix}]\n` : '') + (msg || '');
   if (context && typeof context.forEach !== 'function') context = [context];
@@ -684,23 +542,11 @@ function log(msg, type = 'log', context = [], prefix = MSG_PREFIX) {
     case 'log': default: if (console.log) console.log(msg);
   }
 }
-/**
- * Translates the given string to the active language.
- * If no corresponding translation exist, the input string is returned instead.
- *
- * @param {string} string  - Input string
- * @param {?any} [args=]  - Substitution strings for {n} formatter
- */
 function t(string, ...args) {
   const lang = activeLanguage || defaultLanguage;
   if (!i18n.has(lang) || !i18n.get(lang).has(string)) return String.sprintf(string, ...args);
   return String.sprintf(i18n.get(lang).get(string), ...args);
 }
-/**
- * Count the amount of next siblings an element has.
- * @param {HTMLElement|DocumentFragment} element  - Target element
- * @return {number}  - Amount of next siblings
- */
 function getNextSiblingCount(element) {
   let cnt = 0;
   let lastSibling = element;
@@ -710,53 +556,21 @@ function getNextSiblingCount(element) {
   }
   return cnt;
 }
-/**
- * Calculates the line count of an given text element.
- * Note, that this will only return correct values if the element contains only text nodes
- * or elements which have no impact on the elements total height.
- * 
- * @param {HTMLElement} element  - Target element
- * 
- * @return {int}  - Line count
- */
 function countElementLines(element) {
   return Math.floor(element.offsetHeight / parseInt(window.getComputedStyle(element).lineHeight));
 }
-/**
- * Uses the predefined route mappings to determine the route name
- * to decide the path of the further execution flow.
- * 
- * @return {string}  - Route name
- */
 function getActiveRoute() {
   for (const route of pageRoutes.entries()) {
     if (window.location.pathname.match(new RegExp(`^${route[0]}/*$`, 'i'))) return route[1];
   }
   return '';
 }
-/**
- * @class InsertionService
- * @description Injects new elements to the DOM. Use {@link addToDOM} to access this service.
- * 
- * @requires log
- */
 class InsertionService {
-  /** Insert like <code>ref.prependChild(elem)</code> */
   static AsFirstChild = new InsertionService('AsFirstChild');
-  /** Insert like <code>ref.appendChild(elem)</code> */
   static AsLastChild = new InsertionService('AsLastChild');
-  /** Insert like <code>ref.parentElement.insertBefore(elem, ref)</code> */
   static Before = new InsertionService('Before');
-  /** Insert like <code>ref.parentElement.insertAfter(elem, ref)</code> */
   static After = new InsertionService('After');
   constructor(name = '') { this.name = name }
-  /**
-   * Applies the insertion.
-   * 
-   * @param {HTMLElement|Node} element
-   * @param {HTMLElement|Node} refElement
-   * @param {InsertionService} method
-   */
   static insert(element, refElement, method) {
     const buildLogContext = function() {
       return [
@@ -801,24 +615,6 @@ class InsertionService {
     }
   }
 }
-/**
- * Insert a custom element to the DOM and add its reference to the global register of custom elements.
- * 
- * @requires InsertionService
- * @requires customElementsRegister
- * @requires log
- * @requires t
- * 
- * @param {DocumentFragment|HTMLElement|Node} element  - Element to insert
- * @param {HTMLElement|string} refElement  - Reference element for the placement (can be an element id as well)
- * @param {InsertionService} method  - Insertion logic to use
- * @param {boolean} [register=true]  - Whether the element shall be added to the register of custom elements
- * @param {?string} registerId  - ID under which the element is added to the register. 
- *                                If no access is needed later on, can be omitted or set to null (will use random ID).
- *
- * @return {HTMLElement|HTMLElement[]|Node|DocumentFragment}  - Reference (or list of references) of inserted element(s) or
- *   the input itself, if something went wrong.
- */
 function addToDOM(element, refElement, method, register = true, registerId = null) {
   if (typeof refElement === 'string' ) refElement = document.getElementById(refElement);
   let insertedElements = [];
@@ -844,17 +640,6 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
   }
   return insertedElements;
 }
-/**
- * Deletes a custom element from the DOM and from the register, if it was a registered element.
- * 
- * @requires customElementsRegister
- * @requires disabledPrimalElementsRegister
- * @requires Map.prototype.deleteByValue
- * 
- * @param {HTMLElement|string} elementOrId  - Can be the element itself, its id or the register id
- * @param {boolean} [force=false]  - Remove element, even if it is no custom element
- * @return {boolean}  - Whether the removal succeeded or not
- */
 function removeFromDOM(elementOrId, force = false) {
   // if we got the element itself
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
@@ -890,23 +675,6 @@ function removeFromDOM(elementOrId, force = false) {
   }
   return false;
 }
-/**
- * Hides original content of the page and registers the hidden element, so we
- * always know all disabled primal content to allow features like disabling the user script.
- * 
- * <br><br><i><strong>Important note:</strong><br>
- * The register is distinct, which means if the given element is already registered, it will only
- * update the register id instead of adding a duplicate entry!</i>
- * 
- * @requires disabledPrimalElementsRegister
- * @requires Map.prototype.deleteByValue
- * 
- * @param {Node|HTMLElement|string} elementOrId  - Target element, its id or register id
- * @param {?string} registerId  - ID under which the element is added to the register.
- *                                If omitted or null, an unique ID will be created.
- *
- * @return {boolean}  - False, if the target is not found or tagged as custom element, true otherwise.
- */
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
     element.classList.add('hidden');
@@ -927,15 +695,6 @@ function disablePrimalElement(elementOrId, registerId = null) {
   if (disabledPrimalElementsRegister.has(elementOrId)) return apply(elementOrId, disabledPrimalElementsRegister.get(elementOrId));
   return false;
 }
-/**
- * Restores hidden original page content.
- *
- * @requires disabledPrimalElementsRegister
- * 
- * @param {HTMLElement|string} elementOrId  - Target element, its element id or register id
- *
- * @return {boolean}  - Whether the operation succeeded or failed (will fail if the target is not found)
- */
 function enablePrimalElement(elementOrId) {
   // if we got an element
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
@@ -958,30 +717,11 @@ function enablePrimalElement(elementOrId) {
   }
   return false;
 }
-/**
- * Adds a new element to the list of elements which aren't rebuilt on updates
- * but contains text which need to translated when the active language is changed.
- * As entry key the element itself is used.
- * The value is an object with property text and property args which is an array
- * holding all arguments for sending to t().
- * 
- * @requires staticTranslatableElements
- * 
- * @param {HTMLElement} element  - Target element
- * @param {string} text  - The text which will be send to t()
- * @param {string[]} [args=[]]  - The argument list for the formatters send to t()
- */
 function registerStaticTranslatable(element, text, args = []) {
   if (!staticTranslatableElements.has(element)) {
     staticTranslatableElements.set(element, { text: text, args: args });
   }
 }
-/**
- * Click event handler for the global switch which
- * turns all of this UserScripts features on/off.
- *
- * @param [toggleState=true]  - If false, the internal state won't be toggled (used only for the manual call when script is disabled on page load)
- */
 function doChangeMainSwitch(toggleState = false) {
   // toggle state flag
   if (toggleState) {
@@ -1006,16 +746,9 @@ function doChangeMainSwitch(toggleState = false) {
     }
   }
 }
-/**
- * This function is responsible for update all i18n content.
- * All those elements which need such a manual update must be registered with {@link registerStaticTranslatable} once.
- */
 function updateStaticTranslations() {
   for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
 }
-/**
- * Marks some comments as new and inserts some fake replies here and there
- */
 function DEBUG_setSomeFakeData(commentData) {
   commentData[0].hasNewReplies = true;
   commentData[0].reply_cnt = 7;
@@ -1132,12 +865,6 @@ function DEBUG_setSomeFakeData(commentData) {
   });
   return commentData;
 }
-/**
- * Get txt_id, btn_id and the text from an original comment block
- *
- * @param {int} which  - One-indexed id of the target comment (positive integer)
- * @returns {{commentNr, txt_id: string, text: string, btn_id: string}}  - The two server-side ids which describe each comment/reply uniquely
- */
 function getOriginalCommentIds(which) {
     const elem = document.getElementById('originalCommentContainer').children[which-1].lastElementChild.lastElementChild.lastElementChild.lastElementChild;
     const txt_id = elem.getAttribute('data-reply');
@@ -1145,12 +872,6 @@ function getOriginalCommentIds(which) {
     const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
-/**
- * Generates and opens an element as pop-up.
- * 
- * @param {HTMLElement} element  - Element which contains the the modal content
- * @param {?string} [id=null]  - If set, the value will be used as modal element id and register id
- */
 function openModal(element, id = null) {
   // wrap the content to ensure correct displaying no matter of the elements display value
   const wrapper = document.createElement('div');
@@ -1432,12 +1153,12 @@ input[type="date"] {
   border-radius: 50%;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   // set up script-wide variables (used in all/multiple routes)
-  /** @global */ let mainSwitchState;
-  /** @global */ let customElementsRegister = new Map();
-  /** @global */ let disabledPrimalElementsRegister = new Map();
-  /** @global */ let staticTranslatableElements = new Map();
-  /** @global */ let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
-  /** @global */ let commentFilters = new Map([
+ let mainSwitchState;
+ let customElementsRegister = new Map();
+ let disabledPrimalElementsRegister = new Map();
+ let staticTranslatableElements = new Map();
+ let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
+ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
     [ 'filterOnlyUser', { active: false, value: [] } ],
     [ 'filterSkipUser', { active: false, value: [] } ],
@@ -1453,7 +1174,7 @@ input[type="date"] {
     mainSwitchState = true;
   }
   // insert switch
-  /** @global */ const mainSwitch = `
+ const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
       <div class="flipflop" style="--color-on: var(--theme-color);">
         <span id="mainSwitchLabel" style="padding-right: 1rem;"></span>
@@ -1469,9 +1190,6 @@ input[type="date"] {
   if (route === 'start') {
     (function() { // set up route-scoped fields and start the execution flow fo this route
 execute_startPage();
-/**
- * Main function of this route
- */
 function execute_startPage() {
   // ... do stuff ...
   // initialize i18n strings
@@ -1479,16 +1197,16 @@ function execute_startPage() {
 } })();
   } else if (route === 'profile') {
     (function() { // set up route-scoped fields and configs, then start the execution flow fo this route
-/** @type {number} pixel  */ const maxCommentHeightBeforeCut = 250;
-/** @type {object[]}      */ let commentData;
-/** @type {object[]}      */ let storedCommentData;
-/** @type {number}        */ let totalComments;
-/** @type {HTMLElement}   */ let paginationContainer, paginationContainerBottom;
-/** @type {HTMLElement}   */ let paginationControlContainer, paginationControlContainerBottom;
-/** @type {HTMLElement}   */ let customCommentContainer, originalCommentContainer;
-/** @type {number}        */ let currentStart = defaultStart;
-/** @type {number|string} */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
-/** @type {number}        */ let filteredCommentsCount = 0;
+ const maxCommentHeightBeforeCut = 250;
+ let commentData;
+ let storedCommentData;
+ let totalComments;
+ let paginationContainer, paginationContainerBottom;
+ let paginationControlContainer, paginationControlContainerBottom;
+ let customCommentContainer, originalCommentContainer;
+ let currentStart = defaultStart;
+ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
+ let filteredCommentsCount = 0;
 let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
       <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
@@ -1586,9 +1304,6 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     </div>
   </div>`.parseHTML();
 execute_profilePage();
-/**
- * Main function of this route
- */
 function execute_profilePage() {
   const style_comments = `
 <style id="style_newComment">
@@ -1985,12 +1700,6 @@ function execute_profilePage() {
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
 }
-/**
- * Event handler hooked to the input event on both date inputs.
- * 
- * @param {HTMLInputElement} fromInput
- * @param {HTMLInputElement} toInput
- */
 function doUpdateDateFilter(fromInput, toInput) {
   const revertDateRangeInputs = document.getElementById('revertDateRangeInputs');
   let filterDateRange = commentFilters.get('filterDateRange');
@@ -2018,13 +1727,6 @@ function doUpdateDateFilter(fromInput, toInput) {
   // update page
   updatePage();
 }
-/**
- * Generates the data object for storing existing comments
- * by parsing the container holding which contains all the
- * comments.
- *
- * @return {Object[]}  - Comment data collection
- */
 function generateCommentObject() {
   // get raw data
   let RawData = document.getElementsByClassName('profilContentInner')[0];
@@ -2086,9 +1788,6 @@ function generateCommentObject() {
   }
   return commentDataCollection;
 }
-/**
- * (Re-)creates and inserts the datalist element which will be used for autocompletion of the user filter input.
- */
 function addUserFilterAutocompletionList() {
   // remove the current list, if available
   const oldList = customElementsRegister.get('availableUsersForFilter');
@@ -2119,16 +1818,6 @@ function addUserFilterAutocompletionList() {
     }
   }
 }
-/**
- * Uses the data of a single comment including all
- * its replies to generate an HTML comment with
- * the original structure which can be appended
- * to the page's comment blocks section.
- *
- * @param {object} commentData  - Comment data
- *
- * @return {void|DocumentFragment}  - Prepared comment block
- */
 function buildCommentBlock(commentData) {
   if (!commentData) return;
   // generate replies
@@ -2177,18 +1866,6 @@ function buildCommentBlock(commentData) {
   `;
   return commentBlock.parseHTML();
 }
-/**
- * Search in the stored comment data for the comment matching
- * both given id's checks, whether it's a new comment or not.
- *
- * <strong>Note: For now, we compare both ids, since it's not known what
- * they exactly mean and if both are unique by themselves or not.</strong>
- *
- * @param {string|int} btn_id  - The first server-side comment id
- * @param {string|int} txt_id  - The second serve-side comment id
- *
- * @return {boolean}  - Value of stored comments "isNew" property
- */
 function isNewComment(btn_id, txt_id) {
   storedCommentData = storedCommentData || get_value('commentData');
   let msgPrinted = false;
@@ -2205,17 +1882,6 @@ function isNewComment(btn_id, txt_id) {
   }
   return true;
 }
-/**
- * Search in the stored comment data for the comment matching
- * both given id's and count its replies, if found.
- *
- * <strong>Note: For now, we compare both ids, since it's not known what
- * they exactly mean and if both are unique by themselves or not.</strong>
- *
- * @param {string|int} btn_id  - The first server-side comment id
- * @param {string|int} txt_id  - The second serve-side comment id
- * @return {int}  - Reply count (0 if comment not found)
- */
 function getReplyCount(btn_id, txt_id) {
   storedCommentData = storedCommentData || get_value('commentData');
   let msgPrinted = false;
@@ -2233,11 +1899,6 @@ function getReplyCount(btn_id, txt_id) {
     }
   }
 }
-/**
- * Count how many comments are filtered overall
- *
- * @return {int}
- */
 function getFilteredCount() {
   let count = 0;
   for (const comment of commentData) {
@@ -2245,11 +1906,6 @@ function getFilteredCount() {
   }
   return count;
 }
-/**
- * Adds fade out effect to a comment or reply text element and adds a "Show More" button next to it
- *  
- * @param {HTMLPreElement} textElement  - Target text element
- */
 function addFadeOutEffect(textElement) {
   // add class which will fade out the text
   textElement.classList.add('hasOverflow');
@@ -2295,11 +1951,6 @@ function insertPaginatedComments() {
     counter++;
   }
 }
-/**
- * @param {object} commentData
- *
- * @return {boolean} True, if the comment shall be displayed, false if not
- */
 function applyFilters(commentData) {
   /* show only, if the comment is new or has new replies */
   if (commentFilters.get('filterOnlyNew').active) {
@@ -2382,13 +2033,6 @@ function applyFilters(commentData) {
   }
   return true;
 }
-/**
- * Reorders a date string formatted as dd.mm.yyyy [hh:mm][:ss] into JS standard date format.
- * 
- * @param {string} string  - Target date string
- * 
- * @return {?string}  - JS date object compatible date string or null if input string is invalid
- */
 function convertGermanDate(string) {
   const parts = string.split(' ');
   const dateParts = parts[0].split('.');
@@ -2448,23 +2092,9 @@ function buildPaginationUi() {
     </div>
   `;
 }
-/**
- * Generates a single page button (a numbered one, none
- * of the jumps buttons like "next" or "first")
- *
- * @param {int|string} pageNr  - Becomes Buttons caption
- * @param {int|string} buttonStart  - ID of the first comment to display if this button is clicked
- * @param {boolean} isActivePage  - If true, button will get class "activePage" and attribute "disabled"
- *
- * @return {string}  Parseable string representation of the button
- */
 function buildPageButton(pageNr, buttonStart, isActivePage = false) {
   return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}">${pageNr}</a>`;
 }
-/**
- * @param {string} suffix  - If set, appends this string to all element IDs
- * @return {string}
- */
 function buildPaginationControl(suffix= '') {
   const _totalComments = totalComments - filteredCommentsCount;
   const to = currentStart + currentLength > _totalComments ? _totalComments : currentStart + currentLength - 1;
@@ -2530,10 +2160,6 @@ function insertLanguageDropdown() {
     });
   }
 }
-/**
- * Generates the comment sorting dropdown in default state (no "relevance" option) and adds it to the DOM.
- * Must be inserted after the pagination container since it uses it as reference for the insert location.
- */
 function insertSortingMenu() {
   const sortingContainerHtml = `
     <div id="sorting_container" class="row customDropdown" style="position: relative;top: 2rem;margin-top: -2rem;">
@@ -2552,12 +2178,6 @@ function insertSortingMenu() {
   // TODO: option handlers + click (rebuild menu) handler (see language menu)
   addToDOM(sortingContainerHtml, paginationContainer, InsertionService.Before, true, 'sortingController');
 }
-/**
- * Click event handler for the "comments per page"
- * select box of the pagination control.
- *
- * @param {MouseEvent} ev
- */
 function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
@@ -2570,13 +2190,6 @@ function doChangeLength(ev) {
     : set_value('commentsPerPage', currentLength);
   updatePage();
 }
-/**
- * Event handler for all buttons within the pagination.
- * Excepts attributes 'data-start' and 'data-length' in the received element.
- *
- * @param {Event} ev  - Left click event
- * @param {HTMLElement} clickedBtn  - Clicked button
- */
 function doClickedPagination(ev, clickedBtn) {
   if (!clickedBtn || clickedBtn.hasAttribute('disabled')) return;
   currentStart = parseInt(clickedBtn.getAttribute('data-start')) || currentStart || defaultStart;
@@ -2584,13 +2197,6 @@ function doClickedPagination(ev, clickedBtn) {
   updatePage();
   paginationContainer.previousElementSibling.scrollIntoView()
 }
-/**
- * Event handler that is called whenever a new user is added to the list of users whose comments shall be searched for.
- * The current input value is cut out of the input field and added as new element to the div which shows all selected
- * users. This allows to use the autocompletion for adding another user and it looks super fancy as well.
- * 
- * @param {HTMLInputElement} input  - The input which fired the event
- */
 function doAddUserToFilterList(input) {
   let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span></span></span>`.parseHTML();
   const filterOnlyUser = commentFilters.get('filterOnlyUser');
@@ -2637,13 +2243,6 @@ function doAddUserToFilterList(input) {
   // apply filter and update comments
   changeFilter('filterOnlyUser', currentFilterList);
 }
-/**
- * Transformer for values from filter UI elements to filter data.
- * Used by all event handlers invoked through changing a filter value.
- *
- * @param {string} filterName
- * @param {boolean|string|Array} newValue
- */
 function changeFilter(filterName, newValue) {
   // to simplify the calculation we will jump to page 1 if a filter has changed
   currentStart = 1;
@@ -2654,10 +2253,6 @@ function changeFilter(filterName, newValue) {
   }
   updatePage();
 }
-/**
- * Deletes the pagination UI from DOM, if exists. Then rebuild + insert it again,
- * based on the values from the global variables currentStart and currentLength.
- */
 function updatePaginationUI() {
   if (typeof paginationContainer !== typeof undefined && paginationContainer instanceof HTMLElement) paginationContainer.remove();
   if (typeof paginationContainerBottom !== typeof undefined && paginationContainerBottom instanceof HTMLElement) paginationContainerBottom.remove();
@@ -2717,10 +2312,6 @@ function updatePaginationUI() {
     paginationContainerBottom.classList.add('hidden');
   }
 }
-/**
- * Deletes all comments from DOM and rebuild + insert them again based
- * on the values from the global variables currentStart and currentLength.
- */
 function updateComments() {
   if (customCommentContainer instanceof HTMLElement) {
     customCommentContainer.innerHTML = '';
@@ -2773,13 +2364,6 @@ function updateComments() {
     })
   }
 }
-/**
- * Applies a defined order function on the comment data. The default order is 'activity' which orders the comments
- * by date in descending order (it also takes the reply dates into account)
- * 
- * @param {string} [orderType='activity']  - One of the predefined order keywords: activity, user, video, replyCount,
- *   relevance
- */
 function doOrderCommentData(orderType = 'activity') {
   if (orderType === 'user') {
     // compares the comment authors (no replies) and orders from A to Z
@@ -2832,9 +2416,6 @@ function doOrderCommentData(orderType = 'activity') {
     });
   }
 }
-/**
- * Wrapper which will update all custom stuff
- */
 function updatePage() {
   filteredCommentsCount = getFilteredCount();
   updateComments();
@@ -2850,15 +2431,12 @@ function updatePage() {
         return;
       }
 // set up route-scoped fields and start the execution flow fo this route
-/** @type {number}      */ const searchComments_maxRetries = 5;
-/** @type {number}      */ const searchComments_delayBeforeRetry = 250;
-/** @type {number}      */ let searchComments_retryCounter = 0;
-/** @type {string[]}    */ let storedIgnoreList;
-/** @type {HTMLElement} */ let commentContainer;
+ const searchComments_maxRetries = 5;
+ const searchComments_delayBeforeRetry = 250;
+ let searchComments_retryCounter = 0;
+ let storedIgnoreList;
+ let commentContainer;
 execute_genericPage()
-/**
- * Main function of this route
- */
 function execute_genericPage() {
   // replace all elements which need to be modified
   replaceSuggestedVideoTiles();
@@ -2868,9 +2446,6 @@ function execute_genericPage() {
   // initialize i18n strings
   updateStaticTranslations();
 }
-/**
- * Replace the original tiles for suggested videos with tiles, which allow to use the "open in new tab" function.
- */
 function replaceSuggestedVideoTiles() {
   // add link overlays over suggested videos to enable "open in new tab" function
   let foundSuggestedVideos = false;
@@ -2906,10 +2481,6 @@ function replaceSuggestedVideoTiles() {
     });
   }
 }
-/**
- * Replace the original "Reload" button of the comment section is one, which applies the list of blocked users
- * after reloading.
- */
 function replaceReloadButton() {
   const originalButton = document.getElementsByClassName('reloadComment')[0];
   const modifiedButton = originalButton.cloneNode(true);
@@ -2919,11 +2490,6 @@ function replaceReloadButton() {
   addToDOM(modifiedButton, originalButton, InsertionService.Before, true, 'customReloadButton');
   disablePrimalElement(originalButton, 'originalReloadButton');
 }
-/**
- * Loads the list of blocked users and hide all their comment texts and replies.
- *
- * @param {boolean} [delayed=true]  - Wait some time before searching for the comments (required for the initial call)
- */
 function hideCommentsOfBlockedUsers(delayed = false) {
   if (delayed) {
     const tryToApply = function() {
@@ -2951,11 +2517,6 @@ function hideCommentsOfBlockedUsers(delayed = false) {
     }
   }
 }
-/**
- * Deletes all comments and replies of a given user
- *
- * @param {string} username  - Target username
- */
 function hideCommentsOfUser(username) {
   const allComments = document.querySelectorAll('.profilName');
   for (let i = allComments.length - 1; i >= 0; i--) {
