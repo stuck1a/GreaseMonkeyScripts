@@ -48,8 +48,8 @@
   
   // OPTIMIZE: SHOULD be profile page specific
   /** @global */ let currentStart = defaultStart;
-  /** @global */ let currentLength = defaultLength;
-  /** @global */ let activeLanguage = defaultLanguage;
+  /** @global */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
+  /** @global */ let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
   /** @global */ let filteredCommentsCount = 0;
 
   /** @global */ let commentFilters = new Map([

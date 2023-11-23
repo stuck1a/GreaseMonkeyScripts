@@ -57,10 +57,13 @@ function execute_profilePage() {
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
   commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
-  set_value('commentData', commentData);    // FIXME: Regarding debugger, we use value scriptEnabled here... check that
+  set_value('commentData', commentData);
 
   // count comments
   totalComments = commentData.length;
+  
+  // remap setting commentsPerPage='all'
+  if (currentLength === 'all') currentLength = totalComments;
   
   // build and insert our own comment container
   customCommentContainer = addToDOM(
@@ -852,7 +855,7 @@ function insertLanguageDropdown() {
       <div class="customDropdownMenu"></div>
     </div>
   `.parseHTML();
-
+  
   // insert as first element after the section headline
   const settingsLanguageLabel = document.getElementById('settingsLanguageLabel');
 
@@ -872,6 +875,7 @@ function insertLanguageDropdown() {
       const langId = this.getAttribute('data-lang');
       if (i18n.has(langId)) {
         activeLanguage = langId;
+        set_value('setting_language', activeLanguage);
         updatePage();
       }
 
@@ -925,10 +929,12 @@ function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
   currentStart = currentLength * currentPage - currentLength + 1;
-
-  // This will fix the edge case where filtered total is smaller than current start
+  // fix edge case where filtered total is smaller than current start
   if (currentStart > totalComments - getFilteredCount()) currentStart = 1;
-
+  // update
+  this.selectedOptions[0].innerText === t('alle')
+    ? set_value('commentsPerPage', 'all')
+    : set_value('commentsPerPage', currentLength);
   updatePage();
 }
 

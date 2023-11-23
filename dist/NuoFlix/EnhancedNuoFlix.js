@@ -1307,7 +1307,6 @@ addToDOM(`
   --svg-unchecked: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" fill="%23FF0000" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>');
   --svg-revert: url('data:image/svg+xml;utf8,<svg height="1rem" width="1rem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000"><path fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/><path fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/></svg>');
   --theme-color: #d53d16;
-  --theme-color-brigthen: #bd8656;
 }
 @-moz-keyframes spinR { 100% { -moz-transform: rotate(360deg); } }
 @-webkit-keyframes spinR { 100% { -webkit-transform: rotate(360deg); } }
@@ -1391,8 +1390,8 @@ input[type="date"] {
   display: inline-block;
 }
 .btn:not(.disabled):hover {
-  font-weight: bold;
-  background-color: var(--theme-color-brigthen);
+  filter: brightness(1.5);
+  -webkit-filter: brightness(1.5);
 }
 .clearfix::after {
   content: "";
@@ -1570,8 +1569,8 @@ input[type="date"] {
   
   // OPTIMIZE: SHOULD be profile page specific
   /** @global */ let currentStart = defaultStart;
-  /** @global */ let currentLength = defaultLength;
-  /** @global */ let activeLanguage = defaultLanguage;
+  /** @global */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
+  /** @global */ let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
   /** @global */ let filteredCommentsCount = 0;
 
   /** @global */ let commentFilters = new Map([
@@ -1806,7 +1805,9 @@ function execute_profilePage() {
 .pageNrBtn.activePage {
   cursor: default !important;
   font-weight: bold !important;
-  background-color: #c86852 !important;
+  background-color: var(--theme-color) !important;
+  filter: brightness(.5);
+  -webkit-filter: brightness(.5);
 }
 
 #paginationControl {
@@ -1975,10 +1976,13 @@ function execute_profilePage() {
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
   commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
-  set_value('commentData', commentData);    // FIXME: Regarding debugger, we use value scriptEnabled here... check that
+  set_value('commentData', commentData);
 
   // count comments
   totalComments = commentData.length;
+  
+  // remap setting commentsPerPage='all'
+  if (currentLength === 'all') currentLength = totalComments;
   
   // build and insert our own comment container
   customCommentContainer = addToDOM(
@@ -2770,7 +2774,7 @@ function insertLanguageDropdown() {
       <div class="customDropdownMenu"></div>
     </div>
   `.parseHTML();
-
+  
   // insert as first element after the section headline
   const settingsLanguageLabel = document.getElementById('settingsLanguageLabel');
 
@@ -2790,6 +2794,7 @@ function insertLanguageDropdown() {
       const langId = this.getAttribute('data-lang');
       if (i18n.has(langId)) {
         activeLanguage = langId;
+        set_value('setting_language', activeLanguage);
         updatePage();
       }
 
@@ -2843,10 +2848,12 @@ function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
   currentStart = currentLength * currentPage - currentLength + 1;
-
-  // This will fix the edge case where filtered total is smaller than current start
+  // fix edge case where filtered total is smaller than current start
   if (currentStart > totalComments - getFilteredCount()) currentStart = 1;
-
+  // update
+  this.selectedOptions[0].innerText === t('alle')
+    ? set_value('commentsPerPage', 'all')
+    : set_value('commentsPerPage', currentLength);
   updatePage();
 }
 
