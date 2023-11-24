@@ -513,9 +513,9 @@ String.sprintf = function(format) {
     return typeof args[number] !== typeof undefined ? args[number].toString() : match;
   });
 };
-String.prototype.parseHTML = function() {
+String.prototype.parseHTML = function(ignoreLineBreaks = false) {
   let t = document.createElement('template');
-  t.innerHTML = this;
+  t.innerHTML = ignoreLineBreaks ? this.replaceAll(/\s*[\n\r]\s*/g, '') : this;
   return t.content;
 };
 Map.prototype.deleteByValue = function(value, limit = null) {
@@ -996,6 +996,13 @@ addToDOM(`
 }
 .clickable {
   cursor: pointer;
+}
+.unselectable {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* For IE9- support add attribute unselectable="on" */
 }
 .container-fluid, .container-fluid *, .container-fluid *::before, .container-fluid *::after { box-sizing: border-box }
 .container-fluid { box-sizing: border-box; width: 100%; margin-inline: auto; padding: 0 }
@@ -2108,7 +2115,7 @@ function buildPaginationUi() {
         <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}" data-content="${totalPages}"></a>
       </div>
     </div>
-  `.replaceAll(/[\n\r]/g, '').replaceAll(/>\s+</g, '><');
+  `;
 }
 function addPlaylistContainer() {
   const oldPlaylist = customElementsRegister.get('playlists');
@@ -2206,7 +2213,7 @@ function insertLanguageDropdown() {
     <div id="language_container" class="row customDropdown">
       <div class="customDropdownToggler">
         <span id="activeLanguage" class="customDropdown_ActiveVal">${i18n.get(activeLanguage).get('__metadata__').displayName}</span>
-        <span>&gt;</span>
+        <span class="unselectable" unselectable="on">&gt;</span>
       </div>
       <div class="customDropdownMenu"></div>
     </div>
@@ -2316,7 +2323,7 @@ function updatePaginationUI() {
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
   if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   paginationContainer = addToDOM(
-    buildPaginationUi().parseHTML(),
+    buildPaginationUi().parseHTML(true),
     document.getElementsByClassName('rowHeadlineHolder')[1],
     InsertionService.After,
     true,

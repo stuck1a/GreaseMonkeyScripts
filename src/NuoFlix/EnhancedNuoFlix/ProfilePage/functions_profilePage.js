@@ -797,7 +797,7 @@ function buildPaginationUi() {
         <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}" data-content="${totalPages}"></a>
       </div>
     </div>
-  `.replaceAll(/[\n\r]/g, '').replaceAll(/>\s+</g, '><');
+  `;
 }
 
 
@@ -952,7 +952,7 @@ function insertLanguageDropdown() {
     <div id="language_container" class="row customDropdown">
       <div class="customDropdownToggler">
         <span id="activeLanguage" class="customDropdown_ActiveVal">${i18n.get(activeLanguage).get('__metadata__').displayName}</span>
-        <span>&gt;</span>
+        <span class="unselectable" unselectable="on">&gt;</span>
       </div>
       <div class="customDropdownMenu"></div>
     </div>
@@ -1163,7 +1163,7 @@ function updatePaginationUI() {
   if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   
   paginationContainer = addToDOM(
-    buildPaginationUi().parseHTML(),
+    buildPaginationUi().parseHTML(true),
     document.getElementsByClassName('rowHeadlineHolder')[1],
     InsertionService.After,
     true,
