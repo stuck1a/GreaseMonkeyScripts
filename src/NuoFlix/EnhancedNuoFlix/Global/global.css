@@ -109,8 +109,8 @@ input[type="date"] {
 }
 
 .disabled {
-  background-color: darkgray !important;
-  color: lightgray !important;
+  filter: brightness(.5) !important;
+  -webkit-filter: brightness(.5) !important;
   cursor: default !important;
   pointer-events: none;
 }

@@ -20,7 +20,6 @@
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 (function() {
-  // Unique key used for the GM data storage to avoid naming conflicts across scripts
  const CACHE_KEY = 's1a/enhancednuoflix';
 // Logger prefix
  const MSG_PREFIX = 'Enhanced NuoFlix';
@@ -36,16 +35,19 @@
  const defaultStart = 1;
  const defaultLength = 5;
  const defaultLanguage = 'de';
+ const defaultPlaylists = [
+  { id: 1, is_custom: false, max_items: -1, name: 'Favoriten', item_cnt: 0, items: [], },
+  { id: 2, is_custom: false, max_items: -1, name: 'Für später gespeichert', item_cnt: 0, items: [], },
+  { id: 3, is_custom: false, max_items: -1, name: 'Zuletzt angesehene Videos', item_cnt: 0, items: [], },
+];
 // Map execution flows to pages
  const pageRoutes = new Map([
-  // path       route name
   [ '/',        'start'   ],
   [ '/profil',  'profile' ],
   [ '/.+',      'video'   ],
 ]);
  const i18n = new Map([
   [
-    // German (base strings are german, so we need only the metadata here)
     'de', new Map([
       [ '__metadata__', {
         displayName: 'Deutsch',
@@ -54,7 +56,6 @@
     ])
   ],
   [
-    // English
     'en', new Map([
       [ '__metadata__', {
         displayName: 'English',
@@ -220,10 +221,49 @@
 'Mehr anzeigen',
 'Show more',
 ],
+[
+'Standard-Playlists',
+'Default Playlists',
+],
+[
+'Favoriten',
+'Favorites',
+],
+[
+'Für später gespeichert',
+'Watch later',
+],
+[
+'Zuletzt angesehene Videos',
+'Recently viewed videos',
+],
+[
+'Eigene Playlists',
+'Custom Playlists',
+],
+[
+'Meine Playlists',
+'My Playlists',
+],
+[
+'Erstellen',
+'Create',
+],
+[
+'Abspielen',
+'Play',
+],
+[
+'Bearbeiten',
+'Edit',
+],
+[
+'Löschen',
+'Delete',
+],
     ])
   ],
   [
-    // Russian
     'ru', new Map([
       [ '__metadata__', {
         displayName: 'Russkiy',
@@ -388,6 +428,46 @@
 [
 'Mehr anzeigen',
 'Bol\'she informatsii',
+],
+[
+'Standard-Playlists',
+'Standartnyye pleylisty',
+],
+[
+'Favoriten',
+'Izbrannoye',
+],
+[
+'Für später gespeichert',
+'Ostavit\' na potom',
+],
+[
+'Zuletzt angesehene Videos',
+'Nedavno prosmotrennyye video',
+],
+[
+'Eigene Playlists',
+'Pol\'zovatel\'skiye pleylisty',
+],
+[
+'Meine Playlists',
+'Moi pleylisty',
+],
+[
+'Erstellen',
+'Sozdavat\'',
+],
+[
+'Abspielen',
+'Igrat\'',
+],
+[
+'Bearbeiten',
+'Redaktirovat\'',
+],
+[
+'Löschen',
+'Udalit\'',
 ],
     ])
   ],
@@ -580,7 +660,6 @@ class InsertionService {
       ];
     }
     switch (method) {
-      // as first child
       case this.AsFirstChild:
         if (refElement.hasChildNodes()) {
           refElement.insertBefore(element, refElement.childNodes[0]);
@@ -588,11 +667,9 @@ class InsertionService {
         }
         refElement.appendChild(element);
         break;
-      // as last child
       case this.AsLastChild:
         refElement.appendChild(element);
         break;
-      // before
       case this.Before:
         if (refElement.parentElement) {
           refElement.parentElement.insertBefore(element, refElement);
@@ -600,7 +677,6 @@ class InsertionService {
         }
         log(t('Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!'), 'error', buildLogContext());
         break;
-     // after
       case this.After:
         if (refElement.parentElement) {
           refElement.nextSibling
@@ -641,7 +717,6 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
   return insertedElements;
 }
 function removeFromDOM(elementOrId, force = false) {
-  // if we got the element itself
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
     if (force || elementOrId.hasAttribute('data-customElement')) {
@@ -653,14 +728,12 @@ function removeFromDOM(elementOrId, force = false) {
     }
     return false;
   }
-  // if we got the register id
   if (customElementsRegister && customElementsRegister.has(elementOrId)) {
     const element = customElementsRegister.get(elementOrId);
     if (element instanceof HTMLElement || element instanceof Node) element.remove();
     customElementsRegister.delete(elementOrId);
     return true;
   }
-  // if we got the element id
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
     if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
@@ -680,35 +753,28 @@ function disablePrimalElement(elementOrId, registerId = null) {
     element.classList.add('hidden');
     if (disabledPrimalElementsRegister) {
       if (!id) id = Date.now().toString(36) + Math.random().toString(36).substring(2);
-      // if this element is already stored, then just update the register id
       disabledPrimalElementsRegister.deleteByValue(element, 1);
       disabledPrimalElementsRegister.set(id, element);
     }
     return true;
   };
-  // if we got an element
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) return apply(registerId, elementOrId);
-  // if we got an element id
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) return apply(registerId, elementOrId);
-  // if we got an register id
   if (disabledPrimalElementsRegister.has(elementOrId)) return apply(elementOrId, disabledPrimalElementsRegister.get(elementOrId));
   return false;
 }
 function enablePrimalElement(elementOrId) {
-  // if we got an element
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
     elementOrId.classList.remove('hidden');
     return true;
   }
-  // if we got an register id
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
     element.classList.remove('hidden');
     return true;
   }
-  // if we got an element id
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
@@ -717,18 +783,20 @@ function enablePrimalElement(elementOrId) {
   }
   return false;
 }
-function registerStaticTranslatable(element, text, args = []) {
-  if (!staticTranslatableElements.has(element)) {
-    staticTranslatableElements.set(element, { text: text, args: args });
+function registerStaticTranslatable(element, text = '', args = []) {
+  if (!(element instanceof HTMLElement)) {
+    for (const entry of element) {
+      if (!staticTranslatableElements.has(entry['element'])) staticTranslatableElements.set(entry['element'], { text: entry['text'] ?? text, args: entry['args'] ?? args });
+    }
+    return;
   }
+  if (!staticTranslatableElements.has(element)) staticTranslatableElements.set(element, { text: text, args: args });
 }
 function doChangeMainSwitch(toggleState = false) {
-  // toggle state flag
   if (toggleState) {
     mainSwitchState = !mainSwitchState;
     set_value('scriptEnabled', mainSwitchState);
   }
-  // toggle visibility of custom elements
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {
       for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
@@ -736,8 +804,7 @@ function doChangeMainSwitch(toggleState = false) {
       this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
     }
   }
-  // toggle visibility of original elements
-  const register = Array.from(disabledPrimalElementsRegister.values());    // avoid infinity loop
+  const register = Array.from(disabledPrimalElementsRegister.values());   
   for (const element of register) {
     if (element instanceof Array) {
       for (const entry of element) this.checked ? disablePrimalElement(entry) : enablePrimalElement(entry);
@@ -873,11 +940,9 @@ function getOriginalCommentIds(which) {
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
 function openModal(element, id = null) {
-  // wrap the content to ensure correct displaying no matter of the elements display value
   const wrapper = document.createElement('div');
   wrapper.classList.add('customModal');
   wrapper.append(element);
-  // middle-layer to darken the background
   const background = document.createElement('div');
   background.classList.add('customModal_middlelayer');
   addToDOM(background, document.body, InsertionService.AsLastChild, false);
@@ -998,8 +1063,8 @@ input[type="date"] {
   display: table;
 }
 .disabled {
-  background-color: darkgray !important;
-  color: lightgray !important;
+  filter: brightness(.5) !important;
+  -webkit-filter: brightness(.5) !important;
   cursor: default !important;
   pointer-events: none;
 }
@@ -1152,11 +1217,11 @@ input[type="date"] {
 .flipflop > label > span:before {
   border-radius: 50%;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
-  // set up script-wide variables (used in all/multiple routes)
  let mainSwitchState;
  let customElementsRegister = new Map();
  let disabledPrimalElementsRegister = new Map();
  let staticTranslatableElements = new Map();
+ let playlistData = has_value('playlistData') ? get_value('playlistData') : defaultPlaylists;
  let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
  let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],
@@ -1166,14 +1231,12 @@ input[type="date"] {
     [ 'filterDateRange', { active: false, value: [] } ],
   ]);
   /* add switch to header which enables/disables all features of this Userscript */
-  // get stored state or initialize it
   if (has_value('scriptEnabled')) {
     mainSwitchState = get_value('scriptEnabled');
   } else {
     set_value('scriptEnabled', true);
     mainSwitchState = true;
   }
-  // insert switch
  const mainSwitch = `
     <div style="position: relative;top: -35px;left: 6rem;display: inline-flex;">
       <div class="flipflop" style="--color-on: var(--theme-color);">
@@ -1185,18 +1248,15 @@ input[type="date"] {
   addToDOM(mainSwitch, document.getElementById('header').lastElementChild, InsertionService.AsLastChild, false);
   registerStaticTranslatable(document.getElementById('mainSwitchLabel'), 'NuoFlix 2.0', []);
   document.getElementById('mainSwitch').addEventListener('change', doChangeMainSwitch);
-  // hand over execution flow depending on the route (literally the current page)
   const route = getActiveRoute();
   if (route === 'start') {
-    (function() { // set up route-scoped fields and start the execution flow fo this route
+    (function() {
 execute_startPage();
 function execute_startPage() {
-  // ... do stuff ...
-  // initialize i18n strings
   updateStaticTranslations()
 } })();
   } else if (route === 'profile') {
-    (function() { // set up route-scoped fields and configs, then start the execution flow fo this route
+    (function() {
  const maxCommentHeightBeforeCut = 250;
  let commentData;
  let storedCommentData;
@@ -1295,7 +1355,16 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
       </fieldset>
     </div>
     <div class="row card-group">
-      <fieldset id="settingsContainer" class="card col-5">
+      <fieldset id="playlistContainer" class="card col-6">
+        <legend id="playlistLabel"></legend>
+        <div class="row">
+          <div class="col-auto"><a id="createPlaylist" class="btn btn-small playlistButton"></a></div>
+          <div class="col-auto"><a id="startPlaylist" class="btn btn-small playlistButton disabled"></a></div>
+          <div class="col-auto"><a id="editPlaylist" class="btn btn-small playlistButton disabled"></a></div>
+          <div class="col-auto"><a id="deletePlaylist" class="btn btn-small playlistButton disabled"></a></div>       
+        </div>
+      </fieldset>
+      <fieldset id="settingsContainer" class="card col">
         <legend id="settingsLabel"></legend>
         <div id="settingsLanguage" class="row">
           <label id="settingsLanguageLabel" class="col-5"></label>
@@ -1322,7 +1391,6 @@ function execute_profilePage() {
 }
 </style>
 `.parseHTML();
-  // insert all style sheets used in this route
   addToDOM(`<style>#ignoredUsers {
   width: 100%;
 }
@@ -1335,7 +1403,7 @@ function execute_profilePage() {
   margin-bottom: 1rem;
 }
 #paginationNext {
-  margin-inline: 0 !important;
+  margin-inline: 0.2rem !important;
   padding-inline: 2rem;
   border-radius: 10% 25% 25% 10%;
 }
@@ -1346,7 +1414,7 @@ function execute_profilePage() {
   margin-inline-start: 0 !important;
 }
 #paginationBack {
-  margin-inline: 0 !important;
+  margin-inline: 0.2rem !important;
   padding-inline: 2rem;
   border-radius: 25% 10% 10% 25%;
 }
@@ -1359,6 +1427,9 @@ function execute_profilePage() {
 .pageNrBtn {
   padding-inline: max(1vw, 10px);
   margin-inline: .25rem !important;
+}
+#paginationContainer a:before {
+  content: attr(data-content);
 }
 .pageNrBtn.activePage {
   cursor: default !important;
@@ -1479,45 +1550,66 @@ function execute_profilePage() {
 }
 .replyText + .showFullLength {
   padding-bottom: 0;
+}
+#playlists {
+  width: 100%;
+}
+#playlists optgroup:empty {
+  display: none;
+}
+#playlists option {
+  padding-left: 1rem;
+}
+.playlistItem {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+.playlistItem span:first-child {
+  max-width: 90%;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+div:not(:last-child) > .playlistButton {
+  margin-right: 1rem;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(style_comments, document.body, InsertionService.AsLastChild, false);
-  // insert the additional UI section
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
-  // register all static elements from enhancedUiContainer with text to translate
-  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer');
-  registerStaticTranslatable(document.getElementById('addIgnoreUser'), 'Hinzufügen...');
-  registerStaticTranslatable(document.getElementById('deleteIgnoreUser'), 'Entfernen');
-  registerStaticTranslatable(document.getElementById('filterOnlyNewLabel'), 'Nur neue Kommentare');
-  registerStaticTranslatable(document.getElementById('pluginHeadline'), 'NuoFlix 2.0');
-  registerStaticTranslatable(document.getElementById('filterLabel'), 'Kommentare filtern');
-  registerStaticTranslatable(document.getElementById('searchInputLabel'), 'Suche:');
-  registerStaticTranslatable(document.getElementById('moreFilterTrigger'), 'Erweiterte Filteroptionen');
-  registerStaticTranslatable(document.getElementById('useAndLogicLabel'), 'Muss alle Wörter enthalten');
-  registerStaticTranslatable(document.getElementById('searchByUserLabel'), 'nach Benutzer:');
-  registerStaticTranslatable(document.getElementById('searchByDateLabel'), 'nach Datum:');
-  registerStaticTranslatable(document.getElementById('settingsLabel'), 'Einstellungen');
-  registerStaticTranslatable(document.getElementById('settingsLanguageLabel'), 'Sprache:');
-  // restore list of blocked users
+  registerStaticTranslatable([
+    { element: document.getElementById('ignoredLabel'), text: 'Blockierte Benutzer' },
+    { element: document.getElementById('addIgnoreUser'), text: 'Hinzufügen...' },
+    { element: document.getElementById('deleteIgnoreUser'), text: 'Entfernen' },
+    { element: document.getElementById('filterOnlyNewLabel'), text: 'Nur neue Kommentare' },
+    { element: document.getElementById('pluginHeadline'), text: 'NuoFlix 2.0' },
+    { element: document.getElementById('filterLabel'), text: 'Kommentare filtern' },
+    { element: document.getElementById('searchInputLabel'), text: 'Suche:' },
+    { element: document.getElementById('moreFilterTrigger'), text: 'Erweiterte Filteroptionen' },
+    { element: document.getElementById('useAndLogicLabel'), text: 'Muss alle Wörter enthalten' },
+    { element: document.getElementById('searchByUserLabel'), text: 'nach Benutzer:' },
+    { element: document.getElementById('searchByDateLabel'), text: 'nach Datum:' },
+    { element: document.getElementById('settingsLabel'), text: 'Einstellungen' },
+    { element: document.getElementById('settingsLanguageLabel'), text: 'Sprache:' },
+    { element: document.getElementById('playlistLabel'), text: 'Meine Playlists' },
+    { element: document.getElementById('createPlaylist'), text: 'Erstellen' },
+    { element: document.getElementById('startPlaylist'), text: 'Abspielen' },
+    { element: document.getElementById('editPlaylist'), text: 'Bearbeiten' },
+    { element: document.getElementById('deletePlaylist'), text: 'Löschen' },
+  ]);
   for (const user of get_value('ignoredUsers')) {
     addToDOM(`<option>${user}</option>`.parseHTML(), 'ignoredUsers', InsertionService.AsLastChild, false);
     const ignoreFilter = commentFilters.get('filterSkipUser');
     ignoreFilter.value.push(user);
     ignoreFilter.active = true;
   }
-  // disable the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
   if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
   disablePrimalElement(originalCommentContainer, 'originalCommentContainer');
-  // get last state of stored comments (to identify new comments), then update the storage
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
-  commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
+  commentData = DEBUG_setSomeFakeData(commentData);   
   set_value('commentData', commentData);
-  // count comments
   totalComments = commentData.length;
-  // remap setting commentsPerPage='all'
   if (currentLength === 'all') currentLength = totalComments;
-  // build and insert our own comment container
   customCommentContainer = addToDOM(
     '<div id="customCommentContainer" class="profilContentInner"></div>'.parseHTML(),
     originalCommentContainer,
@@ -1525,15 +1617,11 @@ function execute_profilePage() {
     true, 
     'customCommentContainer'
   );
-  // generate datalist for autocompletion of user filter input
   addUserFilterAutocompletionList();
-  // mount handler for adding a user to the list of users to search for
   document.getElementById('filterByUser').onkeypress = function(ev) {
     if (!ev) ev = window.event;
     let keyCode = ev.code || ev.key;
-    // if user pressed enter
     if (keyCode === 'Enter' || keyCode === 'NumpadEnter') {
-      // add only if user is found
       for (const element of document.getElementById('availableUsers').children) {
         if (element.value === this.value) {
           doAddUserToFilterList(this);
@@ -1541,11 +1629,8 @@ function execute_profilePage() {
         }
       }
     }
-    // if user has entered a comma or space
     else if (keyCode === ',' || keyCode === ' ') {
-      // remove the comma/space
       this.value = this.value.substring(0, this.value.length - 1);
-      // add only if user is found
       for (const element of document.getElementById('availableUsers').children) {
         if (element.value === this.value) {
           doAddUserToFilterList(this);
@@ -1554,7 +1639,6 @@ function execute_profilePage() {
       }
     }
   };
-  // mount handler for the text search filter
   let textFilterDelayActive = false;
   document.getElementById('filterByText').oninput = function() {
     const revertFilterTextInput = document.getElementById('revertFilterTextInput');
@@ -1566,32 +1650,25 @@ function execute_profilePage() {
       textFilter.value = [];
       textFilter.active = false;
     }
-    // add delay before updating the page to reduce performance impact
     if (!textFilterDelayActive) {
       textFilterDelayActive = true;
       setTimeout(function() {
-        // reset execution delayer
         textFilterDelayActive = false;
-        // update filter
         textFilter.value = this.value.split(' ');
         textFilter.active = true;
-        // update page
         updatePage();
       }.bind(this), 150);
     }
   };
-  // mount handlers for the date search filter
   document.getElementById('filterByDateFrom').oninput = function() {
     doUpdateDateFilter(this, document.getElementById('filterByDateTo'));
   };
   document.getElementById('filterByDateTo').oninput = function() {
     doUpdateDateFilter(document.getElementById('filterByDateFrom'), this);
   };
-  // mount handler for changing the text search logic
   document.getElementById('filterAllWords').addEventListener('change', function() {
     if (document.getElementById('filterByText').textLength > 0) updatePage();
   });
-  // mount handler for the reset button of the date range filter
   document.getElementById('revertDateRangeInputs').addEventListener('click', function() {
     document.getElementById('filterByDateFrom').value = '';
     document.getElementById('filterByDateTo').value = '';
@@ -1601,32 +1678,24 @@ function execute_profilePage() {
     this.classList.add('hidden');
     updatePage();
   });
-  // mount handler for the reset button of the user filter
   document.getElementById('revertFilterUserInput').addEventListener('click', function() {
-    // clear the displayed filter values
     const filteredUserList = document.getElementById('filteredUserList');
     while (filteredUserList.firstChild) filteredUserList.removeChild(filteredUserList.lastChild);
-    // clear the filter
     let userFilter = commentFilters.get('filterOnlyUser');
     userFilter.value = [];
     userFilter.active = false;
-    // restore the autocompletion list
     addUserFilterAutocompletionList();
     this.classList.add('hidden');
     updatePage();
   });
-  // mount handler for the reset button of the text filter
   document.getElementById('revertFilterTextInput').addEventListener('click', function() {
-    // clear the displayed filter values
     document.getElementById('filterByText').value = '';
-    // clear the filter
     let textFilter = commentFilters.get('filterTextSearch');
     textFilter.value = [];
     textFilter.active = false;
     this.classList.add('hidden');
     updatePage();
   });
-  // mount handlers for user block feature
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
     let user = prompt(t('Folgenden Benutzer zur Ignorieren-Liste hinzufügen:'));
     if (user) user = user.trim();
@@ -1636,22 +1705,17 @@ function execute_profilePage() {
       if (option.innerText === user) return;
     }
     addToDOM(`<option>${user}</option>`.parseHTML(), 'ignoredUsers', InsertionService.AsLastChild, false);
-    // update filter
     const ignoreFilter = commentFilters.get('filterSkipUser');
     ignoreFilter.value.push(user);
     ignoreFilter.active = true;
-    // update storage
     set_value('ignoredUsers', ignoreFilter.value);
-    // if the blocked user is on the filter list of users to search for, then remove it from that list
     for (const selectedUser of document.getElementById('filteredUserList').children) {
       if (selectedUser.firstElementChild.innerText === user) {
         removeFromDOM(selectedUser);
         break;
       }
     }
-    // update autocompletion list
     addUserFilterAutocompletionList();
-    // update page
     updatePage();
   });
   document.getElementById('deleteIgnoreUser').addEventListener('click', function() {
@@ -1661,49 +1725,39 @@ function execute_profilePage() {
       selectElement.selectedOptions[0].remove();
       this.classList.add('disabled');
       const ignoreFilter = commentFilters.get('filterSkipUser');
-      // update filter
       const oldIgnoreList = ignoreFilter.value;
       ignoreFilter.value = [];
       for (const entry of oldIgnoreList) {
         if (entry !== user) ignoreFilter.value.push(entry);
       }
       if (ignoreFilter.value.length === 0) ignoreFilter.active = false;
-      // update storage
       set_value('ignoredUsers', ignoreFilter.value);
-      // update autocompletion list
       addUserFilterAutocompletionList();
-      // update page
       updatePage();
     }
   });
-  // only enable the button for deleting users from block list if an entry is selected
   document.getElementById('ignoredUsers').addEventListener('change', function() {
     const deleteButton = document.getElementById('deleteIgnoreUser');
     this.selectedIndex === -1 && deleteButton
       ? deleteButton.classList.add('disabled')
       : deleteButton.classList.remove('disabled');
   });
-  // mount handler for the "new only" filter button
   document.getElementById('filterOnlyNew').addEventListener('change', function() {
     changeFilter('filterOnlyNew', !commentFilters.get('filterOnlyNew').value);
     if (commentFilters.get('filterOnlyNew').active) {
-      // no need to highlight new comments if we filter all not new
       document.getElementById('style_newComment').innerText = '';
     } else {
       document.getElementById('style_newComment').innerText = `.newComment { background-color: ${highlightedCommentsColor} }`;
     }
   });
-  // initially generate and insert all dynamic components
   updatePage();
   insertLanguageDropdown();
-  // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
 }
 function doUpdateDateFilter(fromInput, toInput) {
   const revertDateRangeInputs = document.getElementById('revertDateRangeInputs');
   let filterDateRange = commentFilters.get('filterDateRange');
-  // show/hide reset button
   if (fromInput.value === '' && toInput.value === '') {
     filterDateRange.active = false;
     filterDateRange.value = [];
@@ -1712,34 +1766,28 @@ function doUpdateDateFilter(fromInput, toInput) {
   } else {
     revertDateRangeInputs.classList.remove('hidden');
   }
-  // do nothing until we have a valid, positive date range
   if (
     !(fromInput.valueAsDate instanceof Date) ||
     !(toInput.valueAsDate instanceof Date) ||
     (toInput.valueAsDate < fromInput.valueAsDate)
   ) return;
-  // adjust the time parts to include the entered days and update the filter values
   filterDateRange.value = [
     fromInput.valueAsDate.setHours(0, 0, 0, 0),
     toInput.valueAsDate.setHours(23, 59, 59, 999)
   ];
   filterDateRange.active = true;
-  // update page
   updatePage();
 }
 function generateCommentObject() {
-  // get raw data
   let RawData = document.getElementsByClassName('profilContentInner')[0];
   if (!RawData) return [];
   let commentBlocksRaw = RawData.getElementsByClassName('commentItem');
-  // generate data array for each raw comment
   let commentDataCollection = [];
   let counter = 0;
   let tmp;
   for (const commentRaw of commentBlocksRaw) {
     let commentItemData = {};
     commentItemData.id = ++counter;
-    // section 'form'
     commentItemData.form = {};
     tmp = commentRaw.getElementsByClassName('sendReplyProfil')[0];
     if (tmp) {
@@ -1750,7 +1798,6 @@ function generateCommentObject() {
       log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'form'), 'error', this);
       return [];
     }
-    // section 'video'
     commentItemData.video = {};
     tmp = commentRaw.children[0].children[0];
     if (tmp) {
@@ -1768,7 +1815,6 @@ function generateCommentObject() {
     commentItemData.text = commentRaw.children[3].children[2].innerText;
     let storedReplyCount = getReplyCount(commentItemData.form.btn_id, commentItemData.form.txt_id);
     let replyCounter = 0;
-    // section 'replies'
     commentItemData.replies = [];
     tmp = commentRaw.children[3].children[3];
     let repliesTotal = tmp.getElementsByClassName('spacer25').length;
@@ -1789,7 +1835,6 @@ function generateCommentObject() {
   return commentDataCollection;
 }
 function addUserFilterAutocompletionList() {
-  // remove the current list, if available
   const oldList = customElementsRegister.get('availableUsersForFilter');
   if (oldList) {
     removeFromDOM(oldList);
@@ -1804,12 +1849,10 @@ function addUserFilterAutocompletionList() {
   let alreadyInsertedUsers = [];
   const blockedUsers = commentFilters.get('filterSkipUser').value;
   for (const comment of commentData) {
-    // prevent duplicates and blocked users
     if (alreadyInsertedUsers.indexOf(comment.user) === -1 && blockedUsers.indexOf(comment.user) === -1) {
       addToDOM(`<option value="${comment.user}"></option>`.parseHTML(), availableUsersForFilter, InsertionService.AsLastChild, false);
       alreadyInsertedUsers.push(comment.user);
     }
-    // check replies of each comment, too
     for (const reply of comment.replies) {
       if (alreadyInsertedUsers.indexOf(reply.user) === -1 && blockedUsers.indexOf(reply.user) === -1) {
         addToDOM(`<option value="${reply.user}"></option>`.parseHTML(), availableUsersForFilter, InsertionService.AsLastChild, false);
@@ -1820,12 +1863,10 @@ function addUserFilterAutocompletionList() {
 }
 function buildCommentBlock(commentData) {
   if (!commentData) return;
-  // generate replies
   let cnt = 0;
   let repliesBlock = '';
   const ignoreFilter = commentFilters.get('filterSkipUser');
   outer: for (const replyData of commentData.replies) {
-    // skip if reply is from an ignored user
     if (ignoreFilter.active) {
       for (const ignoredUser of ignoreFilter.value) {
         if (ignoredUser === replyData.user) continue outer;
@@ -1844,7 +1885,6 @@ function buildCommentBlock(commentData) {
       </div>
     `;
   }
-  // generate comment including the pre-generated replies
   const commentBlock = `
     <div data-comment-id="${commentData.id}" class="commentItem repliesCollapsed${commentData.isNew ? ' ' + cssClassNewComments : ''}${commentData.hasNewReplies ? ' ' + cssClassHasNewReplies : ''}">
       <div><a href="${commentData.video.url}">${commentData.video.title}</a></div>
@@ -1907,16 +1947,13 @@ function getFilteredCount() {
   return count;
 }
 function addFadeOutEffect(textElement) {
-  // add class which will fade out the text
   textElement.classList.add('hasOverflow');
-  // add the "Show more" button
   const showFullLength = addToDOM(
     `<div class="showFullLength">${t('Mehr anzeigen')}</div>`.parseHTML(),
     textElement,
     InsertionService.After,
     false
   );
-  // mount handler of the "Show more" button
   showFullLength.addEventListener('click', function() {
     this.previousElementSibling.classList.remove('hasOverflow');
     removeFromDOM(this);
@@ -1927,23 +1964,18 @@ function insertPaginatedComments() {
   let insertedComments = 0;
   let counter = currentStart;
   let commentItemElement;
-  // collect all filtered comments (on-the-fly would invalidate the counter)
   let filteredComments = [];
   for (const comment of commentData) {
     if (applyFilters(comment)) filteredComments.push(comment);
   }
   while (insertedComments < currentLength) {
-    // stop if we have filtered as many comments as we even have in total
     if (counter > totalComments || counter / currentPage > filteredComments.length) break;
-    // add comment to page
     commentItemElement = buildCommentBlock(filteredComments[currentStart + insertedComments - 1]);
     if (commentItemElement) {
       commentItemElement = addToDOM(commentItemElement, customCommentContainer, InsertionService.AsLastChild, false);
       insertedComments++;
-      // add fade out effect to comment text if text is longer than the limit
       const commentTextElement = commentItemElement.getElementsByClassName('commentText')[0];
       if (commentTextElement && commentTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(commentTextElement);
-      // do the same for all replies of the comment
       for (const replyTextElement of commentItemElement.getElementsByClassName('replyText')) {
         if (replyTextElement && replyTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(replyTextElement);
       }
@@ -1960,10 +1992,8 @@ function applyFilters(commentData) {
   if (commentFilters.get('filterOnlyUser').active) {
     let match = false;
     for (const currentFilterEntry of commentFilters.get('filterOnlyUser').value) {
-      // get a list of all related users (comment author and all replies authors)
       const usersFromReplies = commentData.replies.map(function (item) { return item.user || ''; });
       const relatedUsers = mergeArraysDistinct([commentData.user], usersFromReplies);
-      // check if the current user from filter list is in the author list
       if (relatedUsers.indexOf(currentFilterEntry) > -1) {
         match = true;
         break;
@@ -1978,12 +2008,7 @@ function applyFilters(commentData) {
     }
   }
   /* apply text search filter */
-  // NICE2HAVE: Highlight matches
-  //            One possibility for that would be wrap the matches here in span's and store a deep copy of the comment
-  //            in the comment data itself. Then when printing the comments check, whether the text filter is active and
-  //            if so, use this copy instead of the normal data. Would require to rebuild the copy data here each time.
   if (commentFilters.get('filterTextSearch').active) {
-    // collect all string to search in (uppercase to make the search case-insensitive)
     let relatedContent = [
       commentData.text.toUpperCase(),
       commentData.user.toUpperCase(),
@@ -1998,7 +2023,6 @@ function applyFilters(commentData) {
     let wordsFound = 0;
     if (document.getElementById('filterAllWords').checked) {
       /* AND logic - must contain ALL search words */
-      // check whether all words are at least once somewhere in the related data
       outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
         for (const content of relatedContent) {
           if (content.indexOf(searchTag.toUpperCase()) !== -1) {
@@ -2007,13 +2031,9 @@ function applyFilters(commentData) {
           }
         }
       }
-      // do we have a match for each given word?
       if (wordsFound < commentFilters.get('filterTextSearch').value.length) return false;
     } else {
       /* OR logic - must contain ANY search word */
-      // NICE2HAVE: Count matches and add the match count in percentage to the comment data, then sort them after when in callee.
-      //            But it probably makes sense to wait with that feature until a general
-      //            sort feature is implemented so we can use those functions for this sorting as well
       outer: for (const searchTag of commentFilters.get('filterTextSearch').value) {
         for (const content of relatedContent) {
           if (content.indexOf(searchTag.toUpperCase()) !== -1) {
@@ -2056,13 +2076,11 @@ function convertGermanDate(string) {
   return result;
 }
 function buildPaginationUi() {
-  // use local copy to adjust the value after filter were applied
   let _totalComments = totalComments - filteredCommentsCount;
   const totalPages = Math.ceil(_totalComments / currentLength);
   const currentPage = Math.ceil((currentStart + 0.00001) / currentLength);
   let firstPageButton = currentPage >= 4 ? currentPage - 2 : 1;
   let highestPageButton = totalPages >= 5 ? firstPageButton + 4 : totalPages;
-  // adjust if upper bound reached
   if (highestPageButton > totalPages) {
     firstPageButton -= (highestPageButton - totalPages);
     firstPageButton = firstPageButton < 1 ? 1 : firstPageButton;
@@ -2081,19 +2099,78 @@ function buildPaginationUi() {
   return `
     <div id="paginationContainer">
       <div class="buttonGroup">
-        <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}">1</a>
-        <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}"><</a>
+        <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}" data-content="1"></a>
+        <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}" data-content="<"></a>
       </div>
       <div id="pageNrBtnContainer" class="buttonGroup">${buttons}</div>
       <div class="buttonGroup">
-        <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}">></a>
-        <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}">${totalPages}</a>
+        <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}" data-content=">"></a>
+        <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}" data-content="${totalPages}"></a>
       </div>
     </div>
-  `;
+  `.replaceAll(/[\n\r]/g, '').replaceAll(/>\s+</g, '><');
+}
+function addPlaylistContainer() {
+  const oldPlaylist = customElementsRegister.get('playlists');
+  if (oldPlaylist) removeFromDOM(oldPlaylist);
+  const playlists = `
+    <select id="playlists" name="playlists" size="5">
+      <optgroup id="optgroup_defaultPlaylists" label="${t('Standard-Playlists')}"></optgroup>
+      <optgroup id="optgroup_customPlaylists" label="${t('Eigene Playlists')}"></optgroup>
+    </select>
+  `.parseHTML();
+  addToDOM(playlists, document.getElementById('playlistContainer'), InsertionService.AsFirstChild, true, 'playlists');
+  const defaultContainer = document.getElementById('optgroup_defaultPlaylists');
+  const customContainer = document.getElementById('optgroup_customPlaylists'); 
+  for (const listData of playlistData) {
+    const option = buildPlaylistItem(listData);
+    addToDOM(option, (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
+  }
+  /*  AUFBAU DER PLAYLISTS DATENOBJEKTE
+   playlists = [
+     {
+       id: <integer> Wird beim Erstellen erzeugt aus: Anzahl Playlists + 1,
+       is_custom: <boolean> Entscheidet darüber, in welche optgroup eingefügt wird,
+       max_items: <integer> -1 (unbegrenzt), außer bei Playlist #playlistLastVideos,
+       name: <string> Aus Prompt,
+       item_cnt: <integer> Anzahl der Videos in der Playlist,
+       items: [
+         {
+           id: <number> Fortlaufende Nummer,
+           url: <string> Videolink,
+           title: <string> Videotitel,
+           img: <string> Image-Link zum Vorschaubild,
+           desc: <string> Beschreibungstext,
+         },
+       ],
+     },
+   ];
+  */
+  document.getElementById('createPlaylist').addEventListener('click', function() {
+    const name = prompt('Name der neuen Playlist:', '');
+    if (!name) return;
+    const dataObject = {
+      id: playlistData[playlistData.length - 1].id + 1,
+      is_custom: true,
+      max_items: -1,
+      name: name,
+      item_cnt: 0,
+      items: [],
+    };
+  });
+  document.getElementById('startPlaylist').addEventListener('click', function() {
+  });
+  document.getElementById('editPlaylist').addEventListener('click', function() {
+  });
+  document.getElementById('deletePlaylist').addEventListener('click', function() {
+  });
+}
+function buildPlaylistItem(data) {
+  if (!data) return ''.parseHTML();
+  return `<option class="playlistItem ${data.is_custom ? 'customPlaylist' : 'fixedPlaylist'}" data-playlist-id="${data.id}"><span>${data.is_custom ? data.name : t(data.name)}</span><span>${data.item_cnt}</span></option>`.parseHTML();
 }
 function buildPageButton(pageNr, buttonStart, isActivePage = false) {
-  return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}">${pageNr}</a>`;
+  return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}" data-content="${pageNr}"></a>`;
 }
 function buildPaginationControl(suffix= '') {
   const _totalComments = totalComments - filteredCommentsCount;
@@ -2134,18 +2211,14 @@ function insertLanguageDropdown() {
       <div class="customDropdownMenu"></div>
     </div>
   `.parseHTML();
-  // insert as first element after the section headline
   const settingsLanguageLabel = document.getElementById('settingsLanguageLabel');
-  // Some weird side effect causes that we have the DocumentFragment here so lets simply get the element from the register again
   enhancedUiContainer = customElementsRegister.get('enhancedUiContainer');
   const languageContainer = addToDOM(languageContainerHtml, settingsLanguageLabel, InsertionService.After, true, 'language_container');
-  // insert an entry for each language defined in global var i18n
   for (const language of i18n.entries()) {
     const metadata = language[1].get('__metadata__');
     const langEntryHtml = `<div id="lang_${language[0]}" data-lang="${language[0]}">${metadata.icon}<span>${metadata.displayName}</span></div>`;
     addToDOM(langEntryHtml.parseHTML(), languageContainer.lastElementChild, InsertionService.AsLastChild, false);
   }
-  // mount handler for all language entries
   for (const langItem of languageContainer.lastElementChild.children) {
     langItem.addEventListener('click', function() {
       const langId = this.getAttribute('data-lang');
@@ -2154,7 +2227,6 @@ function insertLanguageDropdown() {
         set_value('setting_language', activeLanguage);
         updatePage();
       }
-      // rebuild the language menu so the hover effect loses its effect causing the menu to close
       languageContainer.remove();
       insertLanguageDropdown();
     });
@@ -2175,16 +2247,13 @@ function insertSortingMenu() {
       </div>
     </div>
   `.parseHTML();
-  // TODO: option handlers + click (rebuild menu) handler (see language menu)
   addToDOM(sortingContainerHtml, paginationContainer, InsertionService.Before, true, 'sortingController');
 }
 function doChangeLength(ev) {
   currentLength = parseInt(this.value) || currentLength;
   const currentPage = Math.ceil((currentStart + 0.000001) / currentLength);
   currentStart = currentLength * currentPage - currentLength + 1;
-  // fix edge case where filtered total is smaller than current start
   if (currentStart > totalComments - getFilteredCount()) currentStart = 1;
-  // update
   this.selectedOptions[0].innerText === t('alle')
     ? set_value('commentsPerPage', 'all')
     : set_value('commentsPerPage', currentLength);
@@ -2201,7 +2270,6 @@ function doAddUserToFilterList(input) {
   let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span></span></span>`.parseHTML();
   const filterOnlyUser = commentFilters.get('filterOnlyUser');
   userElement = addToDOM(userElement, document.getElementById('filteredUserList'), InsertionService.AsLastChild, false);
-  // remove this username from autocompletion list
   const availableUsersForFilter = customElementsRegister.get('availableUsersForFilter');
   for (const entry of availableUsersForFilter.children) {
     if (entry.value === input.value) {
@@ -2209,15 +2277,11 @@ function doAddUserToFilterList(input) {
       break;
     }
   }
-  // show revert button
   document.getElementById('revertFilterUserInput').classList.remove('hidden');
-  // mount event handler for removing this user from the filter list again
   userElement.lastElementChild.addEventListener('click', function() {
     const targetUsername = this.previousElementSibling.innerText;
-    // make this user available for autocompletion again
     const datalistEntry = `<option value="${targetUsername}"></option>`.parseHTML();
     addToDOM(datalistEntry, availableUsersForFilter, InsertionService.AsLastChild, false);
-    // remove the username from the filter values and disable the filter if this was the last entry
     const oldFilterUserList = filterOnlyUser.value;
     filterOnlyUser.value = [];
     for (const entry of oldFilterUserList) {
@@ -2227,24 +2291,17 @@ function doAddUserToFilterList(input) {
     }
     if (filterOnlyUser.value.length === 0) {
       filterOnlyUser.active = false;
-      // also hide the revert filter button
       document.getElementById('revertFilterUserInput').classList.add('hidden');
     }
-    // remove user from the list which shows all selected users
     removeFromDOM(this.parentElement, true);
-    // update comments
     updatePage();
   });
-  // add the username to the filter values
   let currentFilterList = filterOnlyUser.value;
   currentFilterList.push(input.value);
-  // clear the input, so the user can enter another user
   input.value = '';
-  // apply filter and update comments
   changeFilter('filterOnlyUser', currentFilterList);
 }
 function changeFilter(filterName, newValue) {
-  // to simplify the calculation we will jump to page 1 if a filter has changed
   currentStart = 1;
   if (commentFilters.has(filterName)) {
     const filter = commentFilters.get(filterName);
@@ -2271,7 +2328,6 @@ function updatePaginationUI() {
       doClickedPagination(e, this);
     });
   }
-  // insert a second pagination after the comments
   paginationContainerBottom = paginationContainer.cloneNode(true);
   paginationContainerBottom.id = paginationContainerBottom.id + 'Bottom';
   paginationContainerBottom = addToDOM(
@@ -2281,14 +2337,12 @@ function updatePaginationUI() {
     true,
     'paginationContainerBottom'
   );
-  // handlers won't get cloned
   const paginationButtonsBottom = paginationContainerBottom.getElementsByClassName('btn');
   for (const paginationBtn of paginationButtonsBottom) {
     paginationBtn.addEventListener('click', function (e) {
       doClickedPagination(e, this);
     });
   }
-  // insert pagination control (displays from..to, length selection and such)
   paginationControlContainer = addToDOM(
     buildPaginationControl().parseHTML(),
     paginationContainer,
@@ -2297,7 +2351,6 @@ function updatePaginationUI() {
     'paginationControlContainer'
   );
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
-  // insert a second pagination control after the comments
   paginationControlContainerBottom = addToDOM(
     buildPaginationControl('Bottom').parseHTML(),
     paginationContainerBottom,
@@ -2306,7 +2359,6 @@ function updatePaginationUI() {
     'paginationControlContainerBottom'
   );
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
-  // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
     paginationContainer.classList.add('hidden');
     paginationContainerBottom.classList.add('hidden');
@@ -2316,7 +2368,6 @@ function updateComments() {
   if (customCommentContainer instanceof HTMLElement) {
     customCommentContainer.innerHTML = '';
   } else {
-    // on very first build
     customCommentContainer = document.getElementById('customCommentContainer');
     if (!customCommentContainer) {
       customCommentContainer = document.getElementsByClassName('profilContentInner')[0];
@@ -2325,7 +2376,6 @@ function updateComments() {
   }
   insertPaginatedComments();
   customCommentContainer = document.getElementsByClassName('profilContentInner')[0];
-  // if no comments to display, display message instead
   if (totalComments === 0) {
     const msg = `<div class="msgNoResults">${t('Noch keine Kommentare...')}</div>`.parseHTML();
     addToDOM(msg, customCommentContainer, InsertionService.AsLastChild, false);
@@ -2333,7 +2383,6 @@ function updateComments() {
     const msg = `<div class="msgNoResults">${t('Kein Kommentar entspricht den Filterkriterien')}</div>`.parseHTML();
     addToDOM(msg, customCommentContainer, InsertionService.AsLastChild, false);
   }
-  // insert expand button if some replies were hidden by style rule
   for (const commentElement of customCommentContainer.children) {
     let repliesWrapper = commentElement.getElementsByClassName('allReplys')[0];
     if (!repliesWrapper) continue;
@@ -2348,15 +2397,12 @@ function updateComments() {
       );
     }
   }
-  // mount expand handler function
   const expanderElements = document.getElementsByClassName('expander');
   for (const expander of expanderElements) {
     expander.addEventListener('click', function() {
       if (!this) return;
       this.parentElement.parentElement.classList.remove('repliesCollapsed');
-      // add fadeout effect to now visible replies, if necessary
       for (const reply of expander.nextElementSibling.children) {
-        // skip already processed replies
         const replyTextElement = reply.getElementsByClassName('replyText')[0];
         if (!replyTextElement.classList.contains('hasOverflow') && replyTextElement.scrollHeight > maxCommentHeightBeforeCut) addFadeOutEffect(replyTextElement);
       }
@@ -2366,17 +2412,15 @@ function updateComments() {
 }
 function doOrderCommentData(orderType = 'activity') {
   if (orderType === 'user') {
-    // compares the comment authors (no replies) and orders from A to Z
     commentData.sort((a, b) => {
       const valA = a.user.toUpperCase();
       const valB = b.user.toUpperCase();
-      if (valA === '') return 1; // set empty user names to the end
+      if (valA === '') return 1;
       if (valA < valB) return -1;
       if (valA > valB) return 1;
       return 0;
     });
   } else if (orderType === 'activity') {
-    // this is the original order so we can simply compare the comment id's to restore that order
     commentData.sort((a, b) => {
       const valA = a.id;
       const valB = b.id;
@@ -2385,7 +2429,6 @@ function doOrderCommentData(orderType = 'activity') {
       return 0;
     });
   } else if (orderType === 'video') {
-    // compares the video titles and orders from A to Z (case-insensitive)
     commentData.sort((a, b) => {
       const valA = a.video.title.toUpperCase();
       const valB = b.video.title.toUpperCase();
@@ -2394,7 +2437,6 @@ function doOrderCommentData(orderType = 'activity') {
       return 0;
     });
   } else if (orderType === 'relevance') {
-    // special order type only after a text search with OR logic was done - will compare the match values (orders from best matches to worst)
     if (!commentData[0].matchValue) {
       log(t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!'), 'warn');
       return;
@@ -2421,16 +2463,16 @@ function updatePage() {
   updateComments();
   updatePaginationUI();
   updateStaticTranslations();
+  addPlaylistContainer();
 }
  })();
   } else if (route === 'video') {
     (function() {
-      // make sure, that it's really a video page (they all have a reload button in all possible states)
       if (!document.getElementsByClassName('reloadComment')[0]) {
         updateStaticTranslations();
         return;
       }
-// set up route-scoped fields and start the execution flow fo this route
+// set up route-scoped fields and start the execution flow for this route
  const searchComments_maxRetries = 5;
  const searchComments_delayBeforeRetry = 250;
  let searchComments_retryCounter = 0;
@@ -2438,24 +2480,18 @@ function updatePage() {
  let commentContainer;
 execute_genericPage()
 function execute_genericPage() {
-  // replace all elements which need to be modified
   replaceSuggestedVideoTiles();
   replaceReloadButton();
-  // Try to find content of blocked users and hide them
   hideCommentsOfBlockedUsers(true);
-  // initialize i18n strings
   updateStaticTranslations();
 }
 function replaceSuggestedVideoTiles() {
-  // add link overlays over suggested videos to enable "open in new tab" function
   let foundSuggestedVideos = false;
   const tiles = Array.from(document.getElementsByClassName('folgenItem'));
   for (const i in tiles) {
     const originalTile = tiles[i];
-    // generate full URI
     let uri = originalTile.getAttribute('onClick').replace("folgenItem('", '');
     uri = window.location.origin + '/' + uri.substr(0, uri.length - 2);
-    // generate clone of the tile with an real link as overlay
     const customTile = originalTile.cloneNode(true);
     customTile.removeAttribute('onClick');
     customTile.appendChild(`<a href="${uri}" class="overlayLink" style="position:absolute;left:0;top:0;height:100%;width:100%"></a>`.parseHTML());
@@ -2463,18 +2499,15 @@ function replaceSuggestedVideoTiles() {
     disablePrimalElement(originalTile);
     foundSuggestedVideos = true;
   }
-  // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so
-  // OPTIMIZE: Möglichkeit finden, wie das auch dann noch zuverlässig durchgeführt wird, wenn "Open in new Tab" benutzt wird
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {
-      // get the permalink from the event to pass it to folgenItem(permalink) if the overlay link was used
       const originalTarget = ev.originalTarget || ev.srcElement;
       const callee = originalTarget.activeElement;
       if (callee.classList.contains('overlayLink')) {
         let permalink = originalTarget.activeElement.getAttribute('href').replace(window.location.origin, '');
         permalink = permalink.substring(1, permalink.length);
         if (permalink) {
-          window.onbeforeunload = null;    // otherwise might lead to an infinity loop in some exotic browsers
+          window.onbeforeunload = null;   
           folgenItem(permalink);
         }
       }
@@ -2497,7 +2530,6 @@ function hideCommentsOfBlockedUsers(delayed = false) {
         if (commentContainer.childElementCount > 0) {
           for (const user of storedIgnoreList) hideCommentsOfUser(user);
         } else {
-          // retry it up to 3 times after waiting one second after each try
           if (searchComments_retryCounter < searchComments_maxRetries - 1) {
             searchComments_retryCounter++;
             tryToApply();
@@ -2523,7 +2555,6 @@ function hideCommentsOfUser(username) {
     const comment = allComments[i];
     if (comment.firstElementChild && comment.firstElementChild.innerText === username) {
       if (comment.id.startsWith('comment_')) {
-        // also remove spacer if its a reply
         if (comment.previousElementSibling) disablePrimalElement(comment.previousElementSibling);
       }
       if (comment.parentElement.classList.contains('commentItem')) {
@@ -2536,15 +2567,11 @@ function hideCommentsOfUser(username) {
 }
     })();
   }
-  // mount handlers for setting the checked attribute of flip flop switches
   for (const flipflop of document.getElementsByClassName('flipflop')) {
-    // execute before all other handlers
     flipflop.prependEventListener('change', function() {
-      // toggle checked attribute
       const input = this.getElementsByTagName('input')[0];
       input.hasAttribute('checked') ? input.removeAttribute('checked') : input.setAttribute('checked', 'checked');
     });
   }
-  // reset to default page state if script was disabled on page load
   if (!mainSwitchState) doChangeMainSwitch( false);
 })();

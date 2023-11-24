@@ -4,7 +4,7 @@
 /*</SKIP>*/
 
 
-// set up route-scoped fields and start the execution flow fo this route
+// set up route-scoped fields and start the execution flow for this route
 /** @type {number}      */ const searchComments_maxRetries = 5;
 /** @type {number}      */ const searchComments_delayBeforeRetry = 250;
 /** @type {number}      */ let searchComments_retryCounter = 0;

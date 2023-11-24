@@ -17,6 +17,11 @@
 /** @global */ const defaultStart = 1;
 /** @global */ const defaultLength = 5;
 /** @global */ const defaultLanguage = 'de';
+/** @global */ const defaultPlaylists = [
+  { id: 1, is_custom: false, max_items: -1, name: 'Favoriten', item_cnt: 0, items: [], },
+  { id: 2, is_custom: false, max_items: -1, name: 'Für später gespeichert', item_cnt: 0, items: [], },
+  { id: 3, is_custom: false, max_items: -1, name: 'Zuletzt angesehene Videos', item_cnt: 0, items: [], },
+];
 
 // Map execution flows to pages
 /** @global */ const pageRoutes = new Map([

@@ -271,7 +271,7 @@ function enablePrimalElement(elementOrId) {
 
 
 /**
- * Adds a new element to the list of elements which aren't rebuilt on updates
+ * Adds one or more new elements to the list of elements which aren't rebuilt on updates
  * but contains text which need to translated when the active language is changed.
  * As entry key the element itself is used.
  * The value is an object with property text and property args which is an array
@@ -279,14 +279,20 @@ function enablePrimalElement(elementOrId) {
  * 
  * @requires staticTranslatableElements
  * 
- * @param {HTMLElement} element  - Target element
- * @param {string} text  - The text which will be send to t()
- * @param {string[]} [args=[]]  - The argument list for the formatters send to t()
+ * @param {(HTMLElement|object[element:string,text:string,[args:string[]]])} element  - Target element or array of objects containing all arguments as property 
+ * @param {string} [text='']  - The text which will be send to t() (omit if sending a list)
+ * @param {string[]} [args=[]]  - The argument list for the formatters send to t() (omit if sending a list)
  */
-function registerStaticTranslatable(element, text, args = []) {
-  if (!staticTranslatableElements.has(element)) {
-    staticTranslatableElements.set(element, { text: text, args: args });
+function registerStaticTranslatable(element, text = '', args = []) {
+  // if multiple items received as array of objects
+  if (!(element instanceof HTMLElement)) {
+    for (const entry of element) {
+      if (!staticTranslatableElements.has(entry['element'])) staticTranslatableElements.set(entry['element'], { text: entry['text'] ?? text, args: entry['args'] ?? args });
+    }
+    return;
   }
+  // if single item received
+  if (!staticTranslatableElements.has(element)) staticTranslatableElements.set(element, { text: text, args: args });
 }
 
 

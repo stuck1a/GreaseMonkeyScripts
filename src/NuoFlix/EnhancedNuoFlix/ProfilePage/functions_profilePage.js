@@ -1,5 +1,6 @@
-// set up route-scoped fields and configs, then start the execution flow fo this route
+// set up route-scoped fields and configs, then start the execution flow for this route
 /** @type {number} pixel  */ const maxCommentHeightBeforeCut = 250;
+
 /** @type {object[]}      */ let commentData;
 /** @type {object[]}      */ let storedCommentData;
 /** @type {number}        */ let totalComments;
@@ -26,23 +27,30 @@ function execute_profilePage() {
   addToDOM(`<style>/*%% ProfilePage/profilePage.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(style_comments, document.body, InsertionService.AsLastChild, false);
   
-  // insert the additional UI section
+  // insert the new UI section
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
   
-  // register all static elements from enhancedUiContainer with text to translate
-  registerStaticTranslatable(document.getElementById('ignoredLabel'), 'Blockierte Benutzer');
-  registerStaticTranslatable(document.getElementById('addIgnoreUser'), 'Hinzufügen...');
-  registerStaticTranslatable(document.getElementById('deleteIgnoreUser'), 'Entfernen');
-  registerStaticTranslatable(document.getElementById('filterOnlyNewLabel'), 'Nur neue Kommentare');
-  registerStaticTranslatable(document.getElementById('pluginHeadline'), 'NuoFlix 2.0');
-  registerStaticTranslatable(document.getElementById('filterLabel'), 'Kommentare filtern');
-  registerStaticTranslatable(document.getElementById('searchInputLabel'), 'Suche:');
-  registerStaticTranslatable(document.getElementById('moreFilterTrigger'), 'Erweiterte Filteroptionen');
-  registerStaticTranslatable(document.getElementById('useAndLogicLabel'), 'Muss alle Wörter enthalten');
-  registerStaticTranslatable(document.getElementById('searchByUserLabel'), 'nach Benutzer:');
-  registerStaticTranslatable(document.getElementById('searchByDateLabel'), 'nach Datum:');
-  registerStaticTranslatable(document.getElementById('settingsLabel'), 'Einstellungen');
-  registerStaticTranslatable(document.getElementById('settingsLanguageLabel'), 'Sprache:');
+  // register all static captions for this route (all those which are not recreated when calling pageUpdate)
+  registerStaticTranslatable([
+    { element: document.getElementById('ignoredLabel'), text: 'Blockierte Benutzer' },
+    { element: document.getElementById('addIgnoreUser'), text: 'Hinzufügen...' },
+    { element: document.getElementById('deleteIgnoreUser'), text: 'Entfernen' },
+    { element: document.getElementById('filterOnlyNewLabel'), text: 'Nur neue Kommentare' },
+    { element: document.getElementById('pluginHeadline'), text: 'NuoFlix 2.0' },
+    { element: document.getElementById('filterLabel'), text: 'Kommentare filtern' },
+    { element: document.getElementById('searchInputLabel'), text: 'Suche:' },
+    { element: document.getElementById('moreFilterTrigger'), text: 'Erweiterte Filteroptionen' },
+    { element: document.getElementById('useAndLogicLabel'), text: 'Muss alle Wörter enthalten' },
+    { element: document.getElementById('searchByUserLabel'), text: 'nach Benutzer:' },
+    { element: document.getElementById('searchByDateLabel'), text: 'nach Datum:' },
+    { element: document.getElementById('settingsLabel'), text: 'Einstellungen' },
+    { element: document.getElementById('settingsLanguageLabel'), text: 'Sprache:' },
+    { element: document.getElementById('playlistLabel'), text: 'Meine Playlists' },
+    { element: document.getElementById('createPlaylist'), text: 'Erstellen' },
+    { element: document.getElementById('startPlaylist'), text: 'Abspielen' },
+    { element: document.getElementById('editPlaylist'), text: 'Bearbeiten' },
+    { element: document.getElementById('deletePlaylist'), text: 'Löschen' },
+  ]);
   
   // restore list of blocked users
   for (const user of get_value('ignoredUsers')) {
@@ -80,7 +88,6 @@ function execute_profilePage() {
 
   // generate datalist for autocompletion of user filter input
   addUserFilterAutocompletionList();
-  
   
   // mount handler for adding a user to the list of users to search for
   document.getElementById('filterByUser').onkeypress = function(ev) {
@@ -781,18 +788,109 @@ function buildPaginationUi() {
   return `
     <div id="paginationContainer">
       <div class="buttonGroup">
-        <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}">1</a>
-        <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}"><</a>
+        <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}" data-content="1"></a>
+        <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}" data-content="<"></a>
       </div>
       <div id="pageNrBtnContainer" class="buttonGroup">${buttons}</div>
       <div class="buttonGroup">
-        <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}">></a>
-        <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}">${totalPages}</a>
+        <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}" data-content=">"></a>
+        <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}" data-content="${totalPages}"></a>
       </div>
     </div>
-  `;
+  `.replaceAll(/[\n\r]/g, '').replaceAll(/>\s+</g, '><');
 }
 
+
+
+/**
+ * (Re-)builds and insert the playlist select list
+ * 
+ * @requires playlistData
+ */
+function addPlaylistContainer() {
+  // remove the current list, if available
+  const oldPlaylist = customElementsRegister.get('playlists');
+  if (oldPlaylist) removeFromDOM(oldPlaylist);
+  
+  // add playlist select box
+  const playlists = `
+    <select id="playlists" name="playlists" size="5">
+      <optgroup id="optgroup_defaultPlaylists" label="${t('Standard-Playlists')}"></optgroup>
+      <optgroup id="optgroup_customPlaylists" label="${t('Eigene Playlists')}"></optgroup>
+    </select>
+  `.parseHTML();
+  addToDOM(playlists, document.getElementById('playlistContainer'), InsertionService.AsFirstChild, true, 'playlists');
+  
+  // load and add user playlists
+  const defaultContainer = document.getElementById('optgroup_defaultPlaylists');
+  const customContainer = document.getElementById('optgroup_customPlaylists'); 
+  for (const listData of playlistData) {
+    const option = buildPlaylistItem(listData);
+    addToDOM(option, (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
+  }
+  
+  
+  /*  AUFBAU DER PLAYLISTS DATENOBJEKTE
+   playlists = [
+     {
+       id: <integer> Wird beim Erstellen erzeugt aus: Anzahl Playlists + 1,
+       is_custom: <boolean> Entscheidet darüber, in welche optgroup eingefügt wird,
+       max_items: <integer> -1 (unbegrenzt), außer bei Playlist #playlistLastVideos,
+       name: <string> Aus Prompt,
+       item_cnt: <integer> Anzahl der Videos in der Playlist,
+       items: [
+         {
+           id: <number> Fortlaufende Nummer,
+           url: <string> Videolink,
+           title: <string> Videotitel,
+           img: <string> Image-Link zum Vorschaubild,
+           desc: <string> Beschreibungstext,
+         },
+       ],
+     },
+   ];
+  */
+  
+  // add button handler
+  document.getElementById('createPlaylist').addEventListener('click', function() {
+    const name = prompt('Name der neuen Playlist:', '');
+    if (!name) return;
+
+    const dataObject = {
+      id: playlistData[playlistData.length - 1].id + 1,
+      is_custom: true,
+      max_items: -1,
+      name: name,
+      item_cnt: 0,
+      items: [],
+    };
+  });
+  document.getElementById('startPlaylist').addEventListener('click', function() {
+    // TODO
+  });
+  document.getElementById('editPlaylist').addEventListener('click', function() {
+    // TODO
+  });
+  document.getElementById('deletePlaylist').addEventListener('click', function() {
+    // TODO
+  });
+  
+
+}
+
+
+
+/**
+ * Generates an option element to insert to the playlist selection element from a given playlist data object
+ * 
+ * @param {object} data  - Playlist data object
+ * 
+ * @return {DocumentFragment}  - Playlist option element
+ */
+function buildPlaylistItem(data) {
+  if (!data) return ''.parseHTML();
+  return `<option class="playlistItem ${data.is_custom ? 'customPlaylist' : 'fixedPlaylist'}" data-playlist-id="${data.id}"><span>${data.is_custom ? data.name : t(data.name)}</span><span>${data.item_cnt}</span></option>`.parseHTML();
+}
 
 
 
@@ -807,7 +905,7 @@ function buildPaginationUi() {
  * @return {string}  Parseable string representation of the button
  */
 function buildPageButton(pageNr, buttonStart, isActivePage = false) {
-  return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}">${pageNr}</a>`;
+  return `<a class="btn pageNrBtn${(isActivePage ? ' activePage" disabled="disabled"' : '"')} data-start="${buttonStart}" data-length="${currentLength}" data-content="${pageNr}"></a>`;
 }
 
 
@@ -1255,6 +1353,7 @@ function updatePage() {
   updateComments();
   updatePaginationUI();
   updateStaticTranslations();
+  addPlaylistContainer();
 }
 
 

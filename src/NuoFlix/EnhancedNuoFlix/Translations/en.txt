@@ -231,3 +231,58 @@
 'Mehr anzeigen',
 'Show more',
 ],
+
+
+[
+'Standard-Playlists',
+'Default Playlists',
+],
+
+
+[
+'Favoriten',
+'Favorites',
+],
+
+
+[
+'Für später gespeichert',
+'Watch later',
+],
+
+
+[
+'Zuletzt angesehene Videos',
+'Recently viewed videos',
+],
+
+
+[
+'Eigene Playlists',
+'Custom Playlists',
+],
+
+[
+'Meine Playlists',
+'My Playlists',
+],
+
+[
+'Erstellen',
+'Create',
+],
+
+[
+'Abspielen',
+'Play',
+],
+
+[
+'Bearbeiten',
+'Edit',
+],
+
+[
+'Löschen',
+'Delete',
+],

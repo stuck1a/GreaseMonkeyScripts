@@ -38,6 +38,7 @@
   /** @global */ let customElementsRegister = new Map();
   /** @global */ let disabledPrimalElementsRegister = new Map();
   /** @global */ let staticTranslatableElements = new Map();
+  /** @global */ let playlistData = has_value('playlistData') ? get_value('playlistData') : defaultPlaylists;
   /** @global */ let activeLanguage = has_value('setting_language') ? get_value('setting_language') : defaultLanguage;
   /** @global */ let commentFilters = new Map([
     [ 'filterOnlyNew', { active: false, value: false } ],

@@ -13,7 +13,7 @@
 }
 
 #paginationNext {
-  margin-inline: 0 !important;
+  margin-inline: 0.2rem !important;
   padding-inline: 2rem;
   border-radius: 10% 25% 25% 10%;
 }
@@ -26,7 +26,7 @@
 }
 
 #paginationBack {
-  margin-inline: 0 !important;
+  margin-inline: 0.2rem !important;
   padding-inline: 2rem;
   border-radius: 25% 10% 10% 25%;
 }
@@ -41,6 +41,10 @@
 .pageNrBtn {
   padding-inline: max(1vw, 10px);
   margin-inline: .25rem !important;
+}
+
+#paginationContainer a:before {
+  content: attr(data-content);
 }
 
 .pageNrBtn.activePage {
@@ -179,4 +183,32 @@
 
 .replyText + .showFullLength {
   padding-bottom: 0;
+}
+
+#playlists {
+  width: 100%;
+}
+
+#playlists optgroup:empty {
+  display: none;
+}
+
+#playlists option {
+  padding-left: 1rem;
+}
+
+.playlistItem {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.playlistItem span:first-child {
+  max-width: 90%;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
+div:not(:last-child) > .playlistButton {
+  margin-right: 1rem;
 }

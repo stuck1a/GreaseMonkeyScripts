@@ -232,3 +232,62 @@
 'Bol\'she informatsii',
 ],
 
+
+[
+'Standard-Playlists',
+'Standartnyye pleylisty',
+],
+
+
+[
+'Favoriten',
+'Izbrannoye',
+],
+
+
+[
+'Für später gespeichert',
+'Ostavit\' na potom',
+],
+
+
+[
+'Zuletzt angesehene Videos',
+'Nedavno prosmotrennyye video',
+],
+
+
+[
+'Eigene Playlists',
+'Pol\'zovatel\'skiye pleylisty',
+],
+
+
+[
+'Meine Playlists',
+'Moi pleylisty',
+],
+
+
+[
+'Erstellen',
+'Sozdavat\'',
+],
+
+
+[
+'Abspielen',
+'Igrat\'',
+],
+
+
+[
+'Bearbeiten',
+'Redaktirovat\'',
+],
+
+
+[
+'Löschen',
+'Udalit\'',
+],
