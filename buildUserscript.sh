@@ -152,9 +152,8 @@ remove_skip_blocks() {
 
 ## Function to process operation 'lineComments'
 remove_line_comments() {
-  # FIXME: insert configured arguments
-  #open_tag="$(str_escape "${open_tag}")"
-  sed -i '22,$s/\/\/[^*].*/ /' "${output_file}"
+  open_tag="$(str_escape_given "${open_tag}" "\\")"
+  sed -i "${start_at_line}"',$s,'"${open_tag}"'.*,,' "${output_file}"
   return 0
 }
 
