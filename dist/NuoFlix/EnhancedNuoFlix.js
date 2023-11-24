@@ -513,9 +513,9 @@ String.sprintf = function(format) {
     return typeof args[number] !== typeof undefined ? args[number].toString() : match;
   });
 };
-String.prototype.parseHTML = function(ignoreLineBreaks = true) {
+String.prototype.parseHTML = function(deleteLineBreaks = true) {
   let t = document.createElement('template');
-  t.innerHTML = ignoreLineBreaks ? this.replaceAll(/([^"'])[\n\r\s]*[\n\r][\n\r\s]*([^"'])/g, "$1$2") : this;
+  t.innerHTML = deleteLineBreaks ? this.replaceAll(/([^"'])[\n\r\s]*[\n\r][\n\r\s]*([^"'])/g, "$1$2") : this;
   return t.content;
 };
 Map.prototype.deleteByValue = function(value, limit = null) {
@@ -1274,7 +1274,7 @@ function execute_startPage() {
  let currentStart = defaultStart;
  let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
  let filteredCommentsCount = 0;
-let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
+ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
     <div id="enhancedUiHeadlineHolder" class="rowHeadlineHolder">
       <div class="rowHeadlineBreakerLeft breakerHeight">&nbsp;</div>
       <div class="rowHeadlineHolderItem headerTxt">
@@ -2130,8 +2130,7 @@ function addPlaylistContainer() {
   const defaultContainer = document.getElementById('optgroup_defaultPlaylists');
   const customContainer = document.getElementById('optgroup_customPlaylists'); 
   for (const listData of playlistData) {
-    const option = buildPlaylistItem(listData);
-    addToDOM(option, (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
+    addToDOM(buildPlaylistItem(listData), (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
   }
   /*  AUFBAU DER PLAYLISTS DATENOBJEKTE
    playlists = [
@@ -2144,6 +2143,7 @@ function addPlaylistContainer() {
        items: [
          {
            id: <number> Fortlaufende Nummer,
+           unavailable: <boolean>  Wird auf true gesetzt, wenn der Versuch scheitert, das Video selbst bzw. Content von dessen Video-Page zu fetchen, wenn die Playlist abgespielt wird.
            url: <string> Videolink,
            title: <string> Videotitel,
            img: <string> Image-Link zum Vorschaubild,
@@ -2153,10 +2153,11 @@ function addPlaylistContainer() {
      },
    ];
   */
+  /* button functions  */
   document.getElementById('createPlaylist').addEventListener('click', function() {
     const name = prompt('Name der neuen Playlist:', '');
     if (!name) return;
-    const dataObject = {
+    const playlistObj = {
       id: playlistData[playlistData.length - 1].id + 1,
       is_custom: true,
       max_items: -1,
@@ -2164,8 +2165,38 @@ function addPlaylistContainer() {
       item_cnt: 0,
       items: [],
     };
+    playlistData.push(playlistObj);
+    addToDOM(buildPlaylistItem(playlistObj), customContainer, InsertionService.AsLastChild, false);
+    set_value('playlistData', playlistData);
   });
   document.getElementById('startPlaylist').addEventListener('click', function() {
+    const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
+    const iframe = `<iframe id="watchPlaylist_iframe" src="https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
+    overlay.appendChild(iframe);
+    addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
+    const executor = function() {
+      const iframe_document = iframe.contentDocument;
+      let playlistRow = `
+        <div id="playlistRow" class="row">
+          <div id="loadPreviousVideo"><- vorheriges Video</div>
+          <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
+          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
+          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 3</div>
+          <div id="loadNextVideo">nächstes Video -></div>
+        </div>
+      `;
+      let backToProfileButton = `
+        <div>
+          <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
+        </div>
+      `;
+      playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
+      backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+      backToProfileButton.addEventListener('click', function() {
+        removeFromDOM(overlay);
+      });
+    };
+    setTimeout(executor, 3000);
   });
   document.getElementById('editPlaylist').addEventListener('click', function() {
   });
@@ -2368,7 +2399,8 @@ function updatePaginationUI() {
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
     paginationContainer.classList.add('forceHidden');
-    forceHidden  }
+    paginationContainerBottom.classList.add('forceHidden');
+  }
 }
 function updateComments() {
   if (customCommentContainer instanceof HTMLElement) {

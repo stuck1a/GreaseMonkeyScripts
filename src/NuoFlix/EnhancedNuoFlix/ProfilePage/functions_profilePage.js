@@ -11,8 +11,7 @@
 /** @type {number|string} */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
 /** @type {number}        */ let filteredCommentsCount = 0;
 
-/*%% ProfilePage/mainUI.js %%*/           // Declares {DocumentFragment} let enhancedUiContainer
-/*%% ProfilePage/watchPlaylist.js %%*/    // Declares {DocumentFragment} let customBody
+/** {DocumentFragment} enhancedUiContainer */ /*%% ProfilePage/mainUI.js %%*/
 
 execute_profilePage();
 
@@ -878,40 +877,61 @@ function addPlaylistContainer() {
     const iframe = `<iframe id="watchPlaylist_iframe" src="https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
     overlay.appendChild(iframe);
     addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
-    const iframe_document = iframe.contentDocument;
-    // inject the playlist row and and a "Back to profile page" button to the video page
-    const injectedElements = `
-      <div id="playlistRow" class="row">
-        <div id="loadPreviousVideo"><- vorheriges Video</div>
-        <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
-        <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
-        <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 3</div>
-        <div id="loadNextVideo">nächstes Video -></div>
-      </div>
-      <div>
-        <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
-      </div>
-    `.parseHTML();
-    addToDOM(injectedElements, iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
+    
+    
+    const executor = function() {
+      const iframe_document = iframe.contentDocument;
+      let playlistRow = `
+        <div id="playlistRow" class="row">
+          <div id="loadPreviousVideo"><- vorheriges Video</div>
+          <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
+          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
+          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 3</div>
+          <div id="loadNextVideo">nächstes Video -></div>
+        </div>
+      `;
+      let backToProfileButton = `
+        <div>
+          <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
+        </div>
+      `;
+      playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
+      backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
 
-    // mount handler
-    injectedElements.children[1].addEventListener('click', function() {
-      removeFromDOM(overlay);
-    });
+      // spoof the displayed URL in browser bar
+      const realUrl = window.location.toString();
+      window.history.replaceState(null,'', 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert');
+      
+      // mount handler
+      backToProfileButton.addEventListener('click', function() {
+        removeFromDOM(overlay);
+        window.history.replaceState(null, '', realUrl);
+      });
+      
+
+    };
+
+    // wait some time so the iframe can load, then inject playlist row and "Back to profile page" button
+    setTimeout(executor, 3000);
+
+    
+    
     
     // TODO: PlaylistRow ausprogrammieren und statischen Testlink im iframe mit dem ersten Videolink aus der Playlist ersetzen
     
     // TODO: Vorab (z.b per fetch api) prüfen, ob die Video-Page existiert (falls sich Permalink ändert, Video runtergenommen wird o.ä.)
-    //       und wenn nicht, den Vorgang abbrechen, stattdessen Fehlermeldung ala "Video existiert nicht mehr" ausgeben und im entsprechenden
+    //       und wenn nicht, den Vorgang abbrechen (oder nächstes Video in Liste testen), stattdessen Fehlermeldung ala "Video existiert nicht mehr" ausgeben und im entsprechenden
     //       Video Item des Playlist-Datenobjekts das property unavailable auf true setzen
     
-    // TODO: Find a way to avoid two scrollbars.
-    //       Idee für eine Lösung: Im iframe die Scrollbar verstecken,
-    //       die Scrollposition aber mit der der Profilseite synchronisieren per Scroll-Handler.
-    //       Dann die Differenz berechnen in der Höhe vom Body der Video und Profil Page.
-    //       Wenn die Profil-Page kürzer ist, dort ein Element an den Body anhängen, das die Differenz ausgleicht.
-    //       Wenn die Video-Page kürzer ist, muss im syncronisierten Scroll-Handler ein entsprechender Faktor eingebaut werden,
-    //       der die Scrollheight übersetzt (z.b. wenn Profilpage doppelt so hoch, dann 2px auf Videopage scrollen pro 1px der gescrollt wird)
+    // TODO: Die innere Scrollbar loswerden.
+    //   Idee:
+    //   - Scrollbar in iframe ausblenden
+    //   - Alle Elemente in Body von Profil-Page ausblenden
+    //   - Ein Element in Body von Profil-Page einfügen mit der Höhe von Body der Video-Page
+    //   - Scroll-Handler auf window in iframe setzen, der scrollHeight von Profil-Page Body auf die scrollHeight von Video-Page Body setzt
+    //   - Kann bleiben, wenn Video wechselt
+    //   - EventHandler wieder entfernen wenn: (a) Button "Zurück zur Profilseite" geklickt wird (b) main Switch betätigt wird 
+
     
     // TODO: Check whether second main switch within the iframe also works.
     //       It further need to be synced with the first one because if someone toggles it in the iframe,
