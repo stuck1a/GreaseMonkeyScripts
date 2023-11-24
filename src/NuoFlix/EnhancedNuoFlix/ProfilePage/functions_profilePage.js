@@ -876,10 +876,11 @@ function addPlaylistContainer() {
     /** @type {HTMLIFrameElement} iframe */
     const iframe = `<iframe id="watchPlaylist_iframe" src="https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
     overlay.appendChild(iframe);
+
     addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
-    
-    
-    const executor = function() {
+
+    // wait until the iframe has loaded its DOM content before going ahead
+    iFrameReady(iframe, function() {
       const iframe_document = iframe.contentDocument;
       let playlistRow = `
         <div id="playlistRow" class="row">
@@ -901,21 +902,15 @@ function addPlaylistContainer() {
       // spoof the displayed URL in browser bar
       const realUrl = window.location.toString();
       window.history.replaceState(null,'', 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert');
-      
+
       // mount handler
       backToProfileButton.addEventListener('click', function() {
         removeFromDOM(overlay);
         window.history.replaceState(null, '', realUrl);
       });
-      
-
-    };
-
-    // wait some time so the iframe can load, then inject playlist row and "Back to profile page" button
-    setTimeout(executor, 3000);
-
+    });
     
-    
+
     
     // TODO: PlaylistRow ausprogrammieren und statischen Testlink im iframe mit dem ersten Videolink aus der Playlist ersetzen
     

@@ -95,7 +95,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
         <legend id="playlistLabel"></legend>
         <div class="row">
           <div class="col-auto"><a id="createPlaylist" class="btn btn-small playlistButton"></a></div>
-          <div class="col-auto"><a id="startPlaylist" class="btn btn-small playlistButton disabled"></a></div>
+          <div class="col-auto"><a id="startPlaylist" class="btn btn-small playlistButton "></a></div>
           <div class="col-auto"><a id="editPlaylist" class="btn btn-small playlistButton disabled"></a></div>
           <div class="col-auto"><a id="deletePlaylist" class="btn btn-small playlistButton disabled"></a></div>       
         </div>

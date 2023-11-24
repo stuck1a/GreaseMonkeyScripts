@@ -816,6 +816,49 @@ function doChangeMainSwitch(toggleState = false) {
 function updateStaticTranslations() {
   for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
 }
+// This function ONLY works for iFrames of the same origin as their parent
+function iFrameReady(iFrame, fn) {
+  var timer;
+  var fired = false;
+  function ready() {
+    if (!fired) {
+      fired = true;
+      clearTimeout(timer);
+      fn.call(this);
+    }
+  }
+  function readyState() {
+    if (this.readyState === "complete") {
+      ready.call(this);
+    }
+  }
+  function addEvent(elem, event, fn) {
+    if (elem.addEventListener) {
+      return elem.addEventListener(event, fn);
+    } else {
+      return elem.attachEvent("on" + event, function () {
+        return fn.call(elem, window.event);
+      });
+    }
+  }
+  addEvent(iFrame, "load", function () {
+    ready.call(iFrame.contentDocument || iFrame.contentWindow.document);
+  });
+  function checkLoaded() {
+    var doc = iFrame.contentDocument || iFrame.contentWindow.document;
+    if (doc.URL.indexOf("about:") !== 0) {
+      if (doc.readyState === "complete") {
+        ready.call(doc);
+      } else {
+        addEvent(doc, "DOMContentLoaded", ready);
+        addEvent(doc, "readystatechange", readyState);
+      }
+    } else {
+      timer = setTimeout(checkLoaded, 1);
+    }
+  }
+  checkLoaded();
+}
 function DEBUG_setSomeFakeData(commentData) {
   commentData[0].hasNewReplies = true;
   commentData[0].reply_cnt = 7;
@@ -1366,7 +1409,7 @@ function execute_startPage() {
         <legend id="playlistLabel"></legend>
         <div class="row">
           <div class="col-auto"><a id="createPlaylist" class="btn btn-small playlistButton"></a></div>
-          <div class="col-auto"><a id="startPlaylist" class="btn btn-small playlistButton disabled"></a></div>
+          <div class="col-auto"><a id="startPlaylist" class="btn btn-small playlistButton "></a></div>
           <div class="col-auto"><a id="editPlaylist" class="btn btn-small playlistButton disabled"></a></div>
           <div class="col-auto"><a id="deletePlaylist" class="btn btn-small playlistButton disabled"></a></div>       
         </div>
@@ -2174,7 +2217,7 @@ function addPlaylistContainer() {
     const iframe = `<iframe id="watchPlaylist_iframe" src="https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
     overlay.appendChild(iframe);
     addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
-    const executor = function() {
+    iFrameReady(iframe, function() {
       const iframe_document = iframe.contentDocument;
       let playlistRow = `
         <div id="playlistRow" class="row">
@@ -2192,11 +2235,13 @@ function addPlaylistContainer() {
       `;
       playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
       backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+      const realUrl = window.location.toString();
+      window.history.replaceState(null,'', 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert');
       backToProfileButton.addEventListener('click', function() {
         removeFromDOM(overlay);
+        window.history.replaceState(null, '', realUrl);
       });
-    };
-    setTimeout(executor, 3000);
+    });
   });
   document.getElementById('editPlaylist').addEventListener('click', function() {
   });
