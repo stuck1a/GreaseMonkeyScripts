@@ -94,16 +94,16 @@ String.sprintf = function(format) {
 /**
  * Parses a string to generate a DocumentFragment from it. Supports multiple root nodes as well as CSS.
  * 
- * @param {boolean} [ignoreLineBreaks=true]  - If true, all line breaks and adjacent spaces/tabs outside of quotation marks are removed before parsing.
+ * @param {boolean} [deleteLineBreaks=true]  - If true, all line breaks and adjacent spaces/tabs outside of quotation marks are removed before parsing.
  *                                             This will prevent the creation of unwanted text nodes which might produce an unwanted bias.
  *                                             It's recommended to set this to false, if this is not relevant for better performance.<br>
  *                                             <strong>Note that this will also remove text nodes within <code>˂pre˃</code> elements if they contain line breaks and spaces only!</strong>
  * 
  * @return {DocumentFragment}
  */
-String.prototype.parseHTML = function(ignoreLineBreaks = true) {
+String.prototype.parseHTML = function(deleteLineBreaks = true) {
   let t = document.createElement('template');
-  t.innerHTML = ignoreLineBreaks ? this.replaceAll(/([^"'])[\n\r\s]*[\n\r][\n\r\s]*([^"'])/g, "$1$2") : this;
+  t.innerHTML = deleteLineBreaks ? this.replaceAll(/([^"'])[\n\r\s]*[\n\r][\n\r\s]*([^"'])/g, "$1$2") : this;
   return t.content;
 };
 

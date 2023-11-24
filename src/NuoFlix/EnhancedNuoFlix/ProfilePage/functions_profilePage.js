@@ -11,7 +11,8 @@
 /** @type {number|string} */ let currentLength = has_value('commentsPerPage') ? get_value('commentsPerPage') : defaultLength;
 /** @type {number}        */ let filteredCommentsCount = 0;
 
-/*%% ProfilePage/mainUI.js %%*/
+/*%% ProfilePage/mainUI.js %%*/           // Declares {DocumentFragment} let enhancedUiContainer
+/*%% ProfilePage/watchPlaylist.js %%*/    // Declares {DocumentFragment} let customBody
 
 execute_profilePage();
 
@@ -825,8 +826,7 @@ function addPlaylistContainer() {
   const defaultContainer = document.getElementById('optgroup_defaultPlaylists');
   const customContainer = document.getElementById('optgroup_customPlaylists'); 
   for (const listData of playlistData) {
-    const option = buildPlaylistItem(listData);
-    addToDOM(option, (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
+    addToDOM(buildPlaylistItem(listData), (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
   }
   
   
@@ -841,6 +841,7 @@ function addPlaylistContainer() {
        items: [
          {
            id: <number> Fortlaufende Nummer,
+           unavailable: <boolean>  Wird auf true gesetzt, wenn der Versuch scheitert, das Video selbst bzw. Content von dessen Video-Page zu fetchen, wenn die Playlist abgespielt wird.
            url: <string> Videolink,
            title: <string> Videotitel,
            img: <string> Image-Link zum Vorschaubild,
@@ -851,12 +852,12 @@ function addPlaylistContainer() {
    ];
   */
   
-  // add button handler
+  /* button functions  */
+  // create new playlist
   document.getElementById('createPlaylist').addEventListener('click', function() {
     const name = prompt('Name der neuen Playlist:', '');
     if (!name) return;
-
-    const dataObject = {
+    const playlistObj = {
       id: playlistData[playlistData.length - 1].id + 1,
       is_custom: true,
       max_items: -1,
@@ -864,9 +865,57 @@ function addPlaylistContainer() {
       item_cnt: 0,
       items: [],
     };
+    playlistData.push(playlistObj);
+    addToDOM(buildPlaylistItem(playlistObj), customContainer, InsertionService.AsLastChild, false);
+    set_value('playlistData', playlistData);
   });
+  // start playlist 
   document.getElementById('startPlaylist').addEventListener('click', function() {
-    // TODO
+    // insert the pseudo-page overlay
+    /** @type {HTMLDivElement} overlay */
+    const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
+    /** @type {HTMLIFrameElement} iframe */
+    const iframe = `<iframe id="watchPlaylist_iframe" src="https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
+    overlay.appendChild(iframe);
+    addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
+    const iframe_document = iframe.contentDocument;
+    // inject the playlist row and and a "Back to profile page" button to the video page
+    const injectedElements = `
+      <div id="playlistRow" class="row">
+        <div id="loadPreviousVideo"><- vorheriges Video</div>
+        <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
+        <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
+        <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 3</div>
+        <div id="loadNextVideo">nächstes Video -></div>
+      </div>
+      <div>
+        <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
+      </div>
+    `.parseHTML();
+    addToDOM(injectedElements, iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
+
+    // mount handler
+    injectedElements.children[1].addEventListener('click', function() {
+      removeFromDOM(overlay);
+    });
+    
+    // TODO: PlaylistRow ausprogrammieren und statischen Testlink im iframe mit dem ersten Videolink aus der Playlist ersetzen
+    
+    // TODO: Vorab (z.b per fetch api) prüfen, ob die Video-Page existiert (falls sich Permalink ändert, Video runtergenommen wird o.ä.)
+    //       und wenn nicht, den Vorgang abbrechen, stattdessen Fehlermeldung ala "Video existiert nicht mehr" ausgeben und im entsprechenden
+    //       Video Item des Playlist-Datenobjekts das property unavailable auf true setzen
+    
+    // TODO: Find a way to avoid two scrollbars.
+    //       Idee für eine Lösung: Im iframe die Scrollbar verstecken,
+    //       die Scrollposition aber mit der der Profilseite synchronisieren per Scroll-Handler.
+    //       Dann die Differenz berechnen in der Höhe vom Body der Video und Profil Page.
+    //       Wenn die Profil-Page kürzer ist, dort ein Element an den Body anhängen, das die Differenz ausgleicht.
+    //       Wenn die Video-Page kürzer ist, muss im syncronisierten Scroll-Handler ein entsprechender Faktor eingebaut werden,
+    //       der die Scrollheight übersetzt (z.b. wenn Profilpage doppelt so hoch, dann 2px auf Videopage scrollen pro 1px der gescrollt wird)
+    
+    // TODO: Check whether second main switch within the iframe also works.
+    //       It further need to be synced with the first one because if someone toggles it in the iframe,
+    //       the iframe must disappear since it's a custom feature, which will make the first switch visible again.
   });
   document.getElementById('editPlaylist').addEventListener('click', function() {
     // TODO
@@ -1216,7 +1265,9 @@ function updatePaginationUI() {
   // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
     paginationContainer.classList.add('forceHidden');
-    forceHidden  }
+    paginationContainerBottom.classList.add('forceHidden');
+  }
+  
 }
 
 
