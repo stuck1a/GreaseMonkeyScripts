@@ -341,14 +341,19 @@ function updateStaticTranslations() {
 
 
 
-
-
-
-// This function ONLY works for iFrames of the same origin as their parent
-function iFrameReady(iFrame, fn) {
-  var timer;
-  var fired = false;
-
+/**
+ * Polyfill which works like a DOMContentLoaded event for iframes, so you don't have to wait
+ * for the load event for DOM manipulation within iframes.
+ * 
+ * <strong>Important note:<br>
+ * This function ONLY works for iframes of the same origin as their parent!</strong>
+ * 
+ * @param {HTMLIFrameElement} iframe  - Target iframe
+ * @param {function} fn  - Callback function
+ */
+function iFrameReady(iframe, fn) {
+  let timer;
+  let fired = false;
   function ready() {
     if (!fired) {
       fired = true;
@@ -356,40 +361,29 @@ function iFrameReady(iFrame, fn) {
       fn.call(this);
     }
   }
-
   function readyState() {
-    if (this.readyState === "complete") {
-      ready.call(this);
-    }
+    if (this.readyState === 'complete') ready.call(this);
   }
-
   // cross platform event handler for compatibility with older IE versions
   function addEvent(elem, event, fn) {
     if (elem.addEventListener) {
       return elem.addEventListener(event, fn);
     } else {
-      return elem.attachEvent("on" + event, function () {
-        return fn.call(elem, window.event);
-      });
+      return elem.attachEvent('on' + event, function () { return fn.call(elem, window.event); });
     }
   }
-
-  // use iFrame load as a backup - though the other events should occur first
-  addEvent(iFrame, "load", function () {
-    ready.call(iFrame.contentDocument || iFrame.contentWindow.document);
-  });
-
+  // use load event as last resort (though the other events should occur first)
+  addEvent(iframe, 'load', function () { ready.call(iframe.contentDocument || iframe.contentWindow.document); });
   function checkLoaded() {
-    var doc = iFrame.contentDocument || iFrame.contentWindow.document;
-    // We can tell if there is a dummy document installed because the dummy document
-    // will have an URL that starts with "about:".  The real document will not have that URL
-    if (doc.URL.indexOf("about:") !== 0) {
-      if (doc.readyState === "complete") {
+    let doc = iframe.contentDocument || iframe.contentWindow.document;
+    // check if there is still the dummy document
+    if (doc.URL.indexOf('about:') !== 0) {
+      if (doc.readyState === 'complete') {
         ready.call(doc);
       } else {
         // set event listener for DOMContentLoaded on the new document
-        addEvent(doc, "DOMContentLoaded", ready);
-        addEvent(doc, "readystatechange", readyState);
+        addEvent(doc, 'DOMContentLoaded', ready);
+        addEvent(doc, 'readystatechange', readyState);
       }
     } else {
       // still same old original document, so keep looking for content or new document

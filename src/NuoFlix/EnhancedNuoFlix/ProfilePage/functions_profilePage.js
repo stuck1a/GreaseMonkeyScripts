@@ -870,18 +870,19 @@ function addPlaylistContainer() {
   });
   // start playlist 
   document.getElementById('startPlaylist').addEventListener('click', function() {
+    
+    const videoUrl = 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert';  // TODO: Replace dummy url
+    
     // insert the pseudo-page overlay
-    /** @type {HTMLDivElement} overlay */
     const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
-    /** @type {HTMLIFrameElement} iframe */
-    const iframe = `<iframe id="watchPlaylist_iframe" src="https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
+    const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
     overlay.appendChild(iframe);
 
     addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
 
-    // wait until the iframe has loaded its DOM content before going ahead
+    // wait until the iframe is ready before going ahead
     iFrameReady(iframe, function() {
-      const iframe_document = iframe.contentDocument;
+      const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
       let playlistRow = `
         <div id="playlistRow" class="row">
           <div id="loadPreviousVideo"><- vorheriges Video</div>
@@ -899,9 +900,9 @@ function addPlaylistContainer() {
       playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
       backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
 
-      // spoof the displayed URL in browser bar
+      // spoof the displayed URL in the browser bar
       const realUrl = window.location.toString();
-      window.history.replaceState(null,'', 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert');
+      window.history.replaceState(null,'', videoUrl);
 
       // mount handler
       backToProfileButton.addEventListener('click', function() {

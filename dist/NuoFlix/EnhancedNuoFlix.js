@@ -816,10 +816,9 @@ function doChangeMainSwitch(toggleState = false) {
 function updateStaticTranslations() {
   for (const element of staticTranslatableElements.entries()) element[0].innerText = t(element[1].text, element[1].args);
 }
-// This function ONLY works for iFrames of the same origin as their parent
-function iFrameReady(iFrame, fn) {
-  var timer;
-  var fired = false;
+function iFrameReady(iframe, fn) {
+  let timer;
+  let fired = false;
   function ready() {
     if (!fired) {
       fired = true;
@@ -828,30 +827,24 @@ function iFrameReady(iFrame, fn) {
     }
   }
   function readyState() {
-    if (this.readyState === "complete") {
-      ready.call(this);
-    }
+    if (this.readyState === 'complete') ready.call(this);
   }
   function addEvent(elem, event, fn) {
     if (elem.addEventListener) {
       return elem.addEventListener(event, fn);
     } else {
-      return elem.attachEvent("on" + event, function () {
-        return fn.call(elem, window.event);
-      });
+      return elem.attachEvent('on' + event, function () { return fn.call(elem, window.event); });
     }
   }
-  addEvent(iFrame, "load", function () {
-    ready.call(iFrame.contentDocument || iFrame.contentWindow.document);
-  });
+  addEvent(iframe, 'load', function () { ready.call(iframe.contentDocument || iframe.contentWindow.document); });
   function checkLoaded() {
-    var doc = iFrame.contentDocument || iFrame.contentWindow.document;
-    if (doc.URL.indexOf("about:") !== 0) {
-      if (doc.readyState === "complete") {
+    let doc = iframe.contentDocument || iframe.contentWindow.document;
+    if (doc.URL.indexOf('about:') !== 0) {
+      if (doc.readyState === 'complete') {
         ready.call(doc);
       } else {
-        addEvent(doc, "DOMContentLoaded", ready);
-        addEvent(doc, "readystatechange", readyState);
+        addEvent(doc, 'DOMContentLoaded', ready);
+        addEvent(doc, 'readystatechange', readyState);
       }
     } else {
       timer = setTimeout(checkLoaded, 1);
@@ -2213,12 +2206,13 @@ function addPlaylistContainer() {
     set_value('playlistData', playlistData);
   });
   document.getElementById('startPlaylist').addEventListener('click', function() {
+    const videoUrl = 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert'; 
     const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
-    const iframe = `<iframe id="watchPlaylist_iframe" src="https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
+    const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
     overlay.appendChild(iframe);
     addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
     iFrameReady(iframe, function() {
-      const iframe_document = iframe.contentDocument;
+      const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
       let playlistRow = `
         <div id="playlistRow" class="row">
           <div id="loadPreviousVideo"><- vorheriges Video</div>
@@ -2236,7 +2230,7 @@ function addPlaylistContainer() {
       playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
       backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
       const realUrl = window.location.toString();
-      window.history.replaceState(null,'', 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert');
+      window.history.replaceState(null,'', videoUrl);
       backToProfileButton.addEventListener('click', function() {
         removeFromDOM(overlay);
         window.history.replaceState(null, '', realUrl);
