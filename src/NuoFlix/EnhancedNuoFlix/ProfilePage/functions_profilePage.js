@@ -124,9 +124,9 @@ function execute_profilePage() {
     const revertFilterTextInput = document.getElementById('revertFilterTextInput');
     let textFilter = commentFilters.get('filterTextSearch');
     if (this.value) {
-      revertFilterTextInput.classList.remove('hidden');
+      revertFilterTextInput.classList.remove('forceHidden');
     } else {
-      revertFilterTextInput.classList.add('hidden');
+      revertFilterTextInput.classList.add('forceHidden');
       textFilter.value = [];
       textFilter.active = false;
     }
@@ -168,7 +168,7 @@ function execute_profilePage() {
     let filter = commentFilters.get('filterDateRange');
     filter.active = false;
     filter.value = [];
-    this.classList.add('hidden');
+    this.classList.add('forceHidden');
     updatePage();
   });
 
@@ -184,7 +184,7 @@ function execute_profilePage() {
     userFilter.active = false;
     // restore the autocompletion list
     addUserFilterAutocompletionList();
-    this.classList.add('hidden');
+    this.classList.add('forceHidden');
     updatePage();
   });
 
@@ -197,7 +197,7 @@ function execute_profilePage() {
     let textFilter = commentFilters.get('filterTextSearch');
     textFilter.value = [];
     textFilter.active = false;
-    this.classList.add('hidden');
+    this.classList.add('forceHidden');
     updatePage();
   });
 
@@ -298,10 +298,10 @@ function doUpdateDateFilter(fromInput, toInput) {
   if (fromInput.value === '' && toInput.value === '') {
     filterDateRange.active = false;
     filterDateRange.value = [];
-    revertDateRangeInputs.classList.add('hidden');
+    revertDateRangeInputs.classList.add('forceHidden');
     return;
   } else {
-    revertDateRangeInputs.classList.remove('hidden');
+    revertDateRangeInputs.classList.remove('forceHidden');
   }
   // do nothing until we have a valid, positive date range
   if (
@@ -787,12 +787,12 @@ function buildPaginationUi() {
   const BtnLast_Start = totalPages * currentLength - currentLength + 1;
   return `
     <div id="paginationContainer">
-      <div class="buttonGroup">
+      <div class="paginationButtonGroup">
         <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}" data-content="1"></a>
         <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}" data-content="<"></a>
       </div>
-      <div id="pageNrBtnContainer" class="buttonGroup">${buttons}</div>
-      <div class="buttonGroup">
+      <div id="pageNrBtnContainer" class="paginationButtonGroup">${buttons}</div>
+      <div class="paginationButtonGroup">
         <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}" data-content=">"></a>
         <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}" data-content="${totalPages}"></a>
       </div>
@@ -1088,7 +1088,7 @@ function doAddUserToFilterList(input) {
   }
   
   // show revert button
-  document.getElementById('revertFilterUserInput').classList.remove('hidden');
+  document.getElementById('revertFilterUserInput').classList.remove('hiforceHiddendden');
   
   // mount event handler for removing this user from the filter list again
   userElement.lastElementChild.addEventListener('click', function() {
@@ -1107,7 +1107,7 @@ function doAddUserToFilterList(input) {
     if (filterOnlyUser.value.length === 0) {
       filterOnlyUser.active = false;
       // also hide the revert filter button
-      document.getElementById('revertFilterUserInput').classList.add('hidden');
+      document.getElementById('revertFilterUserInput').classList.add('forceHidden');
     }
     // remove user from the list which shows all selected users
     removeFromDOM(this.parentElement, true);
@@ -1163,7 +1163,7 @@ function updatePaginationUI() {
   if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   
   paginationContainer = addToDOM(
-    buildPaginationUi().parseHTML(true),
+    buildPaginationUi().parseHTML(),
     document.getElementsByClassName('rowHeadlineHolder')[1],
     InsertionService.After,
     true,
@@ -1215,9 +1215,8 @@ function updatePaginationUI() {
   
   // if no comments to display, hide pagination buttons
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
-    paginationContainer.classList.add('hidden');
-    paginationContainerBottom.classList.add('hidden');
-  }
+    paginationContainer.classList.add('forceHidden');
+    forceHidden  }
 }
 
 

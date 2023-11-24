@@ -38,13 +38,13 @@
   margin-inline-start: 0 !important;
 }
 
+.paginationButtonGroup {
+  display: inline-block;
+}
+
 .pageNrBtn {
   padding-inline: max(1vw, 10px);
   margin-inline: .25rem !important;
-}
-
-#paginationContainer a:before {
-  content: attr(data-content);
 }
 
 .pageNrBtn.activePage {

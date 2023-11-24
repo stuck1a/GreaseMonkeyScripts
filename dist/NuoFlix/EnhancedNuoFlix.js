@@ -513,9 +513,9 @@ String.sprintf = function(format) {
     return typeof args[number] !== typeof undefined ? args[number].toString() : match;
   });
 };
-String.prototype.parseHTML = function(ignoreLineBreaks = false) {
+String.prototype.parseHTML = function(ignoreLineBreaks = true) {
   let t = document.createElement('template');
-  t.innerHTML = ignoreLineBreaks ? this.replaceAll(/\s*[\n\r]\s*/g, '') : this;
+  t.innerHTML = ignoreLineBreaks ? this.replaceAll(/([^"'])[\n\r\s]*[\n\r][\n\r\s]*([^"'])/g, "$1$2") : this;
   return t.content;
 };
 Map.prototype.deleteByValue = function(value, limit = null) {
@@ -750,7 +750,7 @@ function removeFromDOM(elementOrId, force = false) {
 }
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
-    element.classList.add('hidden');
+    element.classList.add('forceHidden');
     if (disabledPrimalElementsRegister) {
       if (!id) id = Date.now().toString(36) + Math.random().toString(36).substring(2);
       disabledPrimalElementsRegister.deleteByValue(element, 1);
@@ -767,18 +767,18 @@ function disablePrimalElement(elementOrId, registerId = null) {
 function enablePrimalElement(elementOrId) {
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    elementOrId.classList.remove('hidden');
+    elementOrId.classList.remove('forceHidden');
     return true;
   }
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
-    element.classList.remove('hidden');
+    element.classList.remove('forceHidden');
     return true;
   }
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    elementOrId.classList.remove('hidden');
+    elementOrId.classList.remove('forceHidden');
     return true;
   }
   return false;
@@ -799,9 +799,9 @@ function doChangeMainSwitch(toggleState = false) {
   }
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {
-      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
+      for (const entry of element) this.checked ? entry.classList.remove('forceHidden') : entry.classList.add('forceHidden');
     } else {
-      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+      this.checked ? element.classList.remove('forceHidden') : element.classList.add('forceHidden');
     }
   }
   const register = Array.from(disabledPrimalElementsRegister.values());   
@@ -1023,7 +1023,7 @@ addToDOM(`
 .col-10 { width: 83.33333333% }
 .col-11 { width: 91.66666667% }
 .col-12 { width: 100% }
-.hidden { display: none !important }
+.forceHidden { display: none !important }
 .card {
   position: relative;
   display: flex;
@@ -1057,12 +1057,12 @@ input[type="date"] {
   font-size: .75rem;
   padding: .2rem .75rem;
 }
-.buttonGroup {
-  display: inline-block;
-}
 .btn:not(.disabled):hover {
   filter: brightness(1.5);
   -webkit-filter: brightness(1.5);
+}
+.btn[data-content]:before {
+  content: attr(data-content);
 }
 .clearfix::after {
   content: "";
@@ -1301,7 +1301,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
         <div class="row">
           <label class="row col-2" for="filterByText" style="display: flex; flex-wrap: nowrap;">
               <span id="searchInputLabel"></span>
-              <span id="revertFilterTextInput" class="hidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+              <span id="revertFilterTextInput" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                 <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                   <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                   <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1329,7 +1329,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
             <li class="row" style="margin-top: 1rem;">
               <label class="row col-5" for="filterByUser" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByUserLabel"></span>
-                <span id="revertFilterUserInput" class="hidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertFilterUserInput" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1344,7 +1344,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
             <li class="row">
               <label class="row col-5" for="filterByDateFrom" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByDateLabel"></span>
-                <span id="revertDateRangeInputs" class="hidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertDateRangeInputs" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1431,12 +1431,12 @@ function execute_profilePage() {
   padding-block: 0 !important;
   margin-inline-start: 0 !important;
 }
+.paginationButtonGroup {
+  display: inline-block;
+}
 .pageNrBtn {
   padding-inline: max(1vw, 10px);
   margin-inline: .25rem !important;
-}
-#paginationContainer a:before {
-  content: attr(data-content);
 }
 .pageNrBtn.activePage {
   cursor: default !important;
@@ -1651,9 +1651,9 @@ div:not(:last-child) > .playlistButton {
     const revertFilterTextInput = document.getElementById('revertFilterTextInput');
     let textFilter = commentFilters.get('filterTextSearch');
     if (this.value) {
-      revertFilterTextInput.classList.remove('hidden');
+      revertFilterTextInput.classList.remove('forceHidden');
     } else {
-      revertFilterTextInput.classList.add('hidden');
+      revertFilterTextInput.classList.add('forceHidden');
       textFilter.value = [];
       textFilter.active = false;
     }
@@ -1682,7 +1682,7 @@ div:not(:last-child) > .playlistButton {
     let filter = commentFilters.get('filterDateRange');
     filter.active = false;
     filter.value = [];
-    this.classList.add('hidden');
+    this.classList.add('forceHidden');
     updatePage();
   });
   document.getElementById('revertFilterUserInput').addEventListener('click', function() {
@@ -1692,7 +1692,7 @@ div:not(:last-child) > .playlistButton {
     userFilter.value = [];
     userFilter.active = false;
     addUserFilterAutocompletionList();
-    this.classList.add('hidden');
+    this.classList.add('forceHidden');
     updatePage();
   });
   document.getElementById('revertFilterTextInput').addEventListener('click', function() {
@@ -1700,7 +1700,7 @@ div:not(:last-child) > .playlistButton {
     let textFilter = commentFilters.get('filterTextSearch');
     textFilter.value = [];
     textFilter.active = false;
-    this.classList.add('hidden');
+    this.classList.add('forceHidden');
     updatePage();
   });
   document.getElementById('addIgnoreUser').addEventListener('click', function() {
@@ -1768,10 +1768,10 @@ function doUpdateDateFilter(fromInput, toInput) {
   if (fromInput.value === '' && toInput.value === '') {
     filterDateRange.active = false;
     filterDateRange.value = [];
-    revertDateRangeInputs.classList.add('hidden');
+    revertDateRangeInputs.classList.add('forceHidden');
     return;
   } else {
-    revertDateRangeInputs.classList.remove('hidden');
+    revertDateRangeInputs.classList.remove('forceHidden');
   }
   if (
     !(fromInput.valueAsDate instanceof Date) ||
@@ -2105,12 +2105,12 @@ function buildPaginationUi() {
   const BtnLast_Start = totalPages * currentLength - currentLength + 1;
   return `
     <div id="paginationContainer">
-      <div class="buttonGroup">
+      <div class="paginationButtonGroup">
         <a id="paginationFirst" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="1" data-length="${currentLength}" data-content="1"></a>
         <a id="paginationBack" class="btn${(currentPage > 1 ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnBack_Start}" data-length="${currentLength}" data-content="<"></a>
       </div>
-      <div id="pageNrBtnContainer" class="buttonGroup">${buttons}</div>
-      <div class="buttonGroup">
+      <div id="pageNrBtnContainer" class="paginationButtonGroup">${buttons}</div>
+      <div class="paginationButtonGroup">
         <a id="paginationNext" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnNext_Start}" data-length="${currentLength}" data-content=">"></a>
         <a id="paginationLast" class="btn${(currentPage < totalPages ? '"' : ' disabled" disabled="disabled"')} data-start="${BtnLast_Start}" data-length="${currentLength}" data-content="${totalPages}"></a>
       </div>
@@ -2284,7 +2284,7 @@ function doAddUserToFilterList(input) {
       break;
     }
   }
-  document.getElementById('revertFilterUserInput').classList.remove('hidden');
+  document.getElementById('revertFilterUserInput').classList.remove('hiforceHiddendden');
   userElement.lastElementChild.addEventListener('click', function() {
     const targetUsername = this.previousElementSibling.innerText;
     const datalistEntry = `<option value="${targetUsername}"></option>`.parseHTML();
@@ -2298,7 +2298,7 @@ function doAddUserToFilterList(input) {
     }
     if (filterOnlyUser.value.length === 0) {
       filterOnlyUser.active = false;
-      document.getElementById('revertFilterUserInput').classList.add('hidden');
+      document.getElementById('revertFilterUserInput').classList.add('forceHidden');
     }
     removeFromDOM(this.parentElement, true);
     updatePage();
@@ -2323,7 +2323,7 @@ function updatePaginationUI() {
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
   if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   paginationContainer = addToDOM(
-    buildPaginationUi().parseHTML(true),
+    buildPaginationUi().parseHTML(),
     document.getElementsByClassName('rowHeadlineHolder')[1],
     InsertionService.After,
     true,
@@ -2367,9 +2367,8 @@ function updatePaginationUI() {
   );
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
   if (totalComments === 0 || totalComments === filteredCommentsCount) {
-    paginationContainer.classList.add('hidden');
-    paginationContainerBottom.classList.add('hidden');
-  }
+    paginationContainer.classList.add('forceHidden');
+    forceHidden  }
 }
 function updateComments() {
   if (customCommentContainer instanceof HTMLElement) {

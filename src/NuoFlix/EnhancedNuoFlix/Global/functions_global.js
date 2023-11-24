@@ -208,7 +208,7 @@ function removeFromDOM(elementOrId, force = false) {
  */
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
-    element.classList.add('hidden');
+    element.classList.add('forceHidden');
     if (disabledPrimalElementsRegister) {
       if (!id) id = Date.now().toString(36) + Math.random().toString(36).substring(2);
       // if this element is already stored, then just update the register id
@@ -246,14 +246,14 @@ function enablePrimalElement(elementOrId) {
   // if we got an element
   if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    elementOrId.classList.remove('hidden');
+    elementOrId.classList.remove('forceHidden');
     return true;
   }
   
   // if we got an register id
   if (disabledPrimalElementsRegister && disabledPrimalElementsRegister.has(elementOrId)) {
     const element =  disabledPrimalElementsRegister.get(elementOrId);
-    element.classList.remove('hidden');
+    element.classList.remove('forceHidden');
     return true;
   }
   
@@ -261,7 +261,7 @@ function enablePrimalElement(elementOrId) {
   elementOrId = document.getElementById(elementOrId);
   if (elementOrId) {
     if (elementOrId.hasAttribute('data-customElement')) return false;
-    elementOrId.classList.remove('hidden');
+    elementOrId.classList.remove('forceHidden');
     return true;
   }
   
@@ -313,9 +313,9 @@ function doChangeMainSwitch(toggleState = false) {
   // toggle visibility of custom elements
   for (const element of customElementsRegister.values()) {
     if (element instanceof Array) {
-      for (const entry of element) this.checked ? entry.classList.remove('hidden') : entry.classList.add('hidden');
+      for (const entry of element) this.checked ? entry.classList.remove('forceHidden') : entry.classList.add('forceHidden');
     } else {
-      this.checked ? element.classList.remove('hidden') : element.classList.add('hidden');
+      this.checked ? element.classList.remove('forceHidden') : element.classList.add('forceHidden');
     }
   }
   // toggle visibility of original elements

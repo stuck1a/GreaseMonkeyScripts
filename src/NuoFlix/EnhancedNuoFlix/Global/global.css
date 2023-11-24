@@ -61,7 +61,7 @@
 .col-11 { width: 91.66666667% }
 .col-12 { width: 100% }
 
-.hidden { display: none !important }
+.forceHidden { display: none !important }
 
 .card {
   position: relative;
@@ -101,13 +101,13 @@ input[type="date"] {
   padding: .2rem .75rem;
 }
 
-.buttonGroup {
-  display: inline-block;
-}
-
 .btn:not(.disabled):hover {
   filter: brightness(1.5);
   -webkit-filter: brightness(1.5);
+}
+
+.btn[data-content]:before {
+  content: attr(data-content);
 }
 
 .clearfix::after {
@@ -122,7 +122,6 @@ input[type="date"] {
   cursor: default !important;
   pointer-events: none;
 }
-
 
 .customDropdown {
   --borderColor: #555;
