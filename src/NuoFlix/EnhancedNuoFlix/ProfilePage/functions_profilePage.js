@@ -21,6 +21,7 @@ execute_profilePage();
  * Main function of this route
  */
 function execute_profilePage() {
+  
   /*%% ProfilePage/style_comments.js %%*/
     
   // insert all style sheets used in this route
@@ -839,11 +840,10 @@ function addPlaylistContainer() {
        item_cnt: <integer> Anzahl der Videos in der Playlist,
        items: [
          {
-           id: <number> Fortlaufende Nummer,
+           id: <number> uid der Videos (von NuoFlix erzeugt),
            unavailable: <boolean>  Wird auf true gesetzt, wenn der Versuch scheitert, das Video selbst bzw. Content von dessen Video-Page zu fetchen, wenn die Playlist abgespielt wird.
            url: <string> Videolink,
            title: <string> Videotitel,
-           img: <string> Image-Link zum Vorschaubild,
            desc: <string> Beschreibungstext,
          },
        ],
@@ -897,6 +897,9 @@ function addPlaylistContainer() {
           <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
         </div>
       `;
+
+      // TODO: playlistRow ausprogrammieren
+      
       playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
       backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
 
@@ -911,9 +914,6 @@ function addPlaylistContainer() {
       });
     });
     
-
-    
-    // TODO: PlaylistRow ausprogrammieren und statischen Testlink im iframe mit dem ersten Videolink aus der Playlist ersetzen
     
     // TODO: Vorab (z.b per fetch api) prüfen, ob die Video-Page existiert (falls sich Permalink ändert, Video runtergenommen wird o.ä.)
     //       und wenn nicht, den Vorgang abbrechen (oder nächstes Video in Liste testen), stattdessen Fehlermeldung ala "Video existiert nicht mehr" ausgeben und im entsprechenden

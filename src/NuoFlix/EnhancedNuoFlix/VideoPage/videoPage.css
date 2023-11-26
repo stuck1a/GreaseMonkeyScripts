@@ -1,0 +1,45 @@
+#favoriteIcon:hover path, #favoriteIcon.isFavorite path {
+  fill: var(--theme-color);
+}
+
+#addToPlaylistIcon:hover path {
+  stroke: lightgreen;
+}
+
+#addToPlaylistWrapper {
+  display: inline-block;
+  position: relative;
+}
+
+#playlistModal {
+  width: 12rem;
+  position: absolute;
+  background-color: #606060;
+  padding: 1rem;
+  text-align: center;
+  border-radius: 5px;
+  border: 1px solid var(--theme-color);
+}
+
+.checkboxListItemWrapper {
+  display: flex;
+}
+
+.checkboxListItemWrapper:hover {
+  filter: brightness(1.5);
+}
+
+.checkboxListItem {
+  margin-right: .75rem;
+}
+
+/* Specification of the global .playlistItem */
+.playlistItem {
+  width: 85%;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.playlistItem :last-child {
+  margin-left: auto;
+  display: inline-flex;
+}

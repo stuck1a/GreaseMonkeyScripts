@@ -28,7 +28,6 @@
   /*%% Global/utilFunctions.js %%*/
   /*%% Global/functions_global.js %%*/
   /*%% Global/functions_debug.js %%*/
-  /*%% Global/modal.js %%*/
   
   addToDOM(`<style>/*%% Global/global.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(`<style>/*%% Global/flipflop.css %%*/</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);

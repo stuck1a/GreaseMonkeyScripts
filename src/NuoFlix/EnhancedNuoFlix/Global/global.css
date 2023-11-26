@@ -219,3 +219,17 @@ input[type="date"] {
 .svgColorized { --color: var(--theme-color); }
 .svgColorized .svgColoredFill { fill: var(--color) }
 .svgColorized .svgColoredStroke { stroke: var(--color) }
+
+
+
+.playlistItem {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.playlistItem span:first-child {
+  max-width: 90%;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}

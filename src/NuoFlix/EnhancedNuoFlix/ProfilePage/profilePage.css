@@ -197,18 +197,6 @@
   padding-left: 1rem;
 }
 
-.playlistItem {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-}
-
-.playlistItem span:first-child {
-  max-width: 90%;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-}
-
 div:not(:last-child) > .playlistButton {
   margin-right: 1rem;
 }
