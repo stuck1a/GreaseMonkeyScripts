@@ -71,6 +71,61 @@ Element.prototype.prependEventListener = function(type, listener, options = null
 
 
 
+/**
+ * Removes the entry with the given index from the array, if the index exists.
+ * 
+ * @param {number} index  - Target index
+ * 
+ * @return {boolean}  - True, if entry was successfully deleted, false otherwise
+ */
+Array.prototype.deleteByIndex = function(index) {
+  // copy all current entries
+  const oldEntries = Array.from(this);
+  // clear the array
+  while(this.length > 0) this.pop();
+  // re-insert all entries except the one to remove
+  let found = false;
+  for (let i = 0; i < oldEntries.length; i++) {
+    if (i === index) {
+      found = true;
+      continue;
+    }
+    this.push(oldEntries[i]);
+  }
+  return found;
+}
+
+
+
+/**
+ * Removes the given value from the array, if found
+ * 
+ * @param {any} value  - Target value
+ * @param {?number} [limit=null]  - If set, only erases the given amount of values, if multiple value with same value exist
+ * 
+ * @return {boolean}  - True, if value was found and deleted, false otherwise
+ */
+Array.prototype.deleteByValue = function(value, limit = null) {
+  // copy all current entries
+  const oldEntries = Array.from(this);
+  // clear the array
+  while(this.length > 0) this.pop();
+  // re-insert all entries if not the target value and removal limit is not reached yet
+  let counter = 0;
+  for (const item of oldEntries) {
+    if (item === value) {
+      counter++;
+      if (limit) {
+        if (counter <= limit) continue;
+      } else {
+        continue;
+      }
+    }
+    this.push(item);
+  }
+  return counter !== 0;
+}
+
 
 
 /**

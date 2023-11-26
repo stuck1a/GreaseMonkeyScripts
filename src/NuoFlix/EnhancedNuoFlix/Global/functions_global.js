@@ -393,3 +393,62 @@ function iFrameReady(iframe, fn) {
   checkLoaded();
 }
 
+
+
+/**
+ * Searches the playlist data for the playlist with the given id.
+ *
+ * @requires playlistData
+ *
+ * @param {number} playlistId  - Target playlist id
+ *
+ * @return {?object}  - Playlist object or null, if playlist is not found
+ */
+function getPlaylistObjectById(playlistId) {
+  if (!playlistData) return null;
+  for (const playlist of playlistData) {
+    if (playlist.id == playlistId) return playlist;
+  }
+  return null;
+}
+
+
+
+/**
+ * Adds the given video object to the target playlist and update the stored playlistData.
+ *
+ * @requires playlistData
+ *
+ * @param {Object} videoObject  - Video object to add
+ * @param {number} playlistId  - Target playlist id
+ */
+function addVideoToPlaylist(videoObject, playlistId) {
+  let playlist = getPlaylistObjectById(playlistId);
+  if (!playlist) return;
+  playlist.items.push(videoObject);
+  playlist.item_cnt = 1 + playlist.item_cnt;
+  set_value('playlistData', playlistData);
+}
+
+
+
+/**
+ * Removes the given video object to the target playlist and update the stored playlistData.
+ *
+ * @requires playlistData
+ *
+ * @param {Object} videoObject  - Video object to add
+ * @param {number} playlistId  - Target playlist id
+ */
+function removeVideoFromPlaylist(videoObject, playlistId) {
+  let playlist = getPlaylistObjectById(playlistId);
+  if (!playlist) return;
+  const oldItemList = Array.from(playlist.items);
+  let newItemList = [];
+  for (const item of oldItemList) {
+    if (item.id != videoObject.id) newItemList.push(item);
+  }
+  playlist.items = newItemList;
+  playlist.item_cnt = 1 - playlist.item_cnt;
+  set_value('playlistData', playlistData);
+}

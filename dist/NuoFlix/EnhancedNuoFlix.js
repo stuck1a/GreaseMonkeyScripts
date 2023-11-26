@@ -261,6 +261,14 @@
 'Löschen',
 'Delete',
 ],
+[
+'Bestätigen',
+'Confirm',
+],
+[
+'Abbrechen',
+'Cancel',
+],
     ])
   ],
   [
@@ -468,6 +476,14 @@
 [
 'Löschen',
 'Udalit\'',
+],
+[
+'Bestätigen',
+'Podtverzhdat\'',
+],
+[
+'Abbrechen',
+'Otmena',
 ],
     ])
   ],
@@ -852,6 +868,32 @@ function iFrameReady(iframe, fn) {
   }
   checkLoaded();
 }
+function getPlaylistObjectById(playlistId) {
+  if (!playlistData) return null;
+  for (const playlist of playlistData) {
+    if (playlist.id == playlistId) return playlist;
+  }
+  return null;
+}
+function addVideoToPlaylist(videoObject, playlistId) {
+  let playlist = getPlaylistObjectById(playlistId);
+  if (!playlist) return;
+  playlist.items.push(videoObject);
+  playlist.item_cnt = 1 + playlist.item_cnt;
+  set_value('playlistData', playlistData);
+}
+function removeVideoFromPlaylist(videoObject, playlistId) {
+  let playlist = getPlaylistObjectById(playlistId);
+  if (!playlist) return;
+  const oldItemList = Array.from(playlist.items);
+  let newItemList = [];
+  for (const item of oldItemList) {
+    if (item.id != videoObject.id) newItemList.push(item);
+  }
+  playlist.items = newItemList;
+  playlist.item_cnt = 1 - playlist.item_cnt;
+  set_value('playlistData', playlistData);
+}
 function DEBUG_setSomeFakeData(commentData) {
   commentData[0].hasNewReplies = true;
   commentData[0].reply_cnt = 7;
@@ -1382,7 +1424,7 @@ function execute_startPage() {
         <legend id="playlistLabel"></legend>
         <div class="row">
           <div class="col-auto"><a id="createPlaylist" class="btn btn-small playlistButton"></a></div>
-          <div class="col-auto"><a id="startPlaylist" class="btn btn-small playlistButton "></a></div>
+          <div class="col-auto"><a id="startPlaylist" class="btn btn-small playlistButton disabled"></a></div>
           <div class="col-auto"><a id="editPlaylist" class="btn btn-small playlistButton disabled"></a></div>
           <div class="col-auto"><a id="deletePlaylist" class="btn btn-small playlistButton disabled"></a></div>       
         </div>
@@ -1917,7 +1959,7 @@ function buildCommentBlock(commentData) {
       </div>
     </div>
   `;
-  return commentBlock.parseHTML();
+  return commentBlock.parseHTML(false);
 }
 function isNewComment(btn_id, txt_id) {
   storedCommentData = storedCommentData || get_value('commentData');
@@ -2131,33 +2173,33 @@ function addPlaylistContainer() {
       <optgroup id="optgroup_defaultPlaylists" label="${t('Standard-Playlists')}"></optgroup>
       <optgroup id="optgroup_customPlaylists" label="${t('Eigene Playlists')}"></optgroup>
     </select>
-  `.parseHTML();
+  `.parseHTML().firstElementChild;
   addToDOM(playlists, document.getElementById('playlistContainer'), InsertionService.AsFirstChild, true, 'playlists');
+  playlists.addEventListener('change', function() {
+    if (this.selectedIndex === -1) {
+      document.getElementById('startPlaylist').classList.add('disabled');
+      document.getElementById('editPlaylist').classList.add('disabled');
+      document.getElementById('deletePlaylist').classList.add('disabled');
+    } else {
+      const playlistId = parseInt(this.selectedOptions[0].getAttribute('data-playlist-id'));
+      const playlist = getPlaylistObjectById(playlistId);
+      playlist.item_cnt > 0
+        ? document.getElementById('startPlaylist').classList.remove('disabled')
+        : document.getElementById('startPlaylist').classList.add('disabled');
+      if (playlist.is_custom) {
+        document.getElementById('deletePlaylist').classList.remove('disabled');
+        document.getElementById('editPlaylist').classList.remove('disabled');
+      } else {
+        document.getElementById('deletePlaylist').classList.add('disabled');
+        document.getElementById('editPlaylist').classList.add('disabled');
+      }
+    }
+  });
   const defaultContainer = document.getElementById('optgroup_defaultPlaylists');
   const customContainer = document.getElementById('optgroup_customPlaylists'); 
   for (const listData of playlistData) {
     addToDOM(buildPlaylistItem(listData), (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
   }
-  /*  AUFBAU DER PLAYLISTS DATENOBJEKTE
-   playlists = [
-     {
-       id: <integer> Wird beim Erstellen erzeugt aus: Anzahl Playlists + 1,
-       is_custom: <boolean> Entscheidet darüber, in welche optgroup eingefügt wird,
-       max_items: <integer> -1 (unbegrenzt), außer bei Playlist #playlistLastVideos,
-       name: <string> Aus Prompt,
-       item_cnt: <integer> Anzahl der Videos in der Playlist,
-       items: [
-         {
-           id: <number> uid der Videos (von NuoFlix erzeugt),
-           unavailable: <boolean>  Wird auf true gesetzt, wenn der Versuch scheitert, das Video selbst bzw. Content von dessen Video-Page zu fetchen, wenn die Playlist abgespielt wird.
-           url: <string> Videolink,
-           title: <string> Videotitel,
-           desc: <string> Beschreibungstext,
-         },
-       ],
-     },
-   ];
-  */
   /* button functions  */
   document.getElementById('createPlaylist').addEventListener('click', function() {
     const name = prompt('Name der neuen Playlist:', '');
@@ -2175,7 +2217,8 @@ function addPlaylistContainer() {
     set_value('playlistData', playlistData);
   });
   document.getElementById('startPlaylist').addEventListener('click', function() {
-    const videoUrl = 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert'; 
+    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+    const videoUrl = window.location.origin + playlist.items[0].url;
     const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
     const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
     overlay.appendChild(iframe);
@@ -2743,25 +2786,6 @@ function getVideoItemObject() {
   const msg = t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', missing);
   log(msg, 'error', [ t('Aufgetreten in {0}', 'getVideoItemObject') ]);
 }
-function addVideoToPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
-  playlist.items.push(videoObject);
-  playlist.item_cnt = 1 + playlist.item_cnt;
-  set_value('playlistData', playlistData);
-}
-function removeVideoFromPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
-  const oldItemList = Array.from(playlist.items);
-  let newItemList = [];
-  for (const item of oldItemList) {
-    if (item.id != videoObject.id) newItemList.push(item);
-  }
-  playlist.items = newItemList;
-  playlist.item_cnt = 1 - playlist.item_cnt;
-  set_value('playlistData', playlistData);
-}
 function openAddToPlaylistMenu(refElement) {
   if (!playlistData) return;
   const modal = `<div id="playlistModal"><div id="checkboxList"></div></div>`.parseHTML().firstElementChild;
@@ -2773,7 +2797,7 @@ function openAddToPlaylistMenu(refElement) {
       <div class="checkboxListItemWrapper">
         <input id="checkboxListItem-${playlist.id}" class="checkboxListItem" type="checkbox" ${isVideoInPlaylist(videoObj.id, playlist.id) ? 'checked="checked" ' : ''} data-playlist-id="${playlist.id}">
         <label for="checkboxListItem-${playlist.id}" class="playlistItem">
-          <span>${playlist.name}</span>
+          <span>${playlist.is_custom ? playlist.name : t(playlist.name)}</span>
           <span>${playlist.item_cnt}</span>
         </label>   
       </div>
@@ -2784,7 +2808,7 @@ function openAddToPlaylistMenu(refElement) {
     openAddToPlaylistMenu(document.getElementById('addToPlaylistWrapper'));
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }
-  const confirmButton = addToDOM(`<div style="margin-top: 1rem;"><a class="btn btn-small">Bestätigen</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
+  const confirmButton = addToDOM(`<div style="margin-top: 1rem;"><a class="btn btn-small">${t('Bestätigen')}</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
   confirmButton.addEventListener('click', function() {
     const videoObj = getVideoItemObject();
     for (const input of document.getElementsByClassName('checkboxListItem')) {
@@ -2802,20 +2826,13 @@ function openAddToPlaylistMenu(refElement) {
     removeFromDOM(modal);
     document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
   });
-  const cancelButton = addToDOM(`<div><a class="btn btn-small">Abbrechen</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
+  const cancelButton = addToDOM(`<div><a class="btn btn-small">${t('Abbrechen')}</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
   cancelButton.addEventListener('click', function() {
     removeFromDOM(modal);
     document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
   });
   addToDOM(modal, refElement, InsertionService.AsLastChild, true, 'playlistModal');
 }
-function getPlaylistObjectById(playlistId) {
-  if (!playlistData) return null;
-  for (const playlist of playlistData) {
-    if (playlist.id == playlistId) return playlist;
-  }
-  return null;
-}
     })();
   }
   for (const flipflop of document.getElementsByClassName('flipflop')) {

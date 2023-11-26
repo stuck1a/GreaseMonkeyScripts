@@ -291,3 +291,13 @@
 'Löschen',
 'Udalit\'',
 ],
+
+[
+'Bestätigen',
+'Podtverzhdat\'',
+],
+
+[
+'Abbrechen',
+'Otmena',
+],

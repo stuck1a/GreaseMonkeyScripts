@@ -317,47 +317,6 @@ function getVideoItemObject() {
 
 
 /**
- * Adds the given video object to the target playlist and update the stored playlistData.
- * 
- * @requires playlistData
- * 
- * @param {Object} videoObject  - Video object to add
- * @param {number} playlistId  - Target playlist id
- */
-function addVideoToPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
-  playlist.items.push(videoObject);
-  playlist.item_cnt = 1 + playlist.item_cnt;
-  set_value('playlistData', playlistData);
-}
-
-
-
-/**
- * Removes the given video object to the target playlist and update the stored playlistData.
- * 
- * @requires playlistData
- * 
- * @param {Object} videoObject  - Video object to add
- * @param {number} playlistId  - Target playlist id
- */
-function removeVideoFromPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
-  const oldItemList = Array.from(playlist.items);
-  let newItemList = [];
-  for (const item of oldItemList) {
-    if (item.id != videoObject.id) newItemList.push(item);
-  }
-  playlist.items = newItemList;
-  playlist.item_cnt = 1 - playlist.item_cnt;
-  set_value('playlistData', playlistData);
-}
-
-
-
-/**
  * Generates the playlist selection menu and adds it to the DOM.
  * 
  * @param {HTMLElement} refElement  - Reference element used for the placement of the list
@@ -378,7 +337,7 @@ function openAddToPlaylistMenu(refElement) {
       <div class="checkboxListItemWrapper">
         <input id="checkboxListItem-${playlist.id}" class="checkboxListItem" type="checkbox" ${isVideoInPlaylist(videoObj.id, playlist.id) ? 'checked="checked" ' : ''} data-playlist-id="${playlist.id}">
         <label for="checkboxListItem-${playlist.id}" class="playlistItem">
-          <span>${playlist.name}</span>
+          <span>${playlist.is_custom ? playlist.name : t(playlist.name)}</span>
           <span>${playlist.item_cnt}</span>
         </label>   
       </div>
@@ -392,7 +351,7 @@ function openAddToPlaylistMenu(refElement) {
   }
   
   // add button "confirm"
-  const confirmButton = addToDOM(`<div style="margin-top: 1rem;"><a class="btn btn-small">Bestätigen</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
+  const confirmButton = addToDOM(`<div style="margin-top: 1rem;"><a class="btn btn-small">${t('Bestätigen')}</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
   confirmButton.addEventListener('click', function() {
     // add video to all checked playlists and remove it from all not checked
     const videoObj = getVideoItemObject();
@@ -414,7 +373,7 @@ function openAddToPlaylistMenu(refElement) {
   });
   
   // add button "cancel"
-  const cancelButton = addToDOM(`<div><a class="btn btn-small">Abbrechen</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
+  const cancelButton = addToDOM(`<div><a class="btn btn-small">${t('Abbrechen')}</a></div>`.parseHTML(), modal, InsertionService.AsLastChild, false).firstElementChild;
   cancelButton.addEventListener('click', function() {
     removeFromDOM(modal);
     document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
@@ -424,20 +383,3 @@ function openAddToPlaylistMenu(refElement) {
 }
 
 
-
-/**
- * Searches the playlist data for the playlist with the given id.
- * 
- * @requires playlistData
- * 
- * @param {number} playlistId  - Target playlist id
- * 
- * @return {?object}  - Playlist object or null, if playlist is not found
- */
-function getPlaylistObjectById(playlistId) {
-  if (!playlistData) return null;
-  for (const playlist of playlistData) {
-    if (playlist.id == playlistId) return playlist;
-  }
-  return null;
-}

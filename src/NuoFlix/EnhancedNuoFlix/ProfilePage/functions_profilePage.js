@@ -78,7 +78,7 @@ function execute_profilePage() {
   // remap setting commentsPerPage='all'
   if (currentLength === 'all') currentLength = totalComments;
   
-  // build and insert our own comment container
+  // build and insert the custom comment container
   customCommentContainer = addToDOM(
     '<div id="customCommentContainer" class="profilContentInner"></div>'.parseHTML(),
     originalCommentContainer,
@@ -498,7 +498,7 @@ function buildCommentBlock(commentData) {
     </div>
   `;
 
-  return commentBlock.parseHTML();
+  return commentBlock.parseHTML(false);
 }
 
 
@@ -819,8 +819,30 @@ function addPlaylistContainer() {
       <optgroup id="optgroup_defaultPlaylists" label="${t('Standard-Playlists')}"></optgroup>
       <optgroup id="optgroup_customPlaylists" label="${t('Eigene Playlists')}"></optgroup>
     </select>
-  `.parseHTML();
+  `.parseHTML().firstElementChild;
   addToDOM(playlists, document.getElementById('playlistContainer'), InsertionService.AsFirstChild, true, 'playlists');
+  
+  // add handler to enable/disable buttons if selecting a playlist
+  playlists.addEventListener('change', function() {
+    if (this.selectedIndex === -1) {
+      document.getElementById('startPlaylist').classList.add('disabled');
+      document.getElementById('editPlaylist').classList.add('disabled');
+      document.getElementById('deletePlaylist').classList.add('disabled');
+    } else {
+      const playlistId = parseInt(this.selectedOptions[0].getAttribute('data-playlist-id'));
+      const playlist = getPlaylistObjectById(playlistId);
+      playlist.item_cnt > 0
+        ? document.getElementById('startPlaylist').classList.remove('disabled')
+        : document.getElementById('startPlaylist').classList.add('disabled');
+      if (playlist.is_custom) {
+        document.getElementById('deletePlaylist').classList.remove('disabled');
+        document.getElementById('editPlaylist').classList.remove('disabled');
+      } else {
+        document.getElementById('deletePlaylist').classList.add('disabled');
+        document.getElementById('editPlaylist').classList.add('disabled');
+      }
+    }
+  });
   
   // load and add user playlists
   const defaultContainer = document.getElementById('optgroup_defaultPlaylists');
@@ -828,28 +850,6 @@ function addPlaylistContainer() {
   for (const listData of playlistData) {
     addToDOM(buildPlaylistItem(listData), (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
   }
-  
-  
-  /*  AUFBAU DER PLAYLISTS DATENOBJEKTE
-   playlists = [
-     {
-       id: <integer> Wird beim Erstellen erzeugt aus: Anzahl Playlists + 1,
-       is_custom: <boolean> Entscheidet darüber, in welche optgroup eingefügt wird,
-       max_items: <integer> -1 (unbegrenzt), außer bei Playlist #playlistLastVideos,
-       name: <string> Aus Prompt,
-       item_cnt: <integer> Anzahl der Videos in der Playlist,
-       items: [
-         {
-           id: <number> uid der Videos (von NuoFlix erzeugt),
-           unavailable: <boolean>  Wird auf true gesetzt, wenn der Versuch scheitert, das Video selbst bzw. Content von dessen Video-Page zu fetchen, wenn die Playlist abgespielt wird.
-           url: <string> Videolink,
-           title: <string> Videotitel,
-           desc: <string> Beschreibungstext,
-         },
-       ],
-     },
-   ];
-  */
   
   /* button functions  */
   // create new playlist
@@ -870,9 +870,8 @@ function addPlaylistContainer() {
   });
   // start playlist 
   document.getElementById('startPlaylist').addEventListener('click', function() {
-    
-    const videoUrl = 'https://nuoflix.de/erst-manhatten-jetzt-berlin--im-gespraech-mit-wolfgang-eggert';  // TODO: Replace dummy url
-    
+    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+    const videoUrl = window.location.origin + playlist.items[0].url;
     // insert the pseudo-page overlay
     const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
     const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
@@ -937,7 +936,9 @@ function addPlaylistContainer() {
     // TODO
   });
   document.getElementById('deletePlaylist').addEventListener('click', function() {
-    // TODO
+    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+    
+    
   });
   
 

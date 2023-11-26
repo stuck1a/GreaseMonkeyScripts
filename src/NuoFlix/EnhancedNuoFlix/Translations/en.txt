@@ -286,3 +286,13 @@
 'Löschen',
 'Delete',
 ],
+
+[
+'Bestätigen',
+'Confirm',
+],
+
+[
+'Abbrechen',
+'Cancel',
+],
