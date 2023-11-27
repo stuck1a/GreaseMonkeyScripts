@@ -138,53 +138,72 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
 
 
 /**
- * Deletes a custom element from the DOM and from the register, if it was a registered element.
+ * Deletes a element from the DOM and from the register, if it was a registered custom element.
  * 
  * @requires customElementsRegister
  * @requires disabledPrimalElementsRegister
  * @requires Map.prototype.deleteByValue
  * 
- * @param {HTMLElement|string} elementOrId  - Can be the element itself, its id or the register id
- * @param {boolean} [force=false]  - Remove element, even if it is no custom element
+ * @param {HTMLElement[]|string[]|HTMLElement|string} elementOrId  - Can be the element itself, its id or the register id (or an array with any of that)
+ * 
  * @return {boolean}  - Whether the removal succeeded or not
  */
-function removeFromDOM(elementOrId, force = false) {
+function removeFromDOM(elementOrId) {
   // if we got the element itself
-  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
-    if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
-    if (force || elementOrId.hasAttribute('data-customElement')) {
-      if (disabledPrimalElementsRegister && !elementOrId.hasAttribute('data-customElement')) {
-        disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
+  const removeElement = function (elem) {
+    if (elem instanceof HTMLElement || elem instanceof Node) {
+      if (customElementsRegister) customElementsRegister.deleteByValue(elem, 1);
+      if (disabledPrimalElementsRegister && !elem.hasAttribute('data-customElement')) {
+        disabledPrimalElementsRegister.deleteByValue(elem, 1);
       }
-      elementOrId.remove();
+      elem.remove();
       return true;
     }
+    // if we got the register id
+    if (customElementsRegister && customElementsRegister.has(elem)) {
+      const element = customElementsRegister.get(elem);
+      if (element instanceof HTMLElement || element instanceof Node) element.remove();
+      customElementsRegister.delete(elem);
+      return true;
+    }
+    // if we got the element id
+    elem = document.getElementById(elem);
+    if (elem) {
+      if (customElementsRegister) customElementsRegister.deleteByValue(elem, 1);
+      if (disabledPrimalElementsRegister && !elem.hasAttribute('data-customElement')) {
+        disabledPrimalElementsRegister.deleteByValue(elem, 1);
+      }
+      elem.remove();
+      return true;
+    }
+    // element not found
     return false;
   }
   
-  // if we got the register id
-  if (customElementsRegister && customElementsRegister.has(elementOrId)) {
-    const element = customElementsRegister.get(elementOrId);
-    if (element instanceof HTMLElement || element instanceof Node) element.remove();
-    customElementsRegister.delete(elementOrId);
-    return true;
-  }
-  
-  // if we got the element id
-  elementOrId = document.getElementById(elementOrId);
-  if (elementOrId) {
-    if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
-    if (force || elementOrId.hasAttribute('data-customElement')) {
-      if (disabledPrimalElementsRegister && !elementOrId.hasAttribute('data-customElement')) {
-        disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
-      }
-      elementOrId.remove();
-      return true;
+  if (elementOrId instanceof Array) {
+    // if we got an array or multi-node  process each single item
+    let hadInvalidItems = false;
+    for (const item of elementOrId) {
+      if (!removeElement(item)) hadInvalidItems = true;
     }
-    return false;
+    return hadInvalidItems;
+  } else if (elementOrId instanceof DocumentFragment) {
+    // if we got an document fragment we must differ if it have multiple root nodes or not
+    const rootNodes = elementOrId.children;
+    if (rootNodes.length === 0) {
+      return false;
+    } else if (rootNodes.length === 1) {
+      return removeElement(rootNodes[0]);
+    } else {
+      let hadInvalidItems = false;
+      for (const item of elementOrId) {
+        if (!removeElement(item)) hadInvalidItems = true;
+      }
+      return hadInvalidItems;
+    }
   }
   
-  return false;
+  return removeElement(elementOrId);
 }
 
 
@@ -443,12 +462,17 @@ function addVideoToPlaylist(videoObject, playlistId) {
 function removeVideoFromPlaylist(videoObject, playlistId) {
   let playlist = getPlaylistObjectById(playlistId);
   if (!playlist) return;
-  const oldItemList = Array.from(playlist.items);
-  let newItemList = [];
-  for (const item of oldItemList) {
-    if (item.id != videoObject.id) newItemList.push(item);
-  }
-  playlist.items = newItemList;
+  
+  playlist.items.deleteByValue(videoObject);
+  
+  //const oldItemList = Array.from(playlist.items);
+  //let newItemList = [];
+  //for (const item of oldItemList) {
+  //  if (item.id != videoObject.id) newItemList.push(item);
+  //}
+  //playlist.items = newItemList;
+  
+  
   playlist.item_cnt = 1 - playlist.item_cnt;
   set_value('playlistData', playlistData);
 }

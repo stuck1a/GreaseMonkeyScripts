@@ -78,16 +78,20 @@ function replaceSuggestedVideoTiles() {
   const tiles = Array.from(document.getElementsByClassName('folgenItem'));
   for (const i in tiles) {
     const originalTile = tiles[i];
-    // generate full URI
-    let uri = originalTile.getAttribute('onClick').replace("folgenItem('", '');
-    uri = window.location.origin + '/' + uri.substr(0, uri.length - 2);
-    // generate clone of the tile with an real link as overlay
-    const customTile = originalTile.cloneNode(true);
-    customTile.removeAttribute('onClick');
-    customTile.appendChild(`<a href="${uri}" class="overlayLink" style="position:absolute;left:0;top:0;height:100%;width:100%"></a>`.parseHTML());
-    addToDOM(customTile, originalTile, InsertionService.Before);
-    disablePrimalElement(originalTile);
-    foundSuggestedVideos = true;
+    // make sure we have an element, some weird bug cause weird things here
+    if (originalTile instanceof HTMLElement) {
+      // generate full URI
+      let uri = originalTile.getAttribute('onClick').replace("folgenItem('", '');
+      uri = window.location.origin + '/' + uri.substr(0, uri.length - 2);
+      // generate clone of the tile with an real link as overlay
+      const customTile = originalTile.cloneNode(true);
+      customTile.removeAttribute('onClick');
+      customTile.appendChild(`<a href="${uri}" class="overlayLink" style="position:absolute;left:0;top:0;height:100%;width:100%"></a>`.parseHTML());
+      addToDOM(customTile, originalTile, InsertionService.Before);
+      disablePrimalElement(originalTile);
+      foundSuggestedVideos = true;
+    }
+
   }
   
   // call the original function before leaving, maybe NuoFlix use it to collect video statistics with it or so

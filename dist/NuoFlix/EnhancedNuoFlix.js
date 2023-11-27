@@ -523,6 +523,36 @@ Element.prototype.prependEventListener = function(type, listener, options = null
   this.addEventListener(type, listener, options);
   for (let i=0; i<existingListeners.length; i++) this.addEventListener(type, existingListeners[i]['listener'], existingListeners[i]['options']);
 }
+Array.prototype.deleteByIndex = function(index) {
+  const oldEntries = Array.from(this);
+  while(this.length > 0) this.pop();
+  let found = false;
+  for (let i = 0; i < oldEntries.length; i++) {
+    if (i === index) {
+      found = true;
+      continue;
+    }
+    this.push(oldEntries[i]);
+  }
+  return found;
+}
+Array.prototype.deleteByValue = function(value, limit = null) {
+  const oldEntries = Array.from(this);
+  while(this.length > 0) this.pop();
+  let counter = 0;
+  for (const item of oldEntries) {
+    if (item === value) {
+      counter++;
+      if (limit) {
+        if (counter <= limit) continue;
+      } else {
+        continue;
+      }
+    }
+    this.push(item);
+  }
+  return counter !== 0;
+}
 String.sprintf = function(format) {
   const args = Array.prototype.slice.call(arguments, 1);
   return format.replace(/{(\d+)}/g, function(match, number) {
@@ -732,37 +762,54 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
   }
   return insertedElements;
 }
-function removeFromDOM(elementOrId, force = false) {
-  if (elementOrId instanceof HTMLElement || elementOrId instanceof Node) {
-    if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
-    if (force || elementOrId.hasAttribute('data-customElement')) {
-      if (disabledPrimalElementsRegister && !elementOrId.hasAttribute('data-customElement')) {
-        disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
+function removeFromDOM(elementOrId) {
+  const removeElement = function (elem) {
+    if (elem instanceof HTMLElement || elem instanceof Node) {
+      if (customElementsRegister) customElementsRegister.deleteByValue(elem, 1);
+      if (disabledPrimalElementsRegister && !elem.hasAttribute('data-customElement')) {
+        disabledPrimalElementsRegister.deleteByValue(elem, 1);
       }
-      elementOrId.remove();
+      elem.remove();
+      return true;
+    }
+    if (customElementsRegister && customElementsRegister.has(elem)) {
+      const element = customElementsRegister.get(elem);
+      if (element instanceof HTMLElement || element instanceof Node) element.remove();
+      customElementsRegister.delete(elem);
+      return true;
+    }
+    elem = document.getElementById(elem);
+    if (elem) {
+      if (customElementsRegister) customElementsRegister.deleteByValue(elem, 1);
+      if (disabledPrimalElementsRegister && !elem.hasAttribute('data-customElement')) {
+        disabledPrimalElementsRegister.deleteByValue(elem, 1);
+      }
+      elem.remove();
       return true;
     }
     return false;
   }
-  if (customElementsRegister && customElementsRegister.has(elementOrId)) {
-    const element = customElementsRegister.get(elementOrId);
-    if (element instanceof HTMLElement || element instanceof Node) element.remove();
-    customElementsRegister.delete(elementOrId);
-    return true;
-  }
-  elementOrId = document.getElementById(elementOrId);
-  if (elementOrId) {
-    if (customElementsRegister) customElementsRegister.deleteByValue(elementOrId, 1);
-    if (force || elementOrId.hasAttribute('data-customElement')) {
-      if (disabledPrimalElementsRegister && !elementOrId.hasAttribute('data-customElement')) {
-        disabledPrimalElementsRegister.deleteByValue(elementOrId, 1);
-      }
-      elementOrId.remove();
-      return true;
+  if (elementOrId instanceof Array) {
+    let hadInvalidItems = false;
+    for (const item of elementOrId) {
+      if (!removeElement(item)) hadInvalidItems = true;
     }
-    return false;
+    return hadInvalidItems;
+  } else if (elementOrId instanceof DocumentFragment) {
+    const rootNodes = elementOrId.children;
+    if (rootNodes.length === 0) {
+      return false;
+    } else if (rootNodes.length === 1) {
+      return removeElement(rootNodes[0]);
+    } else {
+      let hadInvalidItems = false;
+      for (const item of elementOrId) {
+        if (!removeElement(item)) hadInvalidItems = true;
+      }
+      return hadInvalidItems;
+    }
   }
-  return false;
+  return removeElement(elementOrId);
 }
 function disablePrimalElement(elementOrId, registerId = null) {
   const apply = function(id, element) {
@@ -885,12 +932,7 @@ function addVideoToPlaylist(videoObject, playlistId) {
 function removeVideoFromPlaylist(videoObject, playlistId) {
   let playlist = getPlaylistObjectById(playlistId);
   if (!playlist) return;
-  const oldItemList = Array.from(playlist.items);
-  let newItemList = [];
-  for (const item of oldItemList) {
-    if (item.id != videoObject.id) newItemList.push(item);
-  }
-  playlist.items = newItemList;
+  playlist.items.deleteByValue(videoObject);
   playlist.item_cnt = 1 - playlist.item_cnt;
   set_value('playlistData', playlistData);
 }
@@ -2175,6 +2217,9 @@ function addPlaylistContainer() {
     </select>
   `.parseHTML().firstElementChild;
   addToDOM(playlists, document.getElementById('playlistContainer'), InsertionService.AsFirstChild, true, 'playlists');
+  document.getElementById('startPlaylist').classList.add('disabled');
+  document.getElementById('editPlaylist').classList.add('disabled');
+  document.getElementById('deletePlaylist').classList.add('disabled');
   playlists.addEventListener('change', function() {
     if (this.selectedIndex === -1) {
       document.getElementById('startPlaylist').classList.add('disabled');
@@ -2250,8 +2295,124 @@ function addPlaylistContainer() {
     });
   });
   document.getElementById('editPlaylist').addEventListener('click', function() {
+    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+ const editPlaylistDialog = `
+  <div id="editPlaylistDialog">
+    <div id="playlistNameWrapper" class="row">
+      <span id="playlistName">${playlist.name}</span>
+      <span id="changePlaylistName" data-playlist-id="${playlist.id}">EDIT</span>
+    </div>   
+    <ul id="videoList"></ul>
+    <div><a id="playlistDialogConfirmBtn" class="btn btn-small" data-playlist-id="${playlist.id}">${t('Bestätigen')}</a></div>
+    <div> <a id="playlistDialogCancelBtn" class="btn btn-small">${t('Abbrechen')}</a></div>
+  </div>
+  <style>
+    #editPlaylistDialog {
+      position: fixed;
+      width: min(30%, max(80%, 20rem));   /* Target: 20rem, but min 10vw and max 80vw */
+      height: min(30%, max(60%, 20rem));
+      background-color: #252525;
+      border-radius: 5px;
+      border: 1px solid var(--theme-color);
+      top: 30%;    /* TODO: Replace with calculated value */
+      left: 35%;    /* TODO: Replace with calculated value */
+    }
+    #playlistNameWrapper {
+      display: flex;
+      justify-content: space-between;
+    }
+    #playlistName {
+      width: 85%;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow-y: hidden;
+    }
+    #changePlaylistName {
+      width: 1.5rem;
+    }
+    .videoListEntry {
+    }
+    .videoListEntry_NameRow {
+      display: flex;
+      flex-wrap: nowrap;
+    }
+    .videoListEntry_id {
+      width: 20%;
+    }
+    .videoListEntry_name {
+      width: 70%;
+    }
+    .videoListEntry_delete {
+      width: 10%;
+    }
+    .videoListEntry_desc {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+  </style>
+`.parseHTML();   
+    addToDOM(editPlaylistDialog, document.body, InsertionService.AsLastChild, true, 'editPlaylistDialog');
+    const videoList = document.getElementById('videoList');
+    for (const video of playlist.items) {
+      const listEntry = `
+        <li class="videoListEntry" data-video-id="${video.id}">
+          <div class="videoListEntry_NameRow">
+            <span class="videoListEntry_id">${video.id}</span>
+            <span class="videoListEntry_name">${video.title}</span>
+            <span class="videoListEntry_delete" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
+          </div>
+          <div class="videoListEntry_DescRow">
+            <pre class="videoListEntry_desc">${video.desc}</pre>
+          </div>
+        </li>
+      `.parseHTML();
+      videoList.appendChild(listEntry);
+    }
+    document.getElementById('changePlaylistName').addEventListener('click', function() {
+    });
+    for (const entry of document.getElementsByClassName('videoListEntry_delete')) {
+      entry.addEventListener('click', function() {
+        let targetEntry;
+        for (const videoListEntry of document.getElementsByClassName('videoListEntry')) {
+          if (videoListEntry.getAttribute('data-video-id') === this.getAttribute('data-video-id')) {
+            targetEntry = videoListEntry;
+            break;
+          }
+        }
+        if (targetEntry) targetEntry.remove();
+      });
+    }
+    document.getElementById('playlistDialogConfirmBtn').addEventListener('click', function() {
+      const playlistId = parseInt(this.getAttribute('data-playlist-id'));
+      const playlist = getPlaylistObjectById(playlistId);
+      const newName = document.getElementById('playlistName').innerText;
+      if (newName.length > 0) playlist.name = newName;
+      let newVideoItems = [];
+      for (const listedEntry of document.getElementById('videoList').children) {
+        const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
+        for (const storedEntry of playlist.items) {
+          if (storedEntry.id === listedEntryId) {
+            newVideoItems.push(storedEntry);
+            break;
+          }
+        }
+      }
+      playlist.item_cnt = newVideoItems.length;
+      playlist.items = newVideoItems;
+      set_value('playlistData', playlistData);
+      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    });    
+    document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
+      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    });
   });
   document.getElementById('deletePlaylist').addEventListener('click', function() {
+    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+    playlistData.deleteByValue(playlist);
+    set_value('playlistData', playlistData);
+    updatePage();
   });
 }
 function buildPlaylistItem(data) {
@@ -2362,7 +2523,7 @@ function doAddUserToFilterList(input) {
   const availableUsersForFilter = customElementsRegister.get('availableUsersForFilter');
   for (const entry of availableUsersForFilter.children) {
     if (entry.value === input.value) {
-      removeFromDOM(entry, true);
+      removeFromDOM(entry);
       break;
     }
   }
@@ -2382,7 +2543,7 @@ function doAddUserToFilterList(input) {
       filterOnlyUser.active = false;
       document.getElementById('revertFilterUserInput').classList.add('forceHidden');
     }
-    removeFromDOM(this.parentElement, true);
+    removeFromDOM(this.parentElement);
     updatePage();
   });
   let currentFilterList = filterOnlyUser.value;
@@ -2642,14 +2803,16 @@ function replaceSuggestedVideoTiles() {
   const tiles = Array.from(document.getElementsByClassName('folgenItem'));
   for (const i in tiles) {
     const originalTile = tiles[i];
-    let uri = originalTile.getAttribute('onClick').replace("folgenItem('", '');
-    uri = window.location.origin + '/' + uri.substr(0, uri.length - 2);
-    const customTile = originalTile.cloneNode(true);
-    customTile.removeAttribute('onClick');
-    customTile.appendChild(`<a href="${uri}" class="overlayLink" style="position:absolute;left:0;top:0;height:100%;width:100%"></a>`.parseHTML());
-    addToDOM(customTile, originalTile, InsertionService.Before);
-    disablePrimalElement(originalTile);
-    foundSuggestedVideos = true;
+    if (originalTile instanceof HTMLElement) {
+      let uri = originalTile.getAttribute('onClick').replace("folgenItem('", '');
+      uri = window.location.origin + '/' + uri.substr(0, uri.length - 2);
+      const customTile = originalTile.cloneNode(true);
+      customTile.removeAttribute('onClick');
+      customTile.appendChild(`<a href="${uri}" class="overlayLink" style="position:absolute;left:0;top:0;height:100%;width:100%"></a>`.parseHTML());
+      addToDOM(customTile, originalTile, InsertionService.Before);
+      disablePrimalElement(originalTile);
+      foundSuggestedVideos = true;
+    }
   }
   if (foundSuggestedVideos) {
     window.addEventListener('beforeunload', function(ev) {

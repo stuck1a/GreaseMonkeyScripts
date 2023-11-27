@@ -822,6 +822,11 @@ function addPlaylistContainer() {
   `.parseHTML().firstElementChild;
   addToDOM(playlists, document.getElementById('playlistContainer'), InsertionService.AsFirstChild, true, 'playlists');
   
+  // disable all playlist buttons which require an selected playlist to become enabled
+  document.getElementById('startPlaylist').classList.add('disabled');
+  document.getElementById('editPlaylist').classList.add('disabled');
+  document.getElementById('deletePlaylist').classList.add('disabled');
+  
   // add handler to enable/disable buttons if selecting a playlist
   playlists.addEventListener('change', function() {
     if (this.selectedIndex === -1) {
@@ -933,15 +938,88 @@ function addPlaylistContainer() {
     //       the iframe must disappear since it's a custom feature, which will make the first switch visible again.
   });
   document.getElementById('editPlaylist').addEventListener('click', function() {
-    // TODO
+    // generate and insert the edit dialog
+    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+    /*%% ProfilePage/editPlaylistDialog.js %%*/    // Inserts: const editPlaylistDialog
+    addToDOM(editPlaylistDialog, document.body, InsertionService.AsLastChild, true, 'editPlaylistDialog');
+    
+    // fill the video list in the dialog
+    const videoList = document.getElementById('videoList');
+    for (const video of playlist.items) {
+      const listEntry = `
+        <li class="videoListEntry" data-video-id="${video.id}">
+          <div class="videoListEntry_NameRow">
+            <span class="videoListEntry_id">${video.id}</span>
+            <span class="videoListEntry_name">${video.title}</span>
+            <span class="videoListEntry_delete" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
+          </div>
+          <div class="videoListEntry_DescRow">
+            <pre class="videoListEntry_desc">${video.desc}</pre>
+          </div>
+        </li>
+      `.parseHTML();
+      videoList.appendChild(listEntry);
+    }
+    
+    // mount handler for the "change playlist name" button
+    document.getElementById('changePlaylistName').addEventListener('click', function() {
+      // TODO
+    });
+    
+    // mount all handler for removing a single video from the playlist
+    for (const entry of document.getElementsByClassName('videoListEntry_delete')) {
+      entry.addEventListener('click', function() {
+        // find the correct element
+        let targetEntry;
+        for (const videoListEntry of document.getElementsByClassName('videoListEntry')) {
+          if (videoListEntry.getAttribute('data-video-id') === this.getAttribute('data-video-id')) {
+            targetEntry = videoListEntry;
+            break;
+          }
+        }
+        // remove element
+        if (targetEntry) targetEntry.remove();
+      });
+    }
+    
+    // mount handler for "confirm" button in the dialog
+    document.getElementById('playlistDialogConfirmBtn').addEventListener('click', function() {
+      const playlistId = parseInt(this.getAttribute('data-playlist-id'));
+      const playlist = getPlaylistObjectById(playlistId);
+
+      // store new name
+      const newName = document.getElementById('playlistName').innerText;
+      if (newName.length > 0) playlist.name = newName;
+      
+      // create new list with video items    // FIXME deletes all elements!! 
+      let newVideoItems = [];
+      for (const listedEntry of document.getElementById('videoList').children) {
+        const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
+        // transfer all storedEntries to the new item list, if they are still in the element list
+        for (const storedEntry of playlist.items) {
+          if (storedEntry.id === listedEntryId) {
+            newVideoItems.push(storedEntry);
+            break;
+          }
+        }
+      }
+      playlist.item_cnt = newVideoItems.length;
+      playlist.items = newVideoItems;
+      set_value('playlistData', playlistData);
+      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    });    
+    
+    // mount handler for the "cancel" button in the dialog
+    document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
+      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    });
   });
   document.getElementById('deletePlaylist').addEventListener('click', function() {
     const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-    
-    
+    playlistData.deleteByValue(playlist);
+    set_value('playlistData', playlistData);
+    updatePage();
   });
-  
-
 }
 
 
@@ -1148,7 +1226,7 @@ function doAddUserToFilterList(input) {
   const availableUsersForFilter = customElementsRegister.get('availableUsersForFilter');
   for (const entry of availableUsersForFilter.children) {
     if (entry.value === input.value) {
-      removeFromDOM(entry, true);
+      removeFromDOM(entry);
       break;
     }
   }
@@ -1176,7 +1254,7 @@ function doAddUserToFilterList(input) {
       document.getElementById('revertFilterUserInput').classList.add('forceHidden');
     }
     // remove user from the list which shows all selected users
-    removeFromDOM(this.parentElement, true);
+    removeFromDOM(this.parentElement);
     // update comments
     updatePage();
   });
