@@ -15,8 +15,8 @@
 // @website         https://stuck1a.de/
 // @match           http*://nuoflix.de/*
 // @run-at          document-end
-// @updateURL       https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/NuoFlix/EnhancedNuoFlix.js
-// @downloadURL     https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/NuoFlix/EnhancedNuoFlix.js
+// @updateURL       https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/dist/NuoFlix/EnhancedNuoFlix.js
+// @downloadURL     https://raw.githubusercontent.com/stuck1a/GreaseMonkeyScripts/main/dist/NuoFlix/EnhancedNuoFlix.js
 // @supportURL      mailto:dev@stuck1a.de?subject=Meldung zum Skript 'Enhanced NuoFlix'&body=Problembeschreibung, Frage oder Feedback:
 // ==/UserScript==
 (function() {
@@ -684,6 +684,10 @@ function getNextSiblingCount(element) {
 }
 function countElementLines(element) {
   return Math.floor(element.offsetHeight / parseInt(window.getComputedStyle(element).lineHeight));
+}
+function debounce(fnc, delay) {
+  clearTimeout(fnc._tId);
+  fnc._tId = setTimeout(function(){ fnc();}, delay);
 }
 function getActiveRoute() {
   for (const route of pageRoutes.entries()) {
@@ -2297,38 +2301,65 @@ function addPlaylistContainer() {
   document.getElementById('editPlaylist').addEventListener('click', function() {
     const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
  const editPlaylistDialog = `
+  <div id="playlistDialog_middleLayer"></div>
   <div id="editPlaylistDialog">
     <div id="playlistNameWrapper" class="row">
-      <span id="playlistName">${playlist.name}</span>
-      <span id="changePlaylistName" data-playlist-id="${playlist.id}">EDIT</span>
+      <input id="playlistName" class="col" type="text" maxlength="100" value="${playlist.name}" readonly="readonly" />
+      <span id="changePlaylistName" class="col-auto" data-playlist-id="${playlist.id}">EDIT</span>
     </div>   
     <ul id="videoList"></ul>
-    <div><a id="playlistDialogConfirmBtn" class="btn btn-small" data-playlist-id="${playlist.id}">${t('Bestätigen')}</a></div>
-    <div> <a id="playlistDialogCancelBtn" class="btn btn-small">${t('Abbrechen')}</a></div>
+    <div id="playlistDialogButtons" class="row">
+      <a id="playlistDialogConfirmBtn" class="btn btn-small col-auto" data-playlist-id="${playlist.id}">${t('Bestätigen')}</a>
+      <a id="playlistDialogCancelBtn" class="btn btn-small col-auto">${t('Abbrechen')}</a>
+    </div>
   </div>
   <style>
+    #playlistDialog_middleLayer {
+      position: fixed;
+      z-index: 999998;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #0008;
+    }
     #editPlaylistDialog {
       position: fixed;
-      width: min(30%, max(80%, 20rem));   /* Target: 20rem, but min 10vw and max 80vw */
-      height: min(30%, max(60%, 20rem));
+      width: min(max(30%, 14rem), max(80%, 20rem));   /* Target: 20rem, but min 30% (or at least 14rem) and max 80% */
+      min-height: 14rem;
+      max-height:  80%;
       background-color: #252525;
       border-radius: 5px;
-      border: 1px solid var(--theme-color);
-      top: 30%;    /* TODO: Replace with calculated value */
-      left: 35%;    /* TODO: Replace with calculated value */
+      border: 2px solid var(--theme-color);
+      z-index: 999999;
+      /* top and left are calculated and set in the script (and updated in lazy resize handler) */
     }
     #playlistNameWrapper {
       display: flex;
       justify-content: space-between;
+      padding: .75rem 1rem;
     }
     #playlistName {
-      width: 85%;
-      white-space: nowrap;
+      color: var(--theme-color);
+      font-size: 1rem;
+      font-weight: bold;
+      margin: 0;
+      background-color: inherit;
+      cursor: default;
       text-overflow: ellipsis;
-      overflow-y: hidden;
     }
     #changePlaylistName {
-      width: 1.5rem;
+      margin: auto 0 auto 1rem;
+      cursor: pointer;
+    }
+    #videoList {
+      -ms-overflow-y: scroll;
+      overflow-y: scroll;
+      max-height: 80%;
+      border: 1px solid #373434;
+      margin: 0 .5rem .5rem .5rem;
+      border-radius: 5px;
+      padding: .3rem;
     }
     .videoListEntry {
     }
@@ -2337,19 +2368,27 @@ function addPlaylistContainer() {
       flex-wrap: nowrap;
     }
     .videoListEntry_id {
-      width: 20%;
+      padding-right: 2rem;
     }
     .videoListEntry_name {
-      width: 70%;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      -ms-overflow-x:  hidden;
+      -ms-overflow-y:  hidden;
+      overflow: hidden;
     }
     .videoListEntry_delete {
-      width: 10%;
+      margin-inline: 1rem;
     }
-    .videoListEntry_desc {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      width: 100%;
+    .videoListEntry_delete:hover {
+      color: red;
+      cursor: pointer;
+    }
+    #playlistDialogButtons .btn {
+      margin-inline: 1rem;
+    }
+    #playlistDialogButtons {
+      justify-content: center;
     }
   </style>
 `.parseHTML();   
@@ -2359,18 +2398,37 @@ function addPlaylistContainer() {
       const listEntry = `
         <li class="videoListEntry" data-video-id="${video.id}">
           <div class="videoListEntry_NameRow">
-            <span class="videoListEntry_id">${video.id}</span>
-            <span class="videoListEntry_name">${video.title}</span>
-            <span class="videoListEntry_delete" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
-          </div>
-          <div class="videoListEntry_DescRow">
-            <pre class="videoListEntry_desc">${video.desc}</pre>
+            <span class="videoListEntry_id col-auto">${video.id}</span>
+            <span class="videoListEntry_name col">${video.title}</span>
+            <span class="videoListEntry_delete col-auto" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
           </div>
         </li>
       `.parseHTML();
       videoList.appendChild(listEntry);
     }
+    const resizer = function() {
+      const editPlaylistDialog = document.getElementById('editPlaylistDialog');
+      const style = window.getComputedStyle(editPlaylistDialog);
+      editPlaylistDialog.clientLeft = 100;
+      editPlaylistDialog.style.left = `calc(50% - ${style.width}/2)`;
+      editPlaylistDialog.style.top = `calc(50% - ${style.height}/2)`;
+    };
+    const lazyzResizer = function() { debounce(resizer, 50); };
+    window.addEventListener('resize', lazyzResizer);
+    resizer();
     document.getElementById('changePlaylistName').addEventListener('click', function() {
+      const input = document.getElementById('playlistName');
+      if (input.hasAttribute('readonly')) {
+        input.removeAttribute('readonly');
+        input.style.cursor = 'auto';
+        input.style.backgroundColor = 'revert';
+        input.style.textOverflow = 'unset';
+      } else {
+        input.setAttribute('readonly', 'readonly');
+        input.style.cursor = 'default';
+        input.style.backgroundColor = 'inherit';
+        input.style.textOverflow = 'ellipsis';
+      }
     });
     for (const entry of document.getElementsByClassName('videoListEntry_delete')) {
       entry.addEventListener('click', function() {
@@ -2402,10 +2460,18 @@ function addPlaylistContainer() {
       playlist.item_cnt = newVideoItems.length;
       playlist.items = newVideoItems;
       set_value('playlistData', playlistData);
+      window.removeEventListener('resize', lazyzResizer);
       removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
     });    
     document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
+      window.removeEventListener('resize', lazyzResizer);
       removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    });
+    document.getElementById('playlistDialog_middleLayer').addEventListener('click', function(ev) {
+      window.removeEventListener('resize', lazyzResizer);
+      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
     });
   });
   document.getElementById('deletePlaylist').addEventListener('click', function() {
@@ -2928,21 +2994,17 @@ function getVideoItemObject() {
   if (currentVideoObj) return currentVideoObj;
   const id = document.getElementById('sendcomment');
   const title = document.getElementById('cmsFramework').getElementsByTagName('h2')[0];
-  const desc = document.getElementById('viewCounter');
   let missing = '';
   if (!id) {
     missing = 'id';
   } else if (!title) {
     missing = 'title';
-  } else if (!desc) {
-    missing = 'desc';
   } else {
     currentVideoObj = {
       id: id.getAttribute('data-id'),
       unavailable: false,
       url: window.location.pathname,
       title: title.innerText,
-      desc: desc.nextElementSibling.nextElementSibling.nextElementSibling.lastElementChild.innerText,
     };
     return currentVideoObj;
   }

@@ -449,3 +449,17 @@ function getNextSiblingCount(element) {
 function countElementLines(element) {
   return Math.floor(element.offsetHeight / parseInt(window.getComputedStyle(element).lineHeight));
 }
+
+
+
+/**
+ * De-Bouncer which allows to limit the execution count of a given function to one time per set delay.
+ * Might be used to limit scroll handler for example.
+ * 
+ * @param {function} fnc  - Target function to execute
+ * @param {number} delay  - Minimum delay between executions
+ */
+function debounce(fnc, delay) {
+  clearTimeout(fnc._tId);
+  fnc._tId = setTimeout(function(){ fnc();}, delay);
+}

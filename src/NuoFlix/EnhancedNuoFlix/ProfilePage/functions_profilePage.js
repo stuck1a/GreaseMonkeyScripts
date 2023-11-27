@@ -949,21 +949,44 @@ function addPlaylistContainer() {
       const listEntry = `
         <li class="videoListEntry" data-video-id="${video.id}">
           <div class="videoListEntry_NameRow">
-            <span class="videoListEntry_id">${video.id}</span>
-            <span class="videoListEntry_name">${video.title}</span>
-            <span class="videoListEntry_delete" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
-          </div>
-          <div class="videoListEntry_DescRow">
-            <pre class="videoListEntry_desc">${video.desc}</pre>
+            <span class="videoListEntry_id col-auto">${video.id}</span>
+            <span class="videoListEntry_name col">${video.title}</span>
+            <span class="videoListEntry_delete col-auto" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
           </div>
         </li>
       `.parseHTML();
       videoList.appendChild(listEntry);
     }
     
+    // mount resize handler which keeps the list 
+    const resizer = function() {
+      const editPlaylistDialog = document.getElementById('editPlaylistDialog');
+      const style = window.getComputedStyle(editPlaylistDialog);
+      editPlaylistDialog.clientLeft = 100;
+      editPlaylistDialog.style.left = `calc(50% - ${style.width}/2)`;
+      editPlaylistDialog.style.top = `calc(50% - ${style.height}/2)`;
+    };
+    // limit execution of the resizer to once per 50ms for the scroll handler
+    const lazyzResizer = function() { debounce(resizer, 50); };
+    window.addEventListener('resize', lazyzResizer);
+    
+    // calculate initial left and top once
+    resizer();
+    
     // mount handler for the "change playlist name" button
     document.getElementById('changePlaylistName').addEventListener('click', function() {
-      // TODO
+      const input = document.getElementById('playlistName');
+      if (input.hasAttribute('readonly')) {
+        input.removeAttribute('readonly');
+        input.style.cursor = 'auto';
+        input.style.backgroundColor = 'revert';
+        input.style.textOverflow = 'unset';
+      } else {
+        input.setAttribute('readonly', 'readonly');
+        input.style.cursor = 'default';
+        input.style.backgroundColor = 'inherit';
+        input.style.textOverflow = 'ellipsis';
+      }
     });
     
     // mount all handler for removing a single video from the playlist
@@ -1006,14 +1029,25 @@ function addPlaylistContainer() {
       playlist.item_cnt = newVideoItems.length;
       playlist.items = newVideoItems;
       set_value('playlistData', playlistData);
+      window.removeEventListener('resize', lazyzResizer);
       removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
     });    
     
     // mount handler for the "cancel" button in the dialog
     document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
+      window.removeEventListener('resize', lazyzResizer);
       removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
     });
+
+    // mount handler to close the dialog when clicking the middle layer
+    document.getElementById('playlistDialog_middleLayer').addEventListener('click', function(ev) {
+      window.removeEventListener('resize', lazyzResizer);
+      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+    });
   });
+  
   document.getElementById('deletePlaylist').addEventListener('click', function() {
     const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
     playlistData.deleteByValue(playlist);

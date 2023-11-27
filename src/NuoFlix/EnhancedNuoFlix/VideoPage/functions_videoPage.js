@@ -293,15 +293,12 @@ function getVideoItemObject() {
   // element gathering
   const id = document.getElementById('sendcomment');
   const title = document.getElementById('cmsFramework').getElementsByTagName('h2')[0];
-  const desc = document.getElementById('viewCounter');
   // validation
   let missing = '';
   if (!id) {
     missing = 'id';
   } else if (!title) {
     missing = 'title';
-  } else if (!desc) {
-    missing = 'desc';
   } else {
     currentVideoObj = {
       // if all required elements where found we can be pretty sure, everything is alright
@@ -309,7 +306,6 @@ function getVideoItemObject() {
       unavailable: false,
       url: window.location.pathname,
       title: title.innerText,
-      desc: desc.nextElementSibling.nextElementSibling.nextElementSibling.lastElementChild.innerText,
     };
     return currentVideoObj;
   }
