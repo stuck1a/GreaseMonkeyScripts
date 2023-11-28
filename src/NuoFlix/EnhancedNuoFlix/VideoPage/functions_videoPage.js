@@ -52,6 +52,8 @@ function execute_genericPage() {
   
   // mount handler for button "add to playlist"
   const opener = function () {
+    // update the playlistData in case someone have multiple video pages open to add videos
+    playlistData = get_value('playlistData');
     openAddToPlaylistMenu(document.getElementById('addToPlaylistWrapper'));
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }
@@ -338,6 +340,8 @@ function openAddToPlaylistMenu(refElement) {
   }
 
   const opener = function () {
+    // update the playlistData in case someone have multiple video pages open to add videos
+    playlistData = get_value('playlistData');
     openAddToPlaylistMenu(document.getElementById('addToPlaylistWrapper'));
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }

@@ -281,6 +281,12 @@ function execute_profilePage() {
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
+
+  // mount handler which update the page if we came from another tab (this will make playlistData and commentData "live")
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) updatePage();
+  });
+  
 }
 
 
@@ -1101,18 +1107,18 @@ function addEditPlaylistDialog() {
 
     // store new name (except its a default playlist)
     let newName;
-    if (!playlist.is_custom) {
+    if (playlist.is_custom) {
       newName = document.getElementById('playlistName').value;
       if (newName.length > 0) playlist.name = newName;
     }
 
-    // create new list with video items    // FIXME deletes all elements!! 
+    // create new list with video items
     let newVideoItems = [];
     for (const listedEntry of document.getElementById('videoList').children) {
       const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
       // transfer all storedEntries to the new item list, if they are still in the element list
       for (const storedEntry of playlist.items) {
-        if (storedEntry.id === listedEntryId) {
+        if (parseInt(storedEntry.id) === listedEntryId) {
           newVideoItems.push(storedEntry);
           break;
         }
@@ -1123,6 +1129,7 @@ function addEditPlaylistDialog() {
     set_value('playlistData', playlistData);
     window.removeEventListener('resize', lazyResizer);
     removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    updatePage();
   });
 
   // mount handler for the "cancel" button in the dialog
@@ -1612,12 +1619,27 @@ function doOrderCommentData(orderType = 'activity') {
  * Wrapper which will update all custom stuff
  */
 function updatePage() {
+  // update playlist data object to make the data "live"
+  playlistData = get_value('playlistData');
+  
   filteredCommentsCount = getFilteredCount();
+
+  // the following edge case is only relevant if there are at least one comment left after filtering
+  if (filteredCommentsCount < totalComments) {
+    // if we are on a page, which is now (after filtering) higher than the total page count, then switch to the last page
+    const totalPages = Math.ceil((totalComments - filteredCommentsCount) / currentLength);
+    const currentPage = Math.ceil(currentStart / currentLength);
+    if (currentPage > totalPages) {
+      currentStart = totalPages * currentLength - currentLength;
+      if (currentStart < 1) currentStart = 1;
+    }
+  }
+  
   updateComments();
   updatePaginationUI();
   updateStaticTranslations();
   addPlaylistContainer();
-
+  
   // process translation edge cases (elements which are basically dynamic, but not reset on update)
   for (const element of document.getElementsByClassName('selectedUserFilter')) {
     element.lastElementChild.setAttribute('title', t('Entfernen'));

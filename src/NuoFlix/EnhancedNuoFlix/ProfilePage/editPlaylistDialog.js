@@ -82,7 +82,7 @@
     }
     
     .videoListEntry_id {
-      padding-right: 2rem;
+      width: 3.75rem;
     }
     
     .videoListEntry_name {

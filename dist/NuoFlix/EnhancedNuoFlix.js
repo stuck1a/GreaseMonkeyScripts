@@ -38,7 +38,7 @@
  const defaultPlaylists = [
   { id: 1, is_custom: false, max_items: -1, name: 'Favoriten', item_cnt: 0, items: [], },
   { id: 2, is_custom: false, max_items: -1, name: 'Für später gespeichert', item_cnt: 0, items: [], },
-  { id: 3, is_custom: false, max_items: 3, name: 'Zuletzt angesehene Videos', item_cnt: 0, items: [], },
+  { id: 3, is_custom: false, max_items: 10, name: 'Zuletzt angesehene Videos', item_cnt: 0, items: [], },
 ];
 // IDs of Playlists with special functions
  const favoritesID = 1;
@@ -1903,6 +1903,9 @@ div:not(:last-child) > .playlistButton {
   initializePlaylistButtons();
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) updatePage();
+  });
 }
 function doUpdateDateFilter(fromInput, toInput) {
   const revertDateRangeInputs = document.getElementById('revertDateRangeInputs');
@@ -2443,7 +2446,7 @@ function addEditPlaylistDialog() {
       cursor: default;
     }
     .videoListEntry_id {
-      padding-right: 2rem;
+      width: 3.75rem;
     }
     .videoListEntry_name {
       white-space: nowrap;
@@ -2557,7 +2560,7 @@ function addEditPlaylistDialog() {
     const playlistId = parseInt(this.getAttribute('data-playlist-id'));
     const playlist = getPlaylistObjectById(playlistId);
     let newName;
-    if (!playlist.is_custom) {
+    if (playlist.is_custom) {
       newName = document.getElementById('playlistName').value;
       if (newName.length > 0) playlist.name = newName;
     }
@@ -2565,7 +2568,7 @@ function addEditPlaylistDialog() {
     for (const listedEntry of document.getElementById('videoList').children) {
       const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
       for (const storedEntry of playlist.items) {
-        if (storedEntry.id === listedEntryId) {
+        if (parseInt(storedEntry.id) === listedEntryId) {
           newVideoItems.push(storedEntry);
           break;
         }
@@ -2576,6 +2579,7 @@ function addEditPlaylistDialog() {
     set_value('playlistData', playlistData);
     window.removeEventListener('resize', lazyResizer);
     removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    updatePage();
   });
   document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
     window.removeEventListener('resize', lazyResizer);
@@ -2882,7 +2886,16 @@ function doOrderCommentData(orderType = 'activity') {
   }
 }
 function updatePage() {
+  playlistData = get_value('playlistData');
   filteredCommentsCount = getFilteredCount();
+  if (filteredCommentsCount < totalComments) {
+    const totalPages = Math.ceil((totalComments - filteredCommentsCount) / currentLength);
+    const currentPage = Math.ceil(currentStart / currentLength);
+    if (currentPage > totalPages) {
+      currentStart = totalPages * currentLength - currentLength;
+      if (currentStart < 1) currentStart = 1;
+    }
+  }
   updateComments();
   updatePaginationUI();
   updateStaticTranslations();
@@ -2967,6 +2980,7 @@ function execute_genericPage() {
     }
   });
   const opener = function () {
+    playlistData = get_value('playlistData');
     openAddToPlaylistMenu(document.getElementById('addToPlaylistWrapper'));
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }
@@ -3142,6 +3156,7 @@ function openAddToPlaylistMenu(refElement) {
     addToDOM(entry, checkboxList, InsertionService.AsLastChild, false);
   }
   const opener = function () {
+    playlistData = get_value('playlistData');
     openAddToPlaylistMenu(document.getElementById('addToPlaylistWrapper'));
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }
