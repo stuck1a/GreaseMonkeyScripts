@@ -262,37 +262,50 @@
 'Custom Playlists',
 ],
 
+
 [
 'Meine Playlists',
 'My Playlists',
 ],
+
 
 [
 'Erstellen',
 'Create',
 ],
 
+
 [
 'Abspielen',
 'Play',
 ],
+
 
 [
 'Bearbeiten',
 'Edit',
 ],
 
+
 [
 'Löschen',
 'Delete',
 ],
+
 
 [
 'Bestätigen',
 'Confirm',
 ],
 
+
 [
 'Abbrechen',
 'Cancel',
+],
+
+
+[
+'Filter zurücksetzen',
+'Reset filter',
 ],

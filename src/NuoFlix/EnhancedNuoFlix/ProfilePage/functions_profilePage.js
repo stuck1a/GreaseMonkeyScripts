@@ -91,7 +91,7 @@ function execute_profilePage() {
   addUserFilterAutocompletionList();
   
   // mount handler for adding a user to the list of users to search for
-  document.getElementById('filterByUser').onkeypress = function(ev) {
+  document.getElementById('filterByUser').addEventListener('keypress', function(ev) {
     if (!ev) ev = window.event;
     let keyCode = ev.code || ev.key;
     // if user pressed enter
@@ -116,12 +116,11 @@ function execute_profilePage() {
         }
       }
     }
-  };
-  
+  });
   
   // mount handler for the text search filter
   let textFilterDelayActive = false;
-  document.getElementById('filterByText').oninput = function() {
+  document.getElementById('filterByText').addEventListener('input', function() {
     const revertFilterTextInput = document.getElementById('revertFilterTextInput');
     let textFilter = commentFilters.get('filterTextSearch');
     if (this.value) {
@@ -144,17 +143,15 @@ function execute_profilePage() {
         updatePage();
       }.bind(this), 150);
     }
-  };
-  
+  });
   
   // mount handlers for the date search filter
-  document.getElementById('filterByDateFrom').oninput = function() {
+  document.getElementById('filterByDateFrom').addEventListener('input', function() {
     doUpdateDateFilter(this, document.getElementById('filterByDateTo'));
-  };
-  document.getElementById('filterByDateTo').oninput = function() {
+  });
+  document.getElementById('filterByDateTo').addEventListener('input', function() {
     doUpdateDateFilter(document.getElementById('filterByDateFrom'), this);
-  };
-
+  });
   
   // mount handler for changing the text search logic
   document.getElementById('filterAllWords').addEventListener('change', function() {
@@ -278,6 +275,9 @@ function execute_profilePage() {
   updatePage();
   insertLanguageDropdown();
 
+  // mount all handlers for the playlist buttons
+  initializePlaylistButtons();
+  
   // mount handler for selecting another length value
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
@@ -804,7 +804,7 @@ function buildPaginationUi() {
 
 
 /**
- * (Re-)builds and insert the playlist select list
+ * (Re-)builds and insert the playlist select list.
  * 
  * @requires playlistData
  */
@@ -839,12 +839,13 @@ function addPlaylistContainer() {
       playlist.item_cnt > 0
         ? document.getElementById('startPlaylist').classList.remove('disabled')
         : document.getElementById('startPlaylist').classList.add('disabled');
-      if (playlist.is_custom) {
-        document.getElementById('deletePlaylist').classList.remove('disabled');
+      // only allow edit for custom playlists and for the "watch later" playlist (id 2)
+      if (playlist.is_custom || playlist.id === 2) {
         document.getElementById('editPlaylist').classList.remove('disabled');
+        if (playlist.id !== 2) document.getElementById('deletePlaylist').classList.remove('disabled');
       } else {
-        document.getElementById('deletePlaylist').classList.add('disabled');
         document.getElementById('editPlaylist').classList.add('disabled');
+        document.getElementById('deletePlaylist').classList.add('disabled');
       }
     }
   });
@@ -855,9 +856,15 @@ function addPlaylistContainer() {
   for (const listData of playlistData) {
     addToDOM(buildPlaylistItem(listData), (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
   }
-  
-  /* button functions  */
-  // create new playlist
+}
+
+
+
+/**
+ * Mount all handlers for the playlist buttons.
+ */
+function initializePlaylistButtons() {
+  // button "create"
   document.getElementById('createPlaylist').addEventListener('click', function() {
     const name = prompt('Name der neuen Playlist:', '');
     if (!name) return;
@@ -870,25 +877,57 @@ function addPlaylistContainer() {
       items: [],
     };
     playlistData.push(playlistObj);
+    const customContainer = document.getElementById('optgroup_customPlaylists')
     addToDOM(buildPlaylistItem(playlistObj), customContainer, InsertionService.AsLastChild, false);
     set_value('playlistData', playlistData);
   });
-  // start playlist 
+
+  // button "start"
   document.getElementById('startPlaylist').addEventListener('click', function() {
+    openWatchPlaylistFrame();
+  });
+  
+  // button "edit"
+  document.getElementById('editPlaylist').addEventListener('click', function() {
+    addEditPlaylistDialog();
+  });
+
+  // button "delete"
+  document.getElementById('deletePlaylist').addEventListener('click', function() {
     const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-    const videoUrl = window.location.origin + playlist.items[0].url;
-    // insert the pseudo-page overlay
-    const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
-    const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
-    overlay.appendChild(iframe);
+    // just to be super-duper sure no default playlist will be ever deleted (it would mess up everything)
+    if (playlist.is_custom) {
+      playlistData.deleteByValue(playlist);
+      set_value('playlistData', playlistData);
+    }
+    updatePage();
+  });
+}
 
-    addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
 
-    // wait until the iframe is ready before going ahead
-    iFrameReady(iframe, function() {
-      const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
-      let playlistRow = `
-        <div id="playlistRow" class="row">
+
+/**
+ * Build the pseudo video page for watching a playlist as fullscreen iframe overlay and adds it to the DOM.
+ */
+function openWatchPlaylistFrame() {
+  const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+  // cancel if the playlist is somehow corrupted (empty)
+  if (!playlist.items[playlist.items.length - 1]) return;    // TODO: Add error message
+  // start with the newest video on the playlist
+  
+  const videoUrl = window.location.origin + playlist.items[playlist.items.length - 1].url;
+  // insert the pseudo-page overlay
+  const overlay = `<div id="watchPlaylist_Overlay"></div>`.parseHTML(false).firstElementChild;
+  const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}"></iframe>`.parseHTML(false).firstElementChild;
+  overlay.appendChild(iframe);
+
+  addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
+
+  // wait until the iframe is ready before going ahead
+  iFrameReady(iframe, function() {
+    const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
+    let playlistRow = `
+        <div id="playlistRow" class="row" data-playlist-id="${playlist.id}">
           <div id="loadPreviousVideo"><- vorheriges Video</div>
           <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
           <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
@@ -896,163 +935,208 @@ function addPlaylistContainer() {
           <div id="loadNextVideo">nächstes Video -></div>
         </div>
       `;
-      let backToProfileButton = `
+    let backToProfileButton = `
         <div>
           <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
         </div>
       `;
 
-      // TODO: playlistRow ausprogrammieren
-      
-      playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
-      backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+    // TODO: playlistRow ausprogrammieren
 
-      // spoof the displayed URL in the browser bar
-      const realUrl = window.location.toString();
-      window.history.replaceState(null,'', videoUrl);
+    playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
+    backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
 
-      // mount handler
-      backToProfileButton.addEventListener('click', function() {
-        removeFromDOM(overlay);
-        window.history.replaceState(null, '', realUrl);
-      });
+    // spoof the displayed URL in the browser bar
+    const realUrl = window.location.toString();
+    window.history.replaceState(null,'', videoUrl);
+
+    // mount handler
+    backToProfileButton.addEventListener('click', function() {
+      removeFromDOM(overlay);
+      window.history.replaceState(null, '', realUrl);
+      updatePage();
     });
-    
-    
-    // TODO: Vorab (z.b per fetch api) prüfen, ob die Video-Page existiert (falls sich Permalink ändert, Video runtergenommen wird o.ä.)
-    //       und wenn nicht, den Vorgang abbrechen (oder nächstes Video in Liste testen), stattdessen Fehlermeldung ala "Video existiert nicht mehr" ausgeben und im entsprechenden
-    //       Video Item des Playlist-Datenobjekts das property unavailable auf true setzen
-    
-    // TODO: Die innere Scrollbar loswerden.
-    //   Idee:
-    //   - Scrollbar in iframe ausblenden
-    //   - Alle Elemente in Body von Profil-Page ausblenden
-    //   - Ein Element in Body von Profil-Page einfügen mit der Höhe von Body der Video-Page
-    //   - Scroll-Handler auf window in iframe setzen, der scrollHeight von Profil-Page Body auf die scrollHeight von Video-Page Body setzt
-    //   - Kann bleiben, wenn Video wechselt
-    //   - EventHandler wieder entfernen wenn: (a) Button "Zurück zur Profilseite" geklickt wird (b) main Switch betätigt wird 
-
-    
-    // TODO: Check whether second main switch within the iframe also works.
-    //       It further need to be synced with the first one because if someone toggles it in the iframe,
-    //       the iframe must disappear since it's a custom feature, which will make the first switch visible again.
   });
-  document.getElementById('editPlaylist').addEventListener('click', function() {
-    // generate and insert the edit dialog
-    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-    /*%% ProfilePage/editPlaylistDialog.js %%*/    // Inserts: const editPlaylistDialog
-    addToDOM(editPlaylistDialog, document.body, InsertionService.AsLastChild, true, 'editPlaylistDialog');
-    
-    // fill the video list in the dialog
-    const videoList = document.getElementById('videoList');
-    for (const video of playlist.items) {
-      const listEntry = `
+  
+  // TODO: Vorab (z.b per fetch api) prüfen, ob die Video-Page existiert (falls sich Permalink ändert, Video runtergenommen wird o.ä.)
+  //       und wenn nicht, den Vorgang abbrechen (oder nächstes Video in Liste testen), stattdessen Fehlermeldung ala "Video existiert nicht mehr" ausgeben und im entsprechenden
+  //       Video Item des Playlist-Datenobjekts das property unavailable auf true setzen
+
+  // TODO: Die innere Scrollbar loswerden.
+  //   Idee:
+  //   - Scrollbar in iframe ausblenden
+  //   - Alle Elemente in Body von Profil-Page ausblenden
+  //   - Ein Element in Body von Profil-Page einfügen mit der Höhe von Body der Video-Page
+  //   - Scroll-Handler auf window in iframe setzen, der scrollHeight von Profil-Page Body auf die scrollHeight von Video-Page Body setzt
+  //   - Kann bleiben, wenn Video wechselt
+  //   - EventHandler wieder entfernen wenn: (a) Button "Zurück zur Profilseite" geklickt wird (b) main Switch betätigt wird 
+
+
+  // TODO: Check whether second main switch within the iframe also works.
+  //       It further need to be synced with the first one because if someone toggles it in the iframe,
+  //       the iframe must disappear since it's a custom feature, which will make the first switch visible again.
+}
+
+
+
+/**
+ * Build the dialog for editing playlists and adds it to the DOM.
+ */
+function addEditPlaylistDialog() {
+  // generate and insert the edit dialog
+  const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+  /*%% ProfilePage/editPlaylistDialog.js %%*/    // Inserts: const editPlaylistDialog
+  addToDOM(editPlaylistDialog, document.body, InsertionService.AsLastChild, true, 'editPlaylistDialog');
+
+  // hide the "edit playlist name" button, if it is a default playlist
+  if (!playlist.is_custom) document.getElementById('changePlaylistName').classList.add('forceHidden');
+  
+  // fill the video list in the dialog
+  const videoList = document.getElementById('videoList');
+  for (const video of playlist.items) {
+    const listEntry = `
         <li class="videoListEntry" data-video-id="${video.id}">
           <div class="videoListEntry_NameRow">
             <span class="videoListEntry_id col-auto">${video.id}</span>
             <span class="videoListEntry_name col">${video.title}</span>
-            <span class="videoListEntry_delete col-auto" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
+            <span class="videoListEntry_delete col-auto unselectable" unselectable data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
           </div>
         </li>
       `.parseHTML();
-      videoList.appendChild(listEntry);
-    }
-    
-    // mount resize handler which keeps the list 
-    const resizer = function() {
-      const editPlaylistDialog = document.getElementById('editPlaylistDialog');
-      const style = window.getComputedStyle(editPlaylistDialog);
-      editPlaylistDialog.clientLeft = 100;
-      editPlaylistDialog.style.left = `calc(50% - ${style.width}/2)`;
-      editPlaylistDialog.style.top = `calc(50% - ${style.height}/2)`;
-    };
-    // limit execution of the resizer to once per 50ms for the scroll handler
-    const lazyzResizer = function() { debounce(resizer, 50); };
-    window.addEventListener('resize', lazyzResizer);
-    
-    // calculate initial left and top once
-    resizer();
-    
-    // mount handler for the "change playlist name" button
-    document.getElementById('changePlaylistName').addEventListener('click', function() {
-      const input = document.getElementById('playlistName');
-      if (input.hasAttribute('readonly')) {
-        input.removeAttribute('readonly');
-        input.style.cursor = 'auto';
-        input.style.backgroundColor = 'revert';
-        input.style.textOverflow = 'unset';
-      } else {
-        input.setAttribute('readonly', 'readonly');
-        input.style.cursor = 'default';
-        input.style.backgroundColor = 'inherit';
-        input.style.textOverflow = 'ellipsis';
-      }
-    });
-    
-    // mount all handler for removing a single video from the playlist
-    for (const entry of document.getElementsByClassName('videoListEntry_delete')) {
-      entry.addEventListener('click', function() {
-        // find the correct element
-        let targetEntry;
-        for (const videoListEntry of document.getElementsByClassName('videoListEntry')) {
-          if (videoListEntry.getAttribute('data-video-id') === this.getAttribute('data-video-id')) {
-            targetEntry = videoListEntry;
-            break;
-          }
-        }
-        // remove element
-        if (targetEntry) targetEntry.remove();
-      });
-    }
-    
-    // mount handler for "confirm" button in the dialog
-    document.getElementById('playlistDialogConfirmBtn').addEventListener('click', function() {
-      const playlistId = parseInt(this.getAttribute('data-playlist-id'));
-      const playlist = getPlaylistObjectById(playlistId);
+    videoList.appendChild(listEntry);
+  }
+  
+  // hide the list if empty and display notification instead
+  if (!playlist.items.length) {
+    videoList.classList.add('forceHidden');
+    const info = `<div id="noVideosInfo">Keine Videos in der Playlist</div>`.parseHTML();
+    addToDOM(info, videoList, InsertionService.After, false);
+  }
+  
+  // mount resize handler which keeps the dialog in the center of the viewport
+  const resizer = function() {
+    const editPlaylistDialog = document.getElementById('editPlaylistDialog');
+    const style = window.getComputedStyle(editPlaylistDialog);
+    editPlaylistDialog.clientLeft = 100;
+    editPlaylistDialog.style.left = `calc(50% - ${style.width}/2)`;
+    editPlaylistDialog.style.top = `calc(50% - ${style.height}/2)`;
+  };
+  // limit execution of the resizer to once per 50ms for the scroll handler
+  const lazyResizer = function() { debounce(resizer, 50); };
+  window.addEventListener('resize', lazyResizer);
 
-      // store new name
-      const newName = document.getElementById('playlistName').innerText;
-      if (newName.length > 0) playlist.name = newName;
-      
-      // create new list with video items    // FIXME deletes all elements!! 
-      let newVideoItems = [];
-      for (const listedEntry of document.getElementById('videoList').children) {
-        const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
-        // transfer all storedEntries to the new item list, if they are still in the element list
-        for (const storedEntry of playlist.items) {
-          if (storedEntry.id === listedEntryId) {
-            newVideoItems.push(storedEntry);
-            break;
-          }
-        }
-      }
-      playlist.item_cnt = newVideoItems.length;
-      playlist.items = newVideoItems;
-      set_value('playlistData', playlistData);
-      window.removeEventListener('resize', lazyzResizer);
-      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
-    });    
-    
-    // mount handler for the "cancel" button in the dialog
-    document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
-      window.removeEventListener('resize', lazyzResizer);
-      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
-    });
+  // calculate initial left and top once
+  resizer();
 
-    // mount handler to close the dialog when clicking the middle layer
-    document.getElementById('playlistDialog_middleLayer').addEventListener('click', function(ev) {
-      window.removeEventListener('resize', lazyzResizer);
-      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
-      ev.preventDefault();
-      ev.stopImmediatePropagation();
-    });
+  // mount handler for the "change playlist name" button
+  document.getElementById('changePlaylistName').addEventListener('click', function() {
+    const input = document.getElementById('playlistName');
+    if (input.hasAttribute('readonly')) {
+      // start edit mode
+      input.removeAttribute('readonly');
+      input.style.cursor = 'auto';
+      input.style.backgroundColor = 'revert';
+      input.style.textOverflow = 'unset';
+      input.scrollLeft = 0;
+      input.focus();
+      input.select();
+    } else {
+      // end edit mode
+      input.setAttribute('readonly', 'readonly');
+      input.style.cursor = 'default';
+      input.style.backgroundColor = 'inherit';
+      input.style.textOverflow = 'ellipsis';
+      input.scrollLeft = 0;
+      // unlock the confirm button
+      document.getElementById('playlistDialogConfirmBtn').classList.remove('disabled');
+    }
+  });
+
+  // mount handler which ends the edit mode for the playlist name when hitting enter
+  document.getElementById('playlistName').addEventListener('keypress', function(ev) {
+    // do only if we are in edit mode
+    if (this.hasAttribute('readonly')) return;
+    if (!ev) ev = window.event;
+    let keyCode = ev.code || ev.key;
+    if (keyCode === 'Enter' || keyCode === 'NumpadEnter') {
+      this.setAttribute('readonly', 'readonly');
+      this.style.cursor = 'default';
+      this.style.backgroundColor = 'inherit';
+      this.style.textOverflow = 'ellipsis';
+      this.scrollLeft = 0;
+      // unlock the confirm button
+      document.getElementById('playlistDialogConfirmBtn').classList.remove('disabled');
+    }
   });
   
-  document.getElementById('deletePlaylist').addEventListener('click', function() {
-    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-    playlistData.deleteByValue(playlist);
+  // mount all handler for removing a single video from the playlist
+  for (const entry of document.getElementsByClassName('videoListEntry_delete')) {
+    entry.addEventListener('click', function() {
+      // find the correct element
+      let targetEntry;
+      for (const videoListEntry of document.getElementsByClassName('videoListEntry')) {
+        if (videoListEntry.getAttribute('data-video-id') === this.getAttribute('data-video-id')) {
+          targetEntry = videoListEntry;
+          break;
+        }
+      }
+      // remove element and unlock the confirm button
+      if (targetEntry) {
+        // hide list if this was the last item
+        if (targetEntry.parentElement.childElementCount === 1) {
+          videoList.classList.add('forceHidden');
+          const info = `<div id="noVideosInfo">Keine Videos in der Playlist</div>`.parseHTML();
+          addToDOM(info, videoList, InsertionService.After, false);
+        }
+        targetEntry.remove();
+        document.getElementById('playlistDialogConfirmBtn').classList.remove('disabled');
+      }
+    });
+  }
+
+  // mount handler for "confirm" button in the dialog
+  document.getElementById('playlistDialogConfirmBtn').addEventListener('click', function() {
+    const playlistId = parseInt(this.getAttribute('data-playlist-id'));
+    const playlist = getPlaylistObjectById(playlistId);
+
+    // store new name (except its a default playlist)
+    let newName;
+    if (!playlist.is_custom) {
+      newName = document.getElementById('playlistName').value;
+      if (newName.length > 0) playlist.name = newName;
+    }
+
+    // create new list with video items    // FIXME deletes all elements!! 
+    let newVideoItems = [];
+    for (const listedEntry of document.getElementById('videoList').children) {
+      const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
+      // transfer all storedEntries to the new item list, if they are still in the element list
+      for (const storedEntry of playlist.items) {
+        if (storedEntry.id === listedEntryId) {
+          newVideoItems.push(storedEntry);
+          break;
+        }
+      }
+    }
+    playlist.item_cnt = newVideoItems.length;
+    playlist.items = newVideoItems;
     set_value('playlistData', playlistData);
-    updatePage();
+    window.removeEventListener('resize', lazyResizer);
+    removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+  });
+
+  // mount handler for the "cancel" button in the dialog
+  document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
+    window.removeEventListener('resize', lazyResizer);
+    removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+  });
+
+  // mount handler to close the dialog when clicking the middle layer
+  document.getElementById('playlistDialog_middleLayer').addEventListener('click', function(ev) {
+    window.removeEventListener('resize', lazyResizer);
+    removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
   });
 }
 
@@ -1252,7 +1336,7 @@ function doClickedPagination(ev, clickedBtn) {
  * @param {HTMLInputElement} input  - The input which fired the event
  */
 function doAddUserToFilterList(input) {
-  let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span></span></span>`.parseHTML();
+  let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span title="${t('Entfernen')}"></span></span>`.parseHTML();
   const filterOnlyUser = commentFilters.get('filterOnlyUser');
   userElement = addToDOM(userElement, document.getElementById('filteredUserList'), InsertionService.AsLastChild, false);
   
@@ -1266,7 +1350,7 @@ function doAddUserToFilterList(input) {
   }
   
   // show revert button
-  document.getElementById('revertFilterUserInput').classList.remove('hiforceHiddendden');
+  document.getElementById('revertFilterUserInput').classList.remove('forceHidden');
   
   // mount event handler for removing this user from the filter list again
   userElement.lastElementChild.addEventListener('click', function() {
@@ -1533,6 +1617,14 @@ function updatePage() {
   updatePaginationUI();
   updateStaticTranslations();
   addPlaylistContainer();
+
+  // process translation edge cases (elements which are basically dynamic, but not reset on update)
+  for (const element of document.getElementsByClassName('selectedUserFilter')) {
+    element.lastElementChild.setAttribute('title', t('Entfernen'));
+  }
+  for (const element of document.getElementsByClassName('revertBtn')) {
+    element.setAttribute('title', t('Filter zurücksetzen'));
+  }
 }
 
 

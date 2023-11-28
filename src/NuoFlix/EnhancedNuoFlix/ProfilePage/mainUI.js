@@ -27,7 +27,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
         <div class="row">
           <label class="row col-2" for="filterByText" style="display: flex; flex-wrap: nowrap;">
               <span id="searchInputLabel"></span>
-              <span id="revertFilterTextInput" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+              <span id="revertFilterTextInput" class="forceHidden clickable revertBtn" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                 <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                   <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                   <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -55,7 +55,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
             <li class="row" style="margin-top: 1rem;">
               <label class="row col-5" for="filterByUser" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByUserLabel"></span>
-                <span id="revertFilterUserInput" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertFilterUserInput" class="forceHidden clickable revertBtn" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -70,7 +70,7 @@ let enhancedUiContainer = `<div id="enhancedUi" class="container-fluid">
             <li class="row">
               <label class="row col-5" for="filterByDateFrom" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByDateLabel"></span>
-                <span id="revertDateRangeInputs" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertDateRangeInputs" class="forceHidden clickable revertBtn" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>

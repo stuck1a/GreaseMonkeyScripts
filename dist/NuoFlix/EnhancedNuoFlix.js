@@ -38,8 +38,12 @@
  const defaultPlaylists = [
   { id: 1, is_custom: false, max_items: -1, name: 'Favoriten', item_cnt: 0, items: [], },
   { id: 2, is_custom: false, max_items: -1, name: 'Für später gespeichert', item_cnt: 0, items: [], },
-  { id: 3, is_custom: false, max_items: -1, name: 'Zuletzt angesehene Videos', item_cnt: 0, items: [], },
+  { id: 3, is_custom: false, max_items: 3, name: 'Zuletzt angesehene Videos', item_cnt: 0, items: [], },
 ];
+// IDs of Playlists with special functions
+ const favoritesID = 1;
+ const watchLaterID = 2;
+ const lastWatchedID = 3;
 // Map execution flows to pages
  const pageRoutes = new Map([
   [ '/',        'start'   ],
@@ -269,6 +273,10 @@
 'Abbrechen',
 'Cancel',
 ],
+[
+'Filter zurücksetzen',
+'Reset filter',
+],
     ])
   ],
   [
@@ -484,6 +492,10 @@
 [
 'Abbrechen',
 'Otmena',
+],
+[
+'Filter zurücksetzen',
+'sbrosit\' fil\'tr',
 ],
     ])
   ],
@@ -921,25 +933,49 @@ function iFrameReady(iframe, fn) {
 }
 function getPlaylistObjectById(playlistId) {
   if (!playlistData) return null;
+  if (typeof playlistId === 'string') playlistId = parseInt(playlistId);
   for (const playlist of playlistData) {
-    if (playlist.id == playlistId) return playlist;
+    if (typeof playlist.id === 'string') playlist.id = parseInt(playlist.id);
+    if (playlist.id === playlistId) return playlist;
   }
   return null;
 }
-function addVideoToPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
+function addVideoToPlaylist(videoObject, playlist) {
+  if (typeof playlist === 'number' || typeof playlist === 'string') playlist = getPlaylistObjectById(playlist);
+  if (!(playlist) || typeof videoObject !== 'object') return;
+  const oldId = isVideoInPlaylist(videoObject.id, playlist);
+  if (oldId !== false) playlist.items.deleteByIndex(oldId);
   playlist.items.push(videoObject);
-  playlist.item_cnt = 1 + playlist.item_cnt;
+  if (playlist.max_items !== -1 && playlist.items.length > playlist.max_items) playlist.items.shift();
+  playlist.item_cnt = playlist.items.length;
   set_value('playlistData', playlistData);
 }
-function removeVideoFromPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
-  playlist.items.deleteByValue(videoObject);
-  playlist.item_cnt = 1 - playlist.item_cnt;
+function removeVideoFromPlaylist(video, playlist) {
+  if (typeof video === 'object') video = video.id;
+  if (typeof video === 'string') video = parseInt(video);
+  if (typeof playlist !== 'object') playlist = getPlaylistObjectById(playlist);
+  if (!(playlist) || !(video)) return;
+  let index;
+  for (let i = 0; i < playlist.items.length; i++) {
+    if (parseInt(playlist.items[i].id) === video) {
+      index = i;
+      break;
+    }
+  }
+  playlist.items.deleteByIndex(index);
+  playlist.item_cnt = playlist.items.length;
   set_value('playlistData', playlistData);
-}
+}
+function isVideoInPlaylist(video, playlist) {
+  if (typeof video === 'object') video = video.id;
+  if (typeof video === 'string') video = parseInt(video);
+  if (typeof playlist !== 'object') playlist = getPlaylistObjectById(playlist);
+  if (!(playlist) || !(video)) return false;
+  for (let i = 0; i < playlist.items.length; i++) {
+    if (parseInt(playlist.items[i].id) === video) return i;
+  }
+  return false;
+}
 function DEBUG_setSomeFakeData(commentData) {
   commentData[0].hasNewReplies = true;
   commentData[0].reply_cnt = 7;
@@ -1405,7 +1441,7 @@ function execute_startPage() {
         <div class="row">
           <label class="row col-2" for="filterByText" style="display: flex; flex-wrap: nowrap;">
               <span id="searchInputLabel"></span>
-              <span id="revertFilterTextInput" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+              <span id="revertFilterTextInput" class="forceHidden clickable revertBtn" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                 <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                   <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                   <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1433,7 +1469,7 @@ function execute_startPage() {
             <li class="row" style="margin-top: 1rem;">
               <label class="row col-5" for="filterByUser" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByUserLabel"></span>
-                <span id="revertFilterUserInput" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertFilterUserInput" class="forceHidden clickable revertBtn" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1448,7 +1484,7 @@ function execute_startPage() {
             <li class="row">
               <label class="row col-5" for="filterByDateFrom" style="display: flex; flex-wrap: nowrap;">
                 <span id="searchByDateLabel"></span>
-                <span id="revertDateRangeInputs" class="forceHidden clickable" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
+                <span id="revertDateRangeInputs" class="forceHidden clickable revertBtn" style="width: 1.3rem;height: 1.3rem;position: relative;right: 2.5rem;">
                   <svg class="svgColorized spinLeftOnHover stretchToParent" style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 867 1000">
                     <path class="svgColoredStroke" fill="none" stroke="black" stroke-width="130" d="M66,566c0,198,165,369,362,369,186,0,372-146,372-369,0-205-161-366-372-366"/>
                     <path class="svgColoredFill" fill="black" d="M 146,200 L 492,0 L 492,400 L 146,200"/>
@@ -1626,10 +1662,8 @@ function execute_profilePage() {
   user-select: none;
 }
 .selectedUserFilter :last-child:after {
+  content: "\\2718";
   color: #f00;
-  content: var(--svg-unchecked);
-  vertical-align: middle;
-  display: inline-flex;
 }
 .selectedUserFilter :last-child:hover {
   cursor: pointer;
@@ -1673,6 +1707,19 @@ function execute_profilePage() {
 }
 div:not(:last-child) > .playlistButton {
   margin-right: 1rem;
+}
+#watchPlaylist_Overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 999999;
+}
+#watchPlaylist_iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   addToDOM(style_comments, document.body, InsertionService.AsLastChild, false);
   enhancedUiContainer = addToDOM(enhancedUiContainer, document.getElementsByClassName('wrapper')[1], InsertionService.AsFirstChild, true, 'enhancedUiContainer');
@@ -1719,7 +1766,7 @@ div:not(:last-child) > .playlistButton {
     'customCommentContainer'
   );
   addUserFilterAutocompletionList();
-  document.getElementById('filterByUser').onkeypress = function(ev) {
+  document.getElementById('filterByUser').addEventListener('keypress', function(ev) {
     if (!ev) ev = window.event;
     let keyCode = ev.code || ev.key;
     if (keyCode === 'Enter' || keyCode === 'NumpadEnter') {
@@ -1739,9 +1786,9 @@ div:not(:last-child) > .playlistButton {
         }
       }
     }
-  };
+  });
   let textFilterDelayActive = false;
-  document.getElementById('filterByText').oninput = function() {
+  document.getElementById('filterByText').addEventListener('input', function() {
     const revertFilterTextInput = document.getElementById('revertFilterTextInput');
     let textFilter = commentFilters.get('filterTextSearch');
     if (this.value) {
@@ -1760,13 +1807,13 @@ div:not(:last-child) > .playlistButton {
         updatePage();
       }.bind(this), 150);
     }
-  };
-  document.getElementById('filterByDateFrom').oninput = function() {
+  });
+  document.getElementById('filterByDateFrom').addEventListener('input', function() {
     doUpdateDateFilter(this, document.getElementById('filterByDateTo'));
-  };
-  document.getElementById('filterByDateTo').oninput = function() {
+  });
+  document.getElementById('filterByDateTo').addEventListener('input', function() {
     doUpdateDateFilter(document.getElementById('filterByDateFrom'), this);
-  };
+  });
   document.getElementById('filterAllWords').addEventListener('change', function() {
     if (document.getElementById('filterByText').textLength > 0) updatePage();
   });
@@ -1853,6 +1900,7 @@ div:not(:last-child) > .playlistButton {
   });
   updatePage();
   insertLanguageDropdown();
+  initializePlaylistButtons();
   document.getElementById('pageLengthSelect').addEventListener('change', doChangeLength);
   document.getElementById('pageLengthSelectBottom').addEventListener('change', doChangeLength);
 }
@@ -2235,12 +2283,12 @@ function addPlaylistContainer() {
       playlist.item_cnt > 0
         ? document.getElementById('startPlaylist').classList.remove('disabled')
         : document.getElementById('startPlaylist').classList.add('disabled');
-      if (playlist.is_custom) {
-        document.getElementById('deletePlaylist').classList.remove('disabled');
+      if (playlist.is_custom || playlist.id === 2) {
         document.getElementById('editPlaylist').classList.remove('disabled');
+        if (playlist.id !== 2) document.getElementById('deletePlaylist').classList.remove('disabled');
       } else {
-        document.getElementById('deletePlaylist').classList.add('disabled');
         document.getElementById('editPlaylist').classList.add('disabled');
+        document.getElementById('deletePlaylist').classList.add('disabled');
       }
     }
   });
@@ -2249,7 +2297,8 @@ function addPlaylistContainer() {
   for (const listData of playlistData) {
     addToDOM(buildPlaylistItem(listData), (listData.is_custom ? customContainer : defaultContainer), InsertionService.AsLastChild, false);
   }
-  /* button functions  */
+}
+function initializePlaylistButtons() {
   document.getElementById('createPlaylist').addEventListener('click', function() {
     const name = prompt('Name der neuen Playlist:', '');
     if (!name) return;
@@ -2262,20 +2311,37 @@ function addPlaylistContainer() {
       items: [],
     };
     playlistData.push(playlistObj);
+    const customContainer = document.getElementById('optgroup_customPlaylists')
     addToDOM(buildPlaylistItem(playlistObj), customContainer, InsertionService.AsLastChild, false);
     set_value('playlistData', playlistData);
   });
   document.getElementById('startPlaylist').addEventListener('click', function() {
+    openWatchPlaylistFrame();
+  });
+  document.getElementById('editPlaylist').addEventListener('click', function() {
+    addEditPlaylistDialog();
+  });
+  document.getElementById('deletePlaylist').addEventListener('click', function() {
     const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-    const videoUrl = window.location.origin + playlist.items[0].url;
-    const overlay = `<div id="watchPlaylist_Overlay" style="position: fixed;top: 0;left: 0;height: 100%; width: 100%;z-index: 999999;"></div>`.parseHTML(false).firstElementChild;
-    const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}" style="border: 0;height: 100%;width: 100%;"></iframe>`.parseHTML(false).firstElementChild;
-    overlay.appendChild(iframe);
-    addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
-    iFrameReady(iframe, function() {
-      const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
-      let playlistRow = `
-        <div id="playlistRow" class="row">
+    if (playlist.is_custom) {
+      playlistData.deleteByValue(playlist);
+      set_value('playlistData', playlistData);
+    }
+    updatePage();
+  });
+}
+function openWatchPlaylistFrame() {
+  const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+  if (!playlist.items[playlist.items.length - 1]) return;   
+  const videoUrl = window.location.origin + playlist.items[playlist.items.length - 1].url;
+  const overlay = `<div id="watchPlaylist_Overlay"></div>`.parseHTML(false).firstElementChild;
+  const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}"></iframe>`.parseHTML(false).firstElementChild;
+  overlay.appendChild(iframe);
+  addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
+  iFrameReady(iframe, function() {
+    const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
+    let playlistRow = `
+        <div id="playlistRow" class="row" data-playlist-id="${playlist.id}">
           <div id="loadPreviousVideo"><- vorheriges Video</div>
           <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
           <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
@@ -2283,33 +2349,38 @@ function addPlaylistContainer() {
           <div id="loadNextVideo">nächstes Video -></div>
         </div>
       `;
-      let backToProfileButton = `
+    let backToProfileButton = `
         <div>
           <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
         </div>
       `;
-      playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
-      backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
-      const realUrl = window.location.toString();
-      window.history.replaceState(null,'', videoUrl);
-      backToProfileButton.addEventListener('click', function() {
-        removeFromDOM(overlay);
-        window.history.replaceState(null, '', realUrl);
-      });
+    playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
+    backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+    const realUrl = window.location.toString();
+    window.history.replaceState(null,'', videoUrl);
+    backToProfileButton.addEventListener('click', function() {
+      removeFromDOM(overlay);
+      window.history.replaceState(null, '', realUrl);
+      updatePage();
     });
   });
-  document.getElementById('editPlaylist').addEventListener('click', function() {
-    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+}
+function addEditPlaylistDialog() {
+  const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
  const editPlaylistDialog = `
   <div id="playlistDialog_middleLayer"></div>
   <div id="editPlaylistDialog">
     <div id="playlistNameWrapper" class="row">
-      <input id="playlistName" class="col" type="text" maxlength="100" value="${playlist.name}" readonly="readonly" />
-      <span id="changePlaylistName" class="col-auto" data-playlist-id="${playlist.id}">EDIT</span>
+      <input id="playlistName" class="col" type="text" maxlength="100" value="${playlist.name}" readonly="readonly">
+      <span id="changePlaylistName" class="col-auto" data-playlist-id="${playlist.id}">
+        <svg xmlns="http://www.w3.org/2000/svg" height="1rem" width="1rem" class="svgColorized" viewBox="0 0 512 512">
+          <path class="svgColoredFill" d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"/>
+        </svg>
+      </span>
     </div>   
     <ul id="videoList"></ul>
     <div id="playlistDialogButtons" class="row">
-      <a id="playlistDialogConfirmBtn" class="btn btn-small col-auto" data-playlist-id="${playlist.id}">${t('Bestätigen')}</a>
+      <a id="playlistDialogConfirmBtn" class="btn btn-small col-auto disabled" data-playlist-id="${playlist.id}">${t('Bestätigen')}</a>
       <a id="playlistDialogCancelBtn" class="btn btn-small col-auto">${t('Abbrechen')}</a>
     </div>
   </div>
@@ -2324,6 +2395,8 @@ function addPlaylistContainer() {
       background-color: #0008;
     }
     #editPlaylistDialog {
+      display: flex;
+      flex-direction: column;
       position: fixed;
       width: min(max(30%, 14rem), max(80%, 20rem));   /* Target: 20rem, but min 30% (or at least 14rem) and max 80% */
       min-height: 14rem;
@@ -2348,6 +2421,9 @@ function addPlaylistContainer() {
       cursor: default;
       text-overflow: ellipsis;
     }
+    #changePlaylistName:hover .svgColoredFill {
+      filter: brightness(2);
+    }
     #changePlaylistName {
       margin: auto 0 auto 1rem;
       cursor: pointer;
@@ -2361,11 +2437,10 @@ function addPlaylistContainer() {
       border-radius: 5px;
       padding: .3rem;
     }
-    .videoListEntry {
-    }
     .videoListEntry_NameRow {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: nowrap
+      cursor: default;
     }
     .videoListEntry_id {
       padding-right: 2rem;
@@ -2389,96 +2464,128 @@ function addPlaylistContainer() {
     }
     #playlistDialogButtons {
       justify-content: center;
+      margin-block: auto .75rem;
+    }
+    #noVideosInfo {
+      margin-inline: auto;
     }
   </style>
 `.parseHTML();   
-    addToDOM(editPlaylistDialog, document.body, InsertionService.AsLastChild, true, 'editPlaylistDialog');
-    const videoList = document.getElementById('videoList');
-    for (const video of playlist.items) {
-      const listEntry = `
+  addToDOM(editPlaylistDialog, document.body, InsertionService.AsLastChild, true, 'editPlaylistDialog');
+  if (!playlist.is_custom) document.getElementById('changePlaylistName').classList.add('forceHidden');
+  const videoList = document.getElementById('videoList');
+  for (const video of playlist.items) {
+    const listEntry = `
         <li class="videoListEntry" data-video-id="${video.id}">
           <div class="videoListEntry_NameRow">
             <span class="videoListEntry_id col-auto">${video.id}</span>
             <span class="videoListEntry_name col">${video.title}</span>
-            <span class="videoListEntry_delete col-auto" data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
+            <span class="videoListEntry_delete col-auto unselectable" unselectable data-video-id="${video.id}" data-playlist-id="${playlist.id}">&cross;</span>
           </div>
         </li>
       `.parseHTML();
-      videoList.appendChild(listEntry);
+    videoList.appendChild(listEntry);
+  }
+  if (!playlist.items.length) {
+    videoList.classList.add('forceHidden');
+    const info = `<div id="noVideosInfo">Keine Videos in der Playlist</div>`.parseHTML();
+    addToDOM(info, videoList, InsertionService.After, false);
+  }
+  const resizer = function() {
+    const editPlaylistDialog = document.getElementById('editPlaylistDialog');
+    const style = window.getComputedStyle(editPlaylistDialog);
+    editPlaylistDialog.clientLeft = 100;
+    editPlaylistDialog.style.left = `calc(50% - ${style.width}/2)`;
+    editPlaylistDialog.style.top = `calc(50% - ${style.height}/2)`;
+  };
+  const lazyResizer = function() { debounce(resizer, 50); };
+  window.addEventListener('resize', lazyResizer);
+  resizer();
+  document.getElementById('changePlaylistName').addEventListener('click', function() {
+    const input = document.getElementById('playlistName');
+    if (input.hasAttribute('readonly')) {
+      input.removeAttribute('readonly');
+      input.style.cursor = 'auto';
+      input.style.backgroundColor = 'revert';
+      input.style.textOverflow = 'unset';
+      input.scrollLeft = 0;
+      input.focus();
+      input.select();
+    } else {
+      input.setAttribute('readonly', 'readonly');
+      input.style.cursor = 'default';
+      input.style.backgroundColor = 'inherit';
+      input.style.textOverflow = 'ellipsis';
+      input.scrollLeft = 0;
+      document.getElementById('playlistDialogConfirmBtn').classList.remove('disabled');
     }
-    const resizer = function() {
-      const editPlaylistDialog = document.getElementById('editPlaylistDialog');
-      const style = window.getComputedStyle(editPlaylistDialog);
-      editPlaylistDialog.clientLeft = 100;
-      editPlaylistDialog.style.left = `calc(50% - ${style.width}/2)`;
-      editPlaylistDialog.style.top = `calc(50% - ${style.height}/2)`;
-    };
-    const lazyzResizer = function() { debounce(resizer, 50); };
-    window.addEventListener('resize', lazyzResizer);
-    resizer();
-    document.getElementById('changePlaylistName').addEventListener('click', function() {
-      const input = document.getElementById('playlistName');
-      if (input.hasAttribute('readonly')) {
-        input.removeAttribute('readonly');
-        input.style.cursor = 'auto';
-        input.style.backgroundColor = 'revert';
-        input.style.textOverflow = 'unset';
-      } else {
-        input.setAttribute('readonly', 'readonly');
-        input.style.cursor = 'default';
-        input.style.backgroundColor = 'inherit';
-        input.style.textOverflow = 'ellipsis';
-      }
-    });
-    for (const entry of document.getElementsByClassName('videoListEntry_delete')) {
-      entry.addEventListener('click', function() {
-        let targetEntry;
-        for (const videoListEntry of document.getElementsByClassName('videoListEntry')) {
-          if (videoListEntry.getAttribute('data-video-id') === this.getAttribute('data-video-id')) {
-            targetEntry = videoListEntry;
-            break;
-          }
-        }
-        if (targetEntry) targetEntry.remove();
-      });
-    }
-    document.getElementById('playlistDialogConfirmBtn').addEventListener('click', function() {
-      const playlistId = parseInt(this.getAttribute('data-playlist-id'));
-      const playlist = getPlaylistObjectById(playlistId);
-      const newName = document.getElementById('playlistName').innerText;
-      if (newName.length > 0) playlist.name = newName;
-      let newVideoItems = [];
-      for (const listedEntry of document.getElementById('videoList').children) {
-        const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
-        for (const storedEntry of playlist.items) {
-          if (storedEntry.id === listedEntryId) {
-            newVideoItems.push(storedEntry);
-            break;
-          }
-        }
-      }
-      playlist.item_cnt = newVideoItems.length;
-      playlist.items = newVideoItems;
-      set_value('playlistData', playlistData);
-      window.removeEventListener('resize', lazyzResizer);
-      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
-    });    
-    document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
-      window.removeEventListener('resize', lazyzResizer);
-      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
-    });
-    document.getElementById('playlistDialog_middleLayer').addEventListener('click', function(ev) {
-      window.removeEventListener('resize', lazyzResizer);
-      removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
-      ev.preventDefault();
-      ev.stopImmediatePropagation();
-    });
   });
-  document.getElementById('deletePlaylist').addEventListener('click', function() {
-    const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-    playlistData.deleteByValue(playlist);
+  document.getElementById('playlistName').addEventListener('keypress', function(ev) {
+    if (this.hasAttribute('readonly')) return;
+    if (!ev) ev = window.event;
+    let keyCode = ev.code || ev.key;
+    if (keyCode === 'Enter' || keyCode === 'NumpadEnter') {
+      this.setAttribute('readonly', 'readonly');
+      this.style.cursor = 'default';
+      this.style.backgroundColor = 'inherit';
+      this.style.textOverflow = 'ellipsis';
+      this.scrollLeft = 0;
+      document.getElementById('playlistDialogConfirmBtn').classList.remove('disabled');
+    }
+  });
+  for (const entry of document.getElementsByClassName('videoListEntry_delete')) {
+    entry.addEventListener('click', function() {
+      let targetEntry;
+      for (const videoListEntry of document.getElementsByClassName('videoListEntry')) {
+        if (videoListEntry.getAttribute('data-video-id') === this.getAttribute('data-video-id')) {
+          targetEntry = videoListEntry;
+          break;
+        }
+      }
+      if (targetEntry) {
+        if (targetEntry.parentElement.childElementCount === 1) {
+          videoList.classList.add('forceHidden');
+          const info = `<div id="noVideosInfo">Keine Videos in der Playlist</div>`.parseHTML();
+          addToDOM(info, videoList, InsertionService.After, false);
+        }
+        targetEntry.remove();
+        document.getElementById('playlistDialogConfirmBtn').classList.remove('disabled');
+      }
+    });
+  }
+  document.getElementById('playlistDialogConfirmBtn').addEventListener('click', function() {
+    const playlistId = parseInt(this.getAttribute('data-playlist-id'));
+    const playlist = getPlaylistObjectById(playlistId);
+    let newName;
+    if (!playlist.is_custom) {
+      newName = document.getElementById('playlistName').value;
+      if (newName.length > 0) playlist.name = newName;
+    }
+    let newVideoItems = [];
+    for (const listedEntry of document.getElementById('videoList').children) {
+      const listedEntryId = parseInt(listedEntry.getAttribute('data-video-id'));
+      for (const storedEntry of playlist.items) {
+        if (storedEntry.id === listedEntryId) {
+          newVideoItems.push(storedEntry);
+          break;
+        }
+      }
+    }
+    playlist.item_cnt = newVideoItems.length;
+    playlist.items = newVideoItems;
     set_value('playlistData', playlistData);
-    updatePage();
+    window.removeEventListener('resize', lazyResizer);
+    removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+  });
+  document.getElementById('playlistDialogCancelBtn').addEventListener('click', function() {
+    window.removeEventListener('resize', lazyResizer);
+    removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+  });
+  document.getElementById('playlistDialog_middleLayer').addEventListener('click', function(ev) {
+    window.removeEventListener('resize', lazyResizer);
+    removeFromDOM(customElementsRegister.get('editPlaylistDialog'));
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
   });
 }
 function buildPlaylistItem(data) {
@@ -2583,7 +2690,7 @@ function doClickedPagination(ev, clickedBtn) {
   paginationContainer.previousElementSibling.scrollIntoView()
 }
 function doAddUserToFilterList(input) {
-  let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span></span></span>`.parseHTML();
+  let userElement = `<span class="selectedUserFilter"><span>${input.value}</span><span title="${t('Entfernen')}"></span></span>`.parseHTML();
   const filterOnlyUser = commentFilters.get('filterOnlyUser');
   userElement = addToDOM(userElement, document.getElementById('filteredUserList'), InsertionService.AsLastChild, false);
   const availableUsersForFilter = customElementsRegister.get('availableUsersForFilter');
@@ -2593,7 +2700,7 @@ function doAddUserToFilterList(input) {
       break;
     }
   }
-  document.getElementById('revertFilterUserInput').classList.remove('hiforceHiddendden');
+  document.getElementById('revertFilterUserInput').classList.remove('forceHidden');
   userElement.lastElementChild.addEventListener('click', function() {
     const targetUsername = this.previousElementSibling.innerText;
     const datalistEntry = `<option value="${targetUsername}"></option>`.parseHTML();
@@ -2780,6 +2887,12 @@ function updatePage() {
   updatePaginationUI();
   updateStaticTranslations();
   addPlaylistContainer();
+  for (const element of document.getElementsByClassName('selectedUserFilter')) {
+    element.lastElementChild.setAttribute('title', t('Entfernen'));
+  }
+  for (const element of document.getElementsByClassName('revertBtn')) {
+    element.setAttribute('title', t('Filter zurücksetzen'));
+  }
 }
  })();
   } else if (route === 'video') {
@@ -2844,13 +2957,13 @@ function execute_genericPage() {
   favoriteButton.addEventListener('click', function() {
     const obj = getVideoItemObject();
     if (isVideoInFavorites(obj.id)) {
-      removeVideoFromPlaylist(obj, 1);
+      removeVideoFromPlaylist(obj, favoritesID);
       this.classList.remove('isFavorite');
-      console.log('Video wurde von Playlist "Favoriten" entfernt');
+      console.log('Video wurde von Playlist "Favoriten" entfernt');   
     } else {
-      addVideoToPlaylist(obj, 1);
+      addVideoToPlaylist(obj, favoritesID);
       this.classList.add('isFavorite');
-      console.log('Video wurde zur Playlist "Favoriten" hinzugefügt');
+      console.log('Video wurde zur Playlist "Favoriten" hinzugefügt');   
     }
   });
   const opener = function () {
@@ -2858,11 +2971,17 @@ function execute_genericPage() {
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }
   document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
-  const fillHeartIfFavorite = function() {
+  const onReadyTasks = function() {
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');
     if (isVideoInFavorites(parseInt(currentVideoId))) favoriteButton.classList.add('isFavorite');
+    const playlistRow = document.getElementById('playlistRow');
+    if (!playlistRow) {
+      addVideoToPlaylist(getVideoItemObject(), lastWatchedID);
+    } else if (parseInt(playlistRow.getAttribute('data-playlist-id')) === watchLaterID) {
+      removeVideoFromPlaylist(getVideoItemObject(), watchLaterID);
+    }
   };
-  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', fillHeartIfFavorite) : fillHeartIfFavorite();
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', onReadyTasks) : onReadyTasks();
 }
 function replaceSuggestedVideoTiles() {
   let foundSuggestedVideos = false;
@@ -2967,22 +3086,15 @@ function addAdditionalVideoButtons() {
   addToDOM(addToPlaylistButton, favoriteButton, InsertionService.Before);
 }
 function isVideoInFavorites(videoId) {
-  return isVideoInPlaylist(videoId, 1);
+  return isVideoInPlaylist(videoId, favoritesID) !== false;
 }
-function isVideoInPlaylist(videoId, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return false;
-  for (const video of playlist.items) {
-    if (video.id == videoId) return true;
-  }
-  return false;
-}
-function getPlaylistsContainingVideo(videoId) {
-  if (!playlistData) return [];
+function getPlaylistsContainingVideo(video) {
+  if (typeof video === 'object') video = video.id;
+  if (!(playlistData) || typeof video !== 'number') return [];
   let matches = []
   outer: for (const playlist of playlistData) {
-    for (const video of playlist.items) {
-      if (video.id == videoId) {
+    for (const member of playlist.items) {
+      if (member.id === video) {
         matches.push();
         continue outer;
       }
@@ -3020,7 +3132,7 @@ function openAddToPlaylistMenu(refElement) {
     if (playlist.id === 1 || playlist.id === 3) continue;
     const entry = `
       <div class="checkboxListItemWrapper">
-        <input id="checkboxListItem-${playlist.id}" class="checkboxListItem" type="checkbox" ${isVideoInPlaylist(videoObj.id, playlist.id) ? 'checked="checked" ' : ''} data-playlist-id="${playlist.id}">
+        <input id="checkboxListItem-${playlist.id}" class="checkboxListItem" type="checkbox" ${isVideoInPlaylist(videoObj.id, playlist.id) !== false ? 'checked="checked" ' : ''} data-playlist-id="${playlist.id}">
         <label for="checkboxListItem-${playlist.id}" class="playlistItem">
           <span>${playlist.is_custom ? playlist.name : t(playlist.name)}</span>
           <span>${playlist.item_cnt}</span>

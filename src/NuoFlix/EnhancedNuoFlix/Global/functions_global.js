@@ -419,14 +419,16 @@ function iFrameReady(iframe, fn) {
  *
  * @requires playlistData
  *
- * @param {number} playlistId  - Target playlist id
+ * @param {(string|number)} playlistId  - Target playlist id
  *
  * @return {?object}  - Playlist object or null, if playlist is not found
  */
 function getPlaylistObjectById(playlistId) {
   if (!playlistData) return null;
+  if (typeof playlistId === 'string') playlistId = parseInt(playlistId);
   for (const playlist of playlistData) {
-    if (playlist.id == playlistId) return playlist;
+    if (typeof playlist.id === 'string') playlist.id = parseInt(playlist.id);
+    if (playlist.id === playlistId) return playlist;
   }
   return null;
 }
@@ -438,41 +440,72 @@ function getPlaylistObjectById(playlistId) {
  *
  * @requires playlistData
  *
- * @param {Object} videoObject  - Video object to add
- * @param {number} playlistId  - Target playlist id
+ * @param {(Object|number)} videoObject  - Video object to add
+ * @param {(Object|number)} playlist  - Target playlist id or object
  */
-function addVideoToPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
+function addVideoToPlaylist(videoObject, playlist) {
+  if (typeof playlist === 'number' || typeof playlist === 'string') playlist = getPlaylistObjectById(playlist);
+  if (!(playlist) || typeof videoObject !== 'object') return;
+  // if the video is already in the playlist (might occur in "last watched" or if something went wrong) then remove the odl entry
+  const oldId = isVideoInPlaylist(videoObject.id, playlist);
+  if (oldId !== false) playlist.items.deleteByIndex(oldId);
+  // add the target video
   playlist.items.push(videoObject);
-  playlist.item_cnt = 1 + playlist.item_cnt;
+  // remove the oldest video from the list if playlist is full
+  if (playlist.max_items !== -1 && playlist.items.length > playlist.max_items) playlist.items.shift();
+  // update item count
+  playlist.item_cnt = playlist.items.length;
+  // update stored list
   set_value('playlistData', playlistData);
 }
 
 
 
 /**
- * Removes the given video object to the target playlist and update the stored playlistData.
+ * Removes the given video to the target playlist and update the stored playlistData.
  *
  * @requires playlistData
  *
- * @param {Object} videoObject  - Video object to add
- * @param {number} playlistId  - Target playlist id
+ * @param {(Object|number)} video  - Target video id or video object
+ * @param {(Object|number)} playlist  - Target playlist id or playlist object
  */
-function removeVideoFromPlaylist(videoObject, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return;
-  
-  playlist.items.deleteByValue(videoObject);
-  
-  //const oldItemList = Array.from(playlist.items);
-  //let newItemList = [];
-  //for (const item of oldItemList) {
-  //  if (item.id != videoObject.id) newItemList.push(item);
-  //}
-  //playlist.items = newItemList;
-  
-  
-  playlist.item_cnt = 1 - playlist.item_cnt;
+function removeVideoFromPlaylist(video, playlist) {
+  if (typeof video === 'object') video = video.id;
+  if (typeof video === 'string') video = parseInt(video);
+  if (typeof playlist !== 'object') playlist = getPlaylistObjectById(playlist);
+  if (!(playlist) || !(video)) return;
+  let index;
+  for (let i = 0; i < playlist.items.length; i++) {
+    if (parseInt(playlist.items[i].id) === video) {
+      index = i;
+      break;
+    }
+  }
+  playlist.items.deleteByIndex(index);
+  playlist.item_cnt = playlist.items.length;
   set_value('playlistData', playlistData);
 }
+
+
+
+/**
+ * Searches the playlist for the given video.
+ *
+ * @requires playlistData
+ *
+ * @param {(Object|number)} video  - Target video id or video object
+ * @param {(Object|number)} playlist  - Target playlist id or playlist object
+ *
+ * @return {false|number}  - Index of the video entry, if video is already stored in the playlist, false otherwise
+ */
+function isVideoInPlaylist(video, playlist) {
+  if (typeof video === 'object') video = video.id;
+  if (typeof video === 'string') video = parseInt(video);
+  if (typeof playlist !== 'object') playlist = getPlaylistObjectById(playlist);
+  if (!(playlist) || !(video)) return false;
+  for (let i = 0; i < playlist.items.length; i++) {
+    if (parseInt(playlist.items[i].id) === video) return i;
+  }
+  return false;
+}
+

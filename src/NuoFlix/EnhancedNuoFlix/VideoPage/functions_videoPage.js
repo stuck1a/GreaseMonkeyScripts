@@ -37,17 +37,16 @@ function execute_genericPage() {
   const favoriteButton = document.getElementById('favoriteIcon');
   
   // mount handler for button "add to favorites"
-  
   favoriteButton.addEventListener('click', function() {
     const obj = getVideoItemObject();
     if (isVideoInFavorites(obj.id)) {
-      removeVideoFromPlaylist(obj, 1);
+      removeVideoFromPlaylist(obj, favoritesID);
       this.classList.remove('isFavorite');
-      console.log('Video wurde von Playlist "Favoriten" entfernt');
+      console.log('Video wurde von Playlist "Favoriten" entfernt');    // TODO: Replace with notification message
     } else {
-      addVideoToPlaylist(obj, 1);
+      addVideoToPlaylist(obj, favoritesID);
       this.classList.add('isFavorite');
-      console.log('Video wurde zur Playlist "Favoriten" hinzugefügt');
+      console.log('Video wurde zur Playlist "Favoriten" hinzugefügt');    // TODO: Replace with notification message
     }
   });
   
@@ -58,12 +57,25 @@ function execute_genericPage() {
   }
   document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
 
-  // check if document is ready here to fetch the video id - if not wait until the DOM is loaded
-  const fillHeartIfFavorite = function() {
+  
+  // some tasks require the DOM content to be loaded, so wait for it from this point
+  const onReadyTasks = function() {
+    // fetch video id
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');
+    // fill heart icon, if video is already in playlist "favorites"
     if (isVideoInFavorites(parseInt(currentVideoId))) favoriteButton.classList.add('isFavorite');
+    
+    // if this video page is not for watching a playlist in the iframe pseudo page...
+    const playlistRow = document.getElementById('playlistRow');
+    if (!playlistRow) {
+      // add the video to the playlist "last watched" (if it is already in the list, addVideoToPlaylist will also remove the old entry)
+      addVideoToPlaylist(getVideoItemObject(), lastWatchedID);
+    } else if (parseInt(playlistRow.getAttribute('data-playlist-id')) === watchLaterID) {
+      // if we are watching the playlist "watch later", then remove the video from the list now
+      removeVideoFromPlaylist(getVideoItemObject(), watchLaterID);
+    }
   };
-  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', fillHeartIfFavorite) : fillHeartIfFavorite();
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', onReadyTasks) : onReadyTasks();
   
 }
 
@@ -230,28 +242,7 @@ function addAdditionalVideoButtons() {
  * @return {boolean}  - True, if the video ID is found in item list of playlist "Favorites", false otherwise
  */
 function isVideoInFavorites(videoId) {
-  return isVideoInPlaylist(videoId, 1);
-}
-
-
-
-/**
- * Searches the playlist with the given id for a video with the target id.
- * 
- * @requires playlistData
- * 
- * @param {number} videoId  - Target video id
- * @param {number} playlistId  - Target playlist id
- * 
- * @return {boolean}  - True, if playlist contains the video, false otherwise
- */
-function isVideoInPlaylist(videoId, playlistId) {
-  let playlist = getPlaylistObjectById(playlistId);
-  if (!playlist) return false;
-  for (const video of playlist.items) {
-    if (video.id == videoId) return true;
-  }
-  return false;
+  return isVideoInPlaylist(videoId, favoritesID) !== false;
 }
 
 
@@ -261,16 +252,17 @@ function isVideoInPlaylist(videoId, playlistId) {
  * 
  * @requires playlistData
  * 
- * @param {number} videoId  - Target video id
+ * @param {(Object|number)} video  - Target video id or object
  * 
  * @return {number[]}  - Array of playlist IDs where the video is listed
  */
-function getPlaylistsContainingVideo(videoId) {
-  if (!playlistData) return [];
+function getPlaylistsContainingVideo(video) {
+  if (typeof video === 'object') video = video.id;
+  if (!(playlistData) || typeof video !== 'number') return [];
   let matches = []
   outer: for (const playlist of playlistData) {
-    for (const video of playlist.items) {
-      if (video.id == videoId) {
+    for (const member of playlist.items) {
+      if (member.id === video) {
         matches.push();
         continue outer;
       }
@@ -335,7 +327,7 @@ function openAddToPlaylistMenu(refElement) {
     if (playlist.id === 1 || playlist.id === 3) continue;
     const entry = `
       <div class="checkboxListItemWrapper">
-        <input id="checkboxListItem-${playlist.id}" class="checkboxListItem" type="checkbox" ${isVideoInPlaylist(videoObj.id, playlist.id) ? 'checked="checked" ' : ''} data-playlist-id="${playlist.id}">
+        <input id="checkboxListItem-${playlist.id}" class="checkboxListItem" type="checkbox" ${isVideoInPlaylist(videoObj.id, playlist.id) !== false ? 'checked="checked" ' : ''} data-playlist-id="${playlist.id}">
         <label for="checkboxListItem-${playlist.id}" class="playlistItem">
           <span>${playlist.is_custom ? playlist.name : t(playlist.name)}</span>
           <span>${playlist.item_cnt}</span>

@@ -144,10 +144,8 @@
   user-select: none;
 }
 .selectedUserFilter :last-child:after {
+  content: "\\2718";
   color: #f00;
-  content: var(--svg-unchecked);
-  vertical-align: middle;
-  display: inline-flex;
 }
 .selectedUserFilter :last-child:hover {
   cursor: pointer;
@@ -199,4 +197,19 @@
 
 div:not(:last-child) > .playlistButton {
   margin-right: 1rem;
+}
+
+#watchPlaylist_Overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 999999;
+}
+
+#watchPlaylist_iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
 }

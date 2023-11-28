@@ -292,12 +292,20 @@
 'Udalit\'',
 ],
 
+
 [
 'Bestätigen',
 'Podtverzhdat\'',
 ],
 
+
 [
 'Abbrechen',
 'Otmena',
+],
+
+
+[
+'Filter zurücksetzen',
+'sbrosit\' fil\'tr',
 ],
