@@ -42,11 +42,13 @@ function execute_genericPage() {
     if (isVideoInFavorites(obj.id)) {
       removeVideoFromPlaylist(obj, favoritesID);
       this.classList.remove('isFavorite');
-      console.log('Video wurde von Playlist "Favoriten" entfernt');    // TODO: Replace with notification message
+      const playlist = getPlaylistObjectById(favoritesID);
+      messagebox('success', t('Video wurde von Playlist "{0}" entfernt.', playlist.name));
     } else {
       addVideoToPlaylist(obj, favoritesID);
       this.classList.add('isFavorite');
-      console.log('Video wurde zur Playlist "Favoriten" hinzugefügt');    // TODO: Replace with notification message
+      const playlist = getPlaylistObjectById(favoritesID);
+      messagebox('success', t('Video wurde zur Playlist "{0}" hinzugefügt.', playlist.name));
     }
   });
   
@@ -305,6 +307,7 @@ function getVideoItemObject() {
   }
   // on failure
   const msg = t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', missing);
+  messagebox('error', msg);
   log(msg, 'error', [ t('Aufgetreten in {0}', 'getVideoItemObject') ]);
 }
 
@@ -357,13 +360,12 @@ function openAddToPlaylistMenu(refElement) {
         // just to be sure, check again that the video is no member yet
         if (!isVideoInPlaylist(videoObj.id, playlistId)) {
           addVideoToPlaylist(videoObj, playlistId);
-          console.log(`Video wurde zur Playlist mit der ID ${playlistId} hinzugefügt`);    // TODO: Replace with modal feedback message
         }
       } else {
         removeVideoFromPlaylist(videoObj, playlistId);
-        console.log(`Video wurde von Playlist mit der ID ${playlistId} entfernt`);    // TODO: Replace with modal feedback message
       }
     }
+    messagebox('success', t('Änderungen wurden gespeichert.'));
     removeFromDOM(modal);
     document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
   });

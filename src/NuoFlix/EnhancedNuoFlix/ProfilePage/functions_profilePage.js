@@ -63,7 +63,11 @@ function execute_profilePage() {
   
   // disable the original comment container
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
-  if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
+  if (!originalCommentContainer) {
+    const msg = t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.');
+    messagebox('error', msg);
+    log(msg, 'fatal');
+  }
   disablePrimalElement(originalCommentContainer, 'originalCommentContainer');
   
   // get last state of stored comments (to identify new comments), then update the storage
@@ -358,7 +362,9 @@ function generateCommentObject() {
       commentItemData.form.btn_id = tmp.getAttribute('data-id').toString();
       tmp = null;
     } else {
-      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'form'), 'error', this);
+      const msg = t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'form');
+      messagebox('error', msg);
+      log(msg, 'error', this);
       return [];
     }
     // section 'video'
@@ -369,7 +375,9 @@ function generateCommentObject() {
       commentItemData.video.title = tmp.innerText;
       tmp = null;
     } else {
-      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'video'), 'error', this);
+      const msg = t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'video');
+      messagebox('error', msg);
+      log(msg, 'error', this);
       return [];
     }
     commentItemData.isNew = isNewComment(commentItemData.form.btn_id, commentItemData.form.txt_id);
@@ -529,6 +537,7 @@ function isNewComment(btn_id, txt_id) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
         const msg = t('Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.');
+        messagebox('error', msg);
         log(msg, 'error', [t('Aufgetreten in {0}', 'isNewComment') + '()', 'storedComment:', storedComment]);
         msgPrinted = true;
       }
@@ -558,7 +567,8 @@ function getReplyCount(btn_id, txt_id) {
   for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
-        const msg = 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.';
+        const msg = t('Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.');
+        messagebox('error', msg);
         log(msg, 'error', [t('Aufgetreten in {0}', 'getReplyCount') + '()', 'storedComment:', storedComment]);
         msgPrinted = true;
       }
@@ -747,7 +757,9 @@ function convertGermanDate(string) {
   const dateParts = parts[0].split('.');
   const timeParts = parts[1] ? parts[1].split(':') : [];
   if (dateParts.length !== 3 || dateParts[0].length !== 2 || dateParts[1].length !== 2 || dateParts[2].length !== 4) {
-    log('convertGermanDate():' + t('Ungültiger Datums-Teil in Input'), 'error', ['string:', string]);
+    const msg = 'convertGermanDate(): ' + t('Ungültiger Datums-Teil in Input');
+    messagebox('error', msg);
+    log(msg, 'error', ['string:', string]);
     return null;
   }
   let result = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
@@ -755,7 +767,10 @@ function convertGermanDate(string) {
     result += ' ';
     for (const part of timeParts) {
       if (part.length !== 2) {
-        log('convertGermanDate():' + t('Ungültiger Zeit-Teil in Input'), 'error', ['string:', string, 'part:', part]);
+        const msg = 'convertGermanDate(): ' + t('Ungültiger Zeit-Teil in Input');
+        messagebox('error', msg);
+        log(msg, 'error', ['string:', string, 'part:', part]);
+        
         return null;  
       }
       result += part + ':';
@@ -918,7 +933,10 @@ function initializePlaylistButtons() {
 function openWatchPlaylistFrame() {
   const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
   // cancel if the playlist is somehow corrupted (empty)
-  if (!playlist.items[playlist.items.length - 1]) return;    // TODO: Add error message
+  if (!playlist.items[playlist.items.length - 1]) {
+    messagebox('error', t('Keine Videos in der Playlist gefunden.'));
+    return;
+  }
   // start with the newest video on the playlist
   
   const videoUrl = window.location.origin + playlist.items[playlist.items.length - 1].url;
@@ -1592,7 +1610,9 @@ function doOrderCommentData(orderType = 'activity') {
   } else if (orderType === 'relevance') {
     // special order type only after a text search with OR logic was done - will compare the match values (orders from best matches to worst)
     if (!commentData[0].matchValue) {
-      log(t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!'), 'warn');
+      const msg = t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!');
+      messagebox('warn', msg);
+      log(msg, 'warn');
       return;
     }
     commentData.sort((a, b) => {

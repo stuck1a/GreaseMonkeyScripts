@@ -118,6 +118,10 @@
 'Occurred in {0}',
 ],
 [
+'Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!',
+'Tried to sort by search result relevance, but the comment data does not contain any "matchValue" values!',
+],
+[
 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?',
 'Failed to gather "{0}" data - maybe the DOM has changed?',
 ],
@@ -293,6 +297,22 @@
 'fehler',
 'error',
 ],
+[
+'Keine Videos in der Playlist gefunden.',
+'No videos found in the playlist.',
+],
+[
+'Video wurde zur Playlist "{0}" hinzugefügt.',
+'Video was added to playlist "{0}".',
+],
+[
+'Video wurde von Playlist "{0}" entfernt.',
+'Video has been removed from playlist "{0}".',
+],
+[
+'Änderungen wurden gespeichert.',
+'Changes have been saved.',
+],
     ])
   ],
   [
@@ -348,6 +368,10 @@
 [
 'Aufgetreten in {0}',
 'Proizoshlo v {0}',
+],
+[
+'Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!',
+'Pytalsya otsortirovat\' po relevantnosti rezul\'tatov poiska, no dannyye kommentariyev ne soderzhat znacheniy matchValue!',
 ],
 [
 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?',
@@ -528,6 +552,22 @@
 [
 'fehler',
 'oshibka',
+],
+[
+'Keine Videos in der Playlist gefunden.',
+'V pleyliste video ne naydeno.',
+],
+[
+'Video wurde zur Playlist "{0}" hinzugefügt.',
+'Video dobavleno v pleylist "{0}".',
+],
+[
+'Video wurde von Playlist "{0}" entfernt.',
+'Video udaleno iz pleylista "{0}".',
+],
+[
+'Änderungen wurden gespeichert.',
+'Izmeneniya byli sokhraneny.',
 ],
     ])
   ],
@@ -753,6 +793,7 @@ class InsertionService {
         t('Verwendete Methode:'), method.name
       ];
     }
+    let msg;
     switch (method) {
       case this.AsFirstChild:
         if (refElement.hasChildNodes()) {
@@ -769,7 +810,9 @@ class InsertionService {
           refElement.parentElement.insertBefore(element, refElement);
           break;
         }
-        log(t('Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!'), 'error', buildLogContext());
+        msg = t('Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!');
+        messagebox('error', msg);
+        log(msg, 'error', buildLogContext());
         break;
       case this.After:
         if (refElement.parentElement) {
@@ -778,10 +821,14 @@ class InsertionService {
             : refElement.parentElement.appendChild(element);
           break;
         }
-        log(t('Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!'), 'error', buildLogContext());
+        msg = t('Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!');
+        messagebox('error', msg);
+        log(msg, 'error', buildLogContext());
         break;
       default:
-        log(t('Unbekannte Einfüge-Methode angefordert.'), 'error', buildLogContext());
+        msg = t('Unbekannte Einfüge-Methode angefordert.');
+        messagebox('error', msg);
+        log(msg, 'error', buildLogContext());
     }
   }
 }
@@ -803,7 +850,9 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
   if (register) {
     if (!registerId) registerId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     if (!customElementsRegister) {
-      log(t('Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.'), 'warn', [ element ]);
+      const msg = t('Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.');
+      messagebox('warn', msg);
+      log(msg, 'warn', [ element ]);
       return insertedElements;
     }
     customElementsRegister.set(registerId, insertedElements);
@@ -1137,19 +1186,24 @@ function getOriginalCommentIds(which) {
 function messagebox(type = 'info', message = '', duration = 3000) {
   const messagebox = `
     <div class="messagebox messagebox_${type}">
-      <h4>${t(type).toUpperCase()}!</h4>
+      <h5 class="messageboxHeadline">${t(type).toUpperCase()}!</h5>
       <pre class="messageboxText">${message}</pre>
+      <div class="messageboxBar"></div>
       <style>
         .messagebox {
           --width: min(20rem, 70%);
-          --height: min(5rem, 40%);
-          padding: 1rem;
+          --height: 6rem;
           position: fixed;
           max-height: var(--height);
           width: var(--width);
+          border: 1px solid var(--theme-color);
+          border-radius: 5px;
           top: calc(80% - var(--height));
           left: calc(50% - var(--width)/2);
           z-index: 9999999;
+        }
+        .messageboxHeadline {
+          margin: .75rem 1rem 0 1rem;
         }
         .messageboxText {
           -ms-text-overflow: ellipsis;
@@ -1158,28 +1212,53 @@ function messagebox(type = 'info', message = '', duration = 3000) {
           -ms-overflow-x: hidden;
           -ms-overflow-y: hidden;
           overflow: hidden;
-          height: 3rem;
+          height: 2.5rem;
+          width: calc(100% - 2rem);
+          font-size: .75rem;
+          margin: 0 1rem .75rem 1rem;
+        }
+        .messageboxBar {
+          position: relative;
+          left: 0;
+          bottom: 0;
+          height: 2px;
+          background-color: var(--theme-color);
           width: 100%;
         }
         .messagebox_info { color: #fff; background-color: #a7a0a0; }      
-        .messagebox_erfolg { color: #fff; background-color: #21b227; }  
-        .messagebox_warnung { color: #fff; background-color: #aa7202; }    
-        .messagebox_fehler { color: #fff; background-color: #83291e; }    
+        .messagebox_success { color: #fff; background-color: #21b227; }  
+        .messagebox_warn { color: #fff; background-color: #aa7202; }    
+        .messagebox_error { color: #fff; background-color: #83291e; }    
       </style>
     </div>
   `.parseHTML(false).firstElementChild;
   document.body.appendChild(messagebox);
+  const fadeOutSteps = 10;
+  const updateInterval = 50;
   setTimeout(function() {
     const fadeEffect = setInterval(function () {
-      if (!messagebox.style.opacity) messagebox.style.opacity = 1;
-      if (messagebox.style.opacity > 0) {
-        messagebox.style.opacity -= 0.1;
+      if (!messagebox.style.opacity) messagebox.style.opacity = '1';
+      if (parseFloat(messagebox.style.opacity) > 0) {
+        messagebox.style.opacity = (messagebox.style.opacity - (1/fadeOutSteps)) + '';
       } else {
         clearInterval(fadeEffect);
         messagebox.remove();
       }
-    }, 50);
+    }, updateInterval);
   }, duration);
+  const totalTime = duration - 2 * updateInterval; 
+  const totalWidth = messagebox.clientWidth;
+  const progressBar = messagebox.getElementsByClassName('messageboxBar')[0];
+  let passedTime = 0;
+  const progressBarAdjuster = setInterval(function() {
+    passedTime += updateInterval;
+    let newWidth = totalWidth - (passedTime * totalWidth / totalTime);
+    if (newWidth < 0) {
+      newWidth = 0;
+      clearInterval(progressBarAdjuster);
+    }
+    this.style.width = newWidth + 'px';
+  }.bind(progressBar), updateInterval);
 }
   addToDOM(`<style>:root {
   --theme-color: #d53d16;
@@ -1482,7 +1561,7 @@ input[type="date"] {
     (function() {
 execute_startPage();
 function execute_startPage() {
-  updateStaticTranslations()
+  updateStaticTranslations();
 } })();
   } else if (route === 'profile') {
     (function() {
@@ -1832,7 +1911,11 @@ div:not(:last-child) > .playlistButton {
     ignoreFilter.active = true;
   }
   originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
-  if (!originalCommentContainer) log(t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.'), 'fatal');
+  if (!originalCommentContainer) {
+    const msg = t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.');
+    messagebox('error', msg);
+    log(msg, 'fatal');
+  }
   disablePrimalElement(originalCommentContainer, 'originalCommentContainer');
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
@@ -2029,7 +2112,9 @@ function generateCommentObject() {
       commentItemData.form.btn_id = tmp.getAttribute('data-id').toString();
       tmp = null;
     } else {
-      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'form'), 'error', this);
+      const msg = t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'form');
+      messagebox('error', msg);
+      log(msg, 'error', this);
       return [];
     }
     commentItemData.video = {};
@@ -2039,7 +2124,9 @@ function generateCommentObject() {
       commentItemData.video.title = tmp.innerText;
       tmp = null;
     } else {
-      log(t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'video'), 'error', this);
+      const msg = t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', 'video');
+      messagebox('error', msg);
+      log(msg, 'error', this);
       return [];
     }
     commentItemData.isNew = isNewComment(commentItemData.form.btn_id, commentItemData.form.txt_id);
@@ -2147,6 +2234,7 @@ function isNewComment(btn_id, txt_id) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
         const msg = t('Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.');
+        messagebox('error', msg);
         log(msg, 'error', [t('Aufgetreten in {0}', 'isNewComment') + '()', 'storedComment:', storedComment]);
         msgPrinted = true;
       }
@@ -2162,7 +2250,8 @@ function getReplyCount(btn_id, txt_id) {
   for (const storedComment of storedCommentData) {
     if (typeof storedComment.form === typeof undefined) {
       if (!msgPrinted) {
-        const msg = 'Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.';
+        const msg = t('Gespeicherte Kommentardaten sind veraltet, ungültig oder beschädigt.\nNormalerweise sollte das mit der nächsten Seitenaktualisierung behoben werden.');
+        messagebox('error', msg);
         log(msg, 'error', [t('Aufgetreten in {0}', 'getReplyCount') + '()', 'storedComment:', storedComment]);
         msgPrinted = true;
       }
@@ -2292,7 +2381,9 @@ function convertGermanDate(string) {
   const dateParts = parts[0].split('.');
   const timeParts = parts[1] ? parts[1].split(':') : [];
   if (dateParts.length !== 3 || dateParts[0].length !== 2 || dateParts[1].length !== 2 || dateParts[2].length !== 4) {
-    log('convertGermanDate():' + t('Ungültiger Datums-Teil in Input'), 'error', ['string:', string]);
+    const msg = 'convertGermanDate(): ' + t('Ungültiger Datums-Teil in Input');
+    messagebox('error', msg);
+    log(msg, 'error', ['string:', string]);
     return null;
   }
   let result = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
@@ -2300,7 +2391,9 @@ function convertGermanDate(string) {
     result += ' ';
     for (const part of timeParts) {
       if (part.length !== 2) {
-        log('convertGermanDate():' + t('Ungültiger Zeit-Teil in Input'), 'error', ['string:', string, 'part:', part]);
+        const msg = 'convertGermanDate(): ' + t('Ungültiger Zeit-Teil in Input');
+        messagebox('error', msg);
+        log(msg, 'error', ['string:', string, 'part:', part]);
         return null;  
       }
       result += part + ':';
@@ -2417,7 +2510,10 @@ function initializePlaylistButtons() {
 }
 function openWatchPlaylistFrame() {
   const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-  if (!playlist.items[playlist.items.length - 1]) return;   
+  if (!playlist.items[playlist.items.length - 1]) {
+    messagebox('error', t('Keine Videos in der Playlist gefunden.'));
+    return;
+  }
   const videoUrl = window.location.origin + playlist.items[playlist.items.length - 1].url;
   const overlay = `<div id="watchPlaylist_Overlay"></div>`.parseHTML(false).firstElementChild;
   const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}"></iframe>`.parseHTML(false).firstElementChild;
@@ -2947,7 +3043,9 @@ function doOrderCommentData(orderType = 'activity') {
     });
   } else if (orderType === 'relevance') {
     if (!commentData[0].matchValue) {
-      log(t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!'), 'warn');
+      const msg = t('Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!');
+      messagebox('warn', msg);
+      log(msg, 'warn');
       return;
     }
     commentData.sort((a, b) => {
@@ -3054,11 +3152,13 @@ function execute_genericPage() {
     if (isVideoInFavorites(obj.id)) {
       removeVideoFromPlaylist(obj, favoritesID);
       this.classList.remove('isFavorite');
-      console.log('Video wurde von Playlist "Favoriten" entfernt');   
+      const playlist = getPlaylistObjectById(favoritesID);
+      messagebox('success', t('Video wurde von Playlist "{0}" entfernt.', playlist.name));
     } else {
       addVideoToPlaylist(obj, favoritesID);
       this.classList.add('isFavorite');
-      console.log('Video wurde zur Playlist "Favoriten" hinzugefügt');   
+      const playlist = getPlaylistObjectById(favoritesID);
+      messagebox('success', t('Video wurde zur Playlist "{0}" hinzugefügt.', playlist.name));
     }
   });
   const opener = function () {
@@ -3217,6 +3317,7 @@ function getVideoItemObject() {
     return currentVideoObj;
   }
   const msg = t('Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?', missing);
+  messagebox('error', msg);
   log(msg, 'error', [ t('Aufgetreten in {0}', 'getVideoItemObject') ]);
 }
 function openAddToPlaylistMenu(refElement) {
@@ -3250,13 +3351,12 @@ function openAddToPlaylistMenu(refElement) {
       if (input.checked) {
         if (!isVideoInPlaylist(videoObj.id, playlistId)) {
           addVideoToPlaylist(videoObj, playlistId);
-          console.log(`Video wurde zur Playlist mit der ID ${playlistId} hinzugefügt`);   
         }
       } else {
         removeVideoFromPlaylist(videoObj, playlistId);
-        console.log(`Video wurde von Playlist mit der ID ${playlistId} entfernt`);   
       }
     }
+    messagebox('success', t('Änderungen wurden gespeichert.'));
     removeFromDOM(modal);
     document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
   });

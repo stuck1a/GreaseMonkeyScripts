@@ -77,6 +77,12 @@
 
 
 [
+'Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!',
+'Tried to sort by search result relevance, but the comment data does not contain any "matchValue" values!',
+],
+
+
+[
 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?',
 'Failed to gather "{0}" data - maybe the DOM has changed?',
 ],
@@ -333,3 +339,28 @@
 'fehler',
 'error',
 ],
+
+
+[
+'Keine Videos in der Playlist gefunden.',
+'No videos found in the playlist.',
+],
+
+
+[
+'Video wurde zur Playlist "{0}" hinzugefügt.',
+'Video was added to playlist "{0}".',
+],
+
+
+[
+'Video wurde von Playlist "{0}" entfernt.',
+'Video has been removed from playlist "{0}".',
+],
+
+
+[
+'Änderungen wurden gespeichert.',
+'Changes have been saved.',
+],
+

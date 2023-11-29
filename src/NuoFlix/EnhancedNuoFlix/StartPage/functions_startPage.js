@@ -11,5 +11,5 @@ function execute_startPage() {
   // ... do stuff ...
   
   // initialize i18n strings
-  updateStaticTranslations()
+  updateStaticTranslations();
 }

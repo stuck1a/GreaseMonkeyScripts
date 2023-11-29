@@ -19,6 +19,7 @@ function getActiveRoute() {
  * @description Injects new elements to the DOM. Use {@link addToDOM} to access this service.
  * 
  * @requires log
+ * @requires messagebox
  */
 class InsertionService {
   /** Insert like <code>ref.prependChild(elem)</code> */
@@ -48,6 +49,7 @@ class InsertionService {
       ];
     }
     
+    let msg;
     switch (method) {
       // as first child
       case this.AsFirstChild:
@@ -67,7 +69,9 @@ class InsertionService {
           refElement.parentElement.insertBefore(element, refElement);
           break;
         }
-        log(t('Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!'), 'error', buildLogContext());
+        msg = t('Element kann nicht vor dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!');
+        messagebox('error', msg);
+        log(msg, 'error', buildLogContext());
         break;
      // after
       case this.After:
@@ -77,10 +81,14 @@ class InsertionService {
             : refElement.parentElement.appendChild(element);
           break;
         }
-        log(t('Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!'), 'error', buildLogContext());
+        msg = t('Element kann nicht nach dem Referenz-Element eingefügt werden, wenn dieses kein übergeordnetes Element besitzt!');
+        messagebox('error', msg);
+        log(msg, 'error', buildLogContext());
         break;
       default:
-        log(t('Unbekannte Einfüge-Methode angefordert.'), 'error', buildLogContext());
+        msg = t('Unbekannte Einfüge-Methode angefordert.');
+        messagebox('error', msg);
+        log(msg, 'error', buildLogContext());
     }
   }
 }
@@ -93,6 +101,7 @@ class InsertionService {
  * @requires InsertionService
  * @requires customElementsRegister
  * @requires log
+ * @requires messagebox
  * @requires t
  * 
  * @param {DocumentFragment|HTMLElement|Node} element  - Element to insert
@@ -126,7 +135,9 @@ function addToDOM(element, refElement, method, register = true, registerId = nul
   if (register) {
     if (!registerId) registerId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     if (!customElementsRegister) {
-      log(t('Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.'), 'warn', [ element ]);
+      const msg = t('Ein Custom-Element wurde vor der Initialisierung des globalen Registers eingefügt.\nDas Element konnte daher nicht registriert werden.');
+      messagebox('warn', msg);
+      log(msg, 'warn', [ element ]);
       return insertedElements;
     }
     customElementsRegister.set(registerId, insertedElements);

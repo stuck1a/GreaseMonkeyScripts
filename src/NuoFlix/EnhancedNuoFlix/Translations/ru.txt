@@ -71,6 +71,12 @@
 
 
 [
+'Es wurde versucht, nach Suchergebnis-Relevanz zu sortieren, die Kommentardaten enthalten jedoch keine "matchValue"-Werte!',
+'Pytalsya otsortirovat\' po relevantnosti rezul\'tatov poiska, no dannyye kommentariyev ne soderzhat znacheniy matchValue!',
+],
+
+
+[
 'Daten für Property "{0}" nicht gefunden - hat sich der DOM geändert?',
 'Ne udalos\' sobrat\' dannyye "{0}". Vozmozhno, izmenilsya DOM?',
 ],
@@ -332,4 +338,27 @@
 [
 'fehler',
 'oshibka',
+],
+
+[
+'Keine Videos in der Playlist gefunden.',
+'V pleyliste video ne naydeno.',
+],
+
+
+[
+'Video wurde zur Playlist "{0}" hinzugefügt.',
+'Video dobavleno v pleylist "{0}".',
+],
+
+
+[
+'Video wurde von Playlist "{0}" entfernt.',
+'Video udaleno iz pleylista "{0}".',
+],
+
+
+[
+'Änderungen wurden gespeichert.',
+'Izmeneniya byli sokhraneny.',
 ],
