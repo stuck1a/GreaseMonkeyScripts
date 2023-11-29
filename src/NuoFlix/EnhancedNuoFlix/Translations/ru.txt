@@ -309,3 +309,27 @@
 'Filter zurücksetzen',
 'sbrosit\' fil\'tr',
 ],
+
+
+[
+'info',
+'informatsiya',
+],
+
+
+[
+'erfolg',
+'uspekh',
+],
+
+
+[
+'warnung',
+'preduprezhdeniye',
+],
+
+
+[
+'fehler',
+'oshibka',
+],

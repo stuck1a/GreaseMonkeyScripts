@@ -277,6 +277,22 @@
 'Filter zurücksetzen',
 'Reset filter',
 ],
+[
+'info',
+'info',
+],
+[
+'erfolg',
+'success',
+],
+[
+'warnung',
+'warning',
+],
+[
+'fehler',
+'error',
+],
     ])
   ],
   [
@@ -496,6 +512,22 @@
 [
 'Filter zurücksetzen',
 'sbrosit\' fil\'tr',
+],
+[
+'info',
+'informatsiya',
+],
+[
+'erfolg',
+'uspekh',
+],
+[
+'warnung',
+'preduprezhdeniye',
+],
+[
+'fehler',
+'oshibka',
 ],
     ])
   ],
@@ -1099,6 +1131,56 @@ function getOriginalCommentIds(which) {
     const text = (elem.parentElement.parentElement.previousElementSibling.previousElementSibling.previousElementSibling.innerText).substring(0,50) + '...'
     return { commentNr: which, txt_id: txt_id, btn_id: btn_id, text: text };
 }
+  /*
+ * Snippet for creating notification messages for example after user actions and such
+ */
+function messagebox(type = 'info', message = '', duration = 3000) {
+  const messagebox = `
+    <div class="messagebox messagebox_${type}">
+      <h4>${t(type).toUpperCase()}!</h4>
+      <pre class="messageboxText">${message}</pre>
+      <style>
+        .messagebox {
+          --width: min(20rem, 70%);
+          --height: min(5rem, 40%);
+          padding: 1rem;
+          position: fixed;
+          max-height: var(--height);
+          width: var(--width);
+          top: calc(80% - var(--height));
+          left: calc(50% - var(--width)/2);
+          z-index: 9999999;
+        }
+        .messageboxText {
+          -ms-text-overflow: ellipsis;
+          -o-text-overflow: ellipsis;
+          text-overflow: ellipsis;
+          -ms-overflow-x: hidden;
+          -ms-overflow-y: hidden;
+          overflow: hidden;
+          height: 3rem;
+          width: 100%;
+        }
+        .messagebox_info { color: #fff; background-color: #a7a0a0; }      
+        .messagebox_erfolg { color: #fff; background-color: #21b227; }  
+        .messagebox_warnung { color: #fff; background-color: #aa7202; }    
+        .messagebox_fehler { color: #fff; background-color: #83291e; }    
+      </style>
+    </div>
+  `.parseHTML(false).firstElementChild;
+  document.body.appendChild(messagebox);
+  setTimeout(function() {
+    const fadeEffect = setInterval(function () {
+      if (!messagebox.style.opacity) messagebox.style.opacity = 1;
+      if (messagebox.style.opacity > 0) {
+        messagebox.style.opacity -= 0.1;
+      } else {
+        clearInterval(fadeEffect);
+        messagebox.remove();
+      }
+    }, 50);
+  }, duration);
+}
   addToDOM(`<style>:root {
   --theme-color: #d53d16;
 }

@@ -309,3 +309,27 @@
 'Filter zurücksetzen',
 'Reset filter',
 ],
+
+
+[
+'info',
+'info',
+],
+
+
+[
+'erfolg',
+'success',
+],
+
+
+[
+'warnung',
+'warning',
+],
+
+
+[
+'fehler',
+'error',
+],
