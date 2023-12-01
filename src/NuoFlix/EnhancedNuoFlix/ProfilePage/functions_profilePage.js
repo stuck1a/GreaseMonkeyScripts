@@ -887,7 +887,7 @@ function addPlaylistContainer() {
 function initializePlaylistButtons() {
   // button "create"
   document.getElementById('createPlaylist').addEventListener('click', function() {
-    const name = prompt('Name der neuen Playlist:', '');
+    const name = prompt(t('Name der neuen Playlist:'), '');
     if (!name) return;
     const playlistObj = {
       id: playlistData[playlistData.length - 1].id + 1,

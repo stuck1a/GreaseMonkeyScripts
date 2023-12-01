@@ -368,3 +368,9 @@
 'Zurück zur Profil-Seite',
 'Vernut\'sya na stranitsu profilya',
 ],
+
+
+[
+'Name der neuen Playlist:',
+'Nazvaniye novogo pleylista:',
+],

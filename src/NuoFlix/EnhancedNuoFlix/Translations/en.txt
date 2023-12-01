@@ -369,3 +369,9 @@
 'Zurück zur Profil-Seite',
 'Back to profile page',
 ],
+
+
+[
+'Name der neuen Playlist:',
+'Name of the new playlist:',
+],

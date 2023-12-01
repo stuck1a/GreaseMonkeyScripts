@@ -317,6 +317,10 @@
 'Zurück zur Profil-Seite',
 'Back to profile page',
 ],
+[
+'Name der neuen Playlist:',
+'Name of the new playlist:',
+],
     ])
   ],
   [
@@ -576,6 +580,10 @@
 [
 'Zurück zur Profil-Seite',
 'Vernut\'sya na stranitsu profilya',
+],
+[
+'Name der neuen Playlist:',
+'Nazvaniye novogo pleylista:',
 ],
     ])
   ],
@@ -2487,7 +2495,7 @@ function addPlaylistContainer() {
 }
 function initializePlaylistButtons() {
   document.getElementById('createPlaylist').addEventListener('click', function() {
-    const name = prompt('Name der neuen Playlist:', '');
+    const name = prompt(t('Name der neuen Playlist:'), '');
     if (!name) return;
     const playlistObj = {
       id: playlistData[playlistData.length - 1].id + 1,
@@ -3391,7 +3399,6 @@ function getVideoItemObject() {
   } else {
     currentVideoObj = {
       id: id.getAttribute('data-id'),
-      unavailable: false,
       url: window.location.pathname,
       title: title.innerText,
     };

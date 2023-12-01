@@ -299,7 +299,6 @@ function getVideoItemObject() {
     currentVideoObj = {
       // if all required elements where found we can be pretty sure, everything is alright
       id: id.getAttribute('data-id'),
-      unavailable: false,
       url: window.location.pathname,
       title: title.innerText,
     };
