@@ -362,3 +362,9 @@
 'Änderungen wurden gespeichert.',
 'Izmeneniya byli sokhraneny.',
 ],
+
+
+[
+'Zurück zur Profil-Seite',
+'Vernut\'sya na stranitsu profilya',
+],

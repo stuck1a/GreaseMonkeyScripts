@@ -986,7 +986,7 @@ function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
   iFrameReady(iframe, function() {
     const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
     let playlistRow = `<div id="playlistRow" class="row" data-playlist-id="${playlist.id}"></div>`;
-    let backToProfileButton = `<div id="backToProfileBtnWrapper"><a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a></div>`;
+    let backToProfileButton = `<div id="backToProfileBtnWrapper"><a id="backToProfileBtn" class="btn btn-small">${t('Zurück zur Profil-Seite')}</a></div>`;
     
     playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
     addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
@@ -1019,7 +1019,7 @@ function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
     });
   });
   
-  // TODO: Äußeren main switch an den main switch im iframe koppeln
+  // TODO: Äußeren main switch an den main switch im iframe koppeln ODER mainSwitch im iframe entfernen
   
 }
 

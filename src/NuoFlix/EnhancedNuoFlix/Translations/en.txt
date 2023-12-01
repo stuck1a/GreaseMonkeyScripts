@@ -364,3 +364,8 @@
 'Changes have been saved.',
 ],
 
+
+[
+'Zurück zur Profil-Seite',
+'Back to profile page',
+],

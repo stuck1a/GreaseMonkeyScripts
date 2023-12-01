@@ -313,6 +313,10 @@
 'Änderungen wurden gespeichert.',
 'Changes have been saved.',
 ],
+[
+'Zurück zur Profil-Seite',
+'Back to profile page',
+],
     ])
   ],
   [
@@ -568,6 +572,10 @@
 [
 'Änderungen wurden gespeichert.',
 'Izmeneniya byli sokhraneny.',
+],
+[
+'Zurück zur Profil-Seite',
+'Vernut\'sya na stranitsu profilya',
 ],
     ])
   ],
@@ -2547,7 +2555,7 @@ function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
   iFrameReady(iframe, function() {
     const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
     let playlistRow = `<div id="playlistRow" class="row" data-playlist-id="${playlist.id}"></div>`;
-    let backToProfileButton = `<div id="backToProfileBtnWrapper"><a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a></div>`;
+    let backToProfileButton = `<div id="backToProfileBtnWrapper"><a id="backToProfileBtn" class="btn btn-small">${t('Zurück zur Profil-Seite')}</a></div>`;
     playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
     addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
     backToProfileButton = iframe_document.getElementById('backToProfileBtn');
