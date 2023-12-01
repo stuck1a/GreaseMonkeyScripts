@@ -43,3 +43,58 @@
   margin-left: auto;
   display: inline-flex;
 }
+
+
+/* If a playlist if played */
+#backToProfileBtnWrapper {
+  text-align: center;
+}
+
+#playlistRow {
+  margin-inline: auto;
+  width: 50%;
+  max-height: 10rem;
+  -ms-overflow-x: hidden;
+  overflow-x: hidden;
+  -ms-overflow-y: scroll;
+  overflow-y: scroll;
+  background-color: #2e2e2e;
+  padding: 1rem;
+}
+
+#playlistRow .videoTile {
+  cursor: pointer;
+  padding: 0 .25rem;
+  white-space: nowrap;
+  -ms-text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  -ms-overflow-x: hidden;
+  overflow-x: hidden;
+}
+#playlistRow .videoTile:hover {
+  background-color: #949296;
+  color: #000;
+}
+
+#playlistRow .videoTile.activeVideo {
+  -webkit-filter: brightness(1.5);
+  filter: brightness(1.5);
+}
+
+#playlistHeadlineWrapper {
+  margin-top: 3rem;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+#playlistHeadline {
+  max-width: 50%;
+  white-space: nowrap;
+  -ms-text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  -ms-overflow-x: hidden;
+  overflow-x: hidden;
+}

@@ -43,12 +43,12 @@ function execute_genericPage() {
       removeVideoFromPlaylist(obj, favoritesID);
       this.classList.remove('isFavorite');
       const playlist = getPlaylistObjectById(favoritesID);
-      messagebox('success', t('Video wurde von Playlist "{0}" entfernt.', playlist.name));
+      messagebox('success', t('Video wurde von Playlist "{0}" entfernt.', playlist.is_custom ? playlist.name : t(playlist.name)));
     } else {
       addVideoToPlaylist(obj, favoritesID);
       this.classList.add('isFavorite');
       const playlist = getPlaylistObjectById(favoritesID);
-      messagebox('success', t('Video wurde zur Playlist "{0}" hinzugefügt.', playlist.name));
+      messagebox('success', t('Video wurde zur Playlist "{0}" hinzugefügt.', playlist.is_custom ? playlist.name : t(playlist.name)));
     }
   });
   

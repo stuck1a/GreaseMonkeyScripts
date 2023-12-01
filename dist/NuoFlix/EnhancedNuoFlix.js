@@ -1022,6 +1022,7 @@ function getPlaylistObjectById(playlistId) {
   return null;
 }
 function addVideoToPlaylist(videoObject, playlist) {
+  playlistData = get_value('playlistData');
   if (typeof playlist === 'number' || typeof playlist === 'string') playlist = getPlaylistObjectById(playlist);
   if (!(playlist) || typeof videoObject !== 'object') return;
   const oldId = isVideoInPlaylist(videoObject.id, playlist);
@@ -1032,6 +1033,7 @@ function addVideoToPlaylist(videoObject, playlist) {
   set_value('playlistData', playlistData);
 }
 function removeVideoFromPlaylist(video, playlist) {
+  playlistData = get_value('playlistData');
   if (typeof video === 'object') video = video.id;
   if (typeof video === 'string') video = parseInt(video);
   if (typeof playlist !== 'object') playlist = getPlaylistObjectById(playlist);
@@ -1919,7 +1921,6 @@ div:not(:last-child) > .playlistButton {
   disablePrimalElement(originalCommentContainer, 'originalCommentContainer');
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
-  commentData = DEBUG_setSomeFakeData(commentData);   
   set_value('commentData', commentData);
   totalComments = commentData.length;
   if (currentLength === 'all') currentLength = totalComments;
@@ -2508,41 +2509,65 @@ function initializePlaylistButtons() {
     updatePage();
   });
 }
-function openWatchPlaylistFrame() {
-  const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
-  if (!playlist.items[playlist.items.length - 1]) {
-    messagebox('error', t('Keine Videos in der Playlist gefunden.'));
+function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
+  if (!playlist) playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+  const videos = activeVideoId ? playlist.items : playlist.items.reverse();
+  if (!activeVideoId) activeVideoId = videos[0].id;
+  if (!activeVideoId) {
+    messagebox('error', t('Video nicht gefunden.'));
     return;
   }
-  const videoUrl = window.location.origin + playlist.items[playlist.items.length - 1].url;
+  let activeVideo;
+  for (const video of videos) {
+    if (video.id === activeVideoId) {
+      activeVideo = video;
+      break;
+    }
+  }
+  if (!activeVideo) {
+    messagebox('error', t('Videoobjekt nicht gefunden.'));
+    return;
+  }
+  const videoUrl = window.location.origin + activeVideo.url;
   const overlay = `<div id="watchPlaylist_Overlay"></div>`.parseHTML(false).firstElementChild;
   const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}"></iframe>`.parseHTML(false).firstElementChild;
   overlay.appendChild(iframe);
   addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
+  iframe.contentWindow.addEventListener('beforeunload', function(ev) {
+    ev.preventDefault();
+    const clickedElement = ev.srcElement.activeElement;
+    if (clickedElement && clickedElement.href) {
+      window.location = clickedElement.href;
+    } else {
+      removeFromDOM(overlay);
+    }
+    document.body.style.overflow = '';
+  });
+  document.body.style.overflow = 'hidden';
   iFrameReady(iframe, function() {
     const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
-    let playlistRow = `
-        <div id="playlistRow" class="row" data-playlist-id="${playlist.id}">
-          <div id="loadPreviousVideo"><- vorheriges Video</div>
-          <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
-          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
-          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 3</div>
-          <div id="loadNextVideo">nächstes Video -></div>
-        </div>
-      `;
-    let backToProfileButton = `
-        <div>
-          <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
-        </div>
-      `;
+    let playlistRow = `<div id="playlistRow" class="row" data-playlist-id="${playlist.id}"></div>`;
+    let backToProfileButton = `<div id="backToProfileBtnWrapper"><a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a></div>`;
     playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
-    backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+    addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+    backToProfileButton = iframe_document.getElementById('backToProfileBtn');
+    for (const video of videos) {
+      const videoTile = `<div class="videoTile${video.id === activeVideoId ? ' activeVideo' : ''}" data-video-id="${video.id}">${video.title}</div>`.parseHTML().firstElementChild;
+      addToDOM(videoTile, playlistRow, InsertionService.AsLastChild, false);
+      videoTile.addEventListener('click', function() {
+        removeFromDOM(overlay);
+        openWatchPlaylistFrame(playlist, video.id);
+      });
+    }
+    const playlistHeadline = `<div id="playlistHeadlineWrapper"><h5 id="playlistHeadline">${playlist.name}</h5></div>`.parseHTML();
+    addToDOM(playlistHeadline, playlistRow, InsertionService.Before, false);
     const realUrl = window.location.toString();
     window.history.replaceState(null,'', videoUrl);
     backToProfileButton.addEventListener('click', function() {
       removeFromDOM(overlay);
       window.history.replaceState(null, '', realUrl);
       updatePage();
+      document.body.style.overflow = '';
     });
   });
 }
@@ -3140,6 +3165,54 @@ function execute_genericPage() {
 .playlistItem :last-child {
   margin-left: auto;
   display: inline-flex;
+}
+/* If a playlist if played */
+#backToProfileBtnWrapper {
+  text-align: center;
+}
+#playlistRow {
+  margin-inline: auto;
+  width: 50%;
+  max-height: 10rem;
+  -ms-overflow-x: hidden;
+  overflow-x: hidden;
+  -ms-overflow-y: scroll;
+  overflow-y: scroll;
+  background-color: #2e2e2e;
+  padding: 1rem;
+}
+#playlistRow .videoTile {
+  cursor: pointer;
+  padding: 0 .25rem;
+  white-space: nowrap;
+  -ms-text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  -ms-overflow-x: hidden;
+  overflow-x: hidden;
+}
+#playlistRow .videoTile:hover {
+  background-color: #949296;
+  color: #000;
+}
+#playlistRow .videoTile.activeVideo {
+  -webkit-filter: brightness(1.5);
+  filter: brightness(1.5);
+}
+#playlistHeadlineWrapper {
+  margin-top: 3rem;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+#playlistHeadline {
+  max-width: 50%;
+  white-space: nowrap;
+  -ms-text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  -ms-overflow-x: hidden;
+  overflow-x: hidden;
 }</style>`.parseHTML(), document.body, InsertionService.AsLastChild, false);
   replaceSuggestedVideoTiles();
   replaceReloadButton();
@@ -3153,12 +3226,12 @@ function execute_genericPage() {
       removeVideoFromPlaylist(obj, favoritesID);
       this.classList.remove('isFavorite');
       const playlist = getPlaylistObjectById(favoritesID);
-      messagebox('success', t('Video wurde von Playlist "{0}" entfernt.', playlist.name));
+      messagebox('success', t('Video wurde von Playlist "{0}" entfernt.', playlist.is_custom ? playlist.name : t(playlist.name)));
     } else {
       addVideoToPlaylist(obj, favoritesID);
       this.classList.add('isFavorite');
       const playlist = getPlaylistObjectById(favoritesID);
-      messagebox('success', t('Video wurde zur Playlist "{0}" hinzugefügt.', playlist.name));
+      messagebox('success', t('Video wurde zur Playlist "{0}" hinzugefügt.', playlist.is_custom ? playlist.name : t(playlist.name)));
     }
   });
   const opener = function () {

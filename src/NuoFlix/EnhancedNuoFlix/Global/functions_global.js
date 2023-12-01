@@ -449,12 +449,12 @@ function getPlaylistObjectById(playlistId) {
 /**
  * Adds the given video object to the target playlist and update the stored playlistData.
  *
- * @requires playlistData
- *
  * @param {(Object|number)} videoObject  - Video object to add
  * @param {(Object|number)} playlist  - Target playlist id or object
  */
 function addVideoToPlaylist(videoObject, playlist) {
+  // update the playlist data before updating it, so it works across multiple opened tabs, too
+  playlistData = get_value('playlistData');
   if (typeof playlist === 'number' || typeof playlist === 'string') playlist = getPlaylistObjectById(playlist);
   if (!(playlist) || typeof videoObject !== 'object') return;
   // if the video is already in the playlist (might occur in "last watched" or if something went wrong) then remove the odl entry
@@ -475,12 +475,12 @@ function addVideoToPlaylist(videoObject, playlist) {
 /**
  * Removes the given video to the target playlist and update the stored playlistData.
  *
- * @requires playlistData
- *
  * @param {(Object|number)} video  - Target video id or video object
  * @param {(Object|number)} playlist  - Target playlist id or playlist object
  */
 function removeVideoFromPlaylist(video, playlist) {
+  // update the playlist data before updating it, so it works across multiple opened tabs, too
+  playlistData = get_value('playlistData');
   if (typeof video === 'object') video = video.id;
   if (typeof video === 'string') video = parseInt(video);
   if (typeof playlist !== 'object') playlist = getPlaylistObjectById(playlist);

@@ -73,7 +73,7 @@ function execute_profilePage() {
   // get last state of stored comments (to identify new comments), then update the storage
   storedCommentData = get_value('commentData');
   commentData = generateCommentObject();
-  commentData = DEBUG_setSomeFakeData(commentData);    // TODO: Remove debug data
+  //commentData = DEBUG_setSomeFakeData(commentData);
   set_value('commentData', commentData);
 
   // count comments
@@ -929,47 +929,83 @@ function initializePlaylistButtons() {
 
 /**
  * Build the pseudo video page for watching a playlist as fullscreen iframe overlay and adds it to the DOM.
+ * 
+ * @param {?Object} playlist  - Target playlist object (if null, the selected playlist is used)
+ * @param {?number} [activeVideoId=null]  - Video id to start with (if null the latest video will be used)
  */
-function openWatchPlaylistFrame() {
-  const playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
+  // use the selected video, if none was specified
+  if (!playlist) playlist = getPlaylistObjectById(parseInt(document.getElementById('playlists').selectedOptions[0].getAttribute('data-playlist-id')));
+  // reverse video order so the last added video is the first one (except we are coming from the watch playlist page already!)
+  const videos = activeVideoId ? playlist.items : playlist.items.reverse();
+  // load latest video, if none was specified
+  if (!activeVideoId) activeVideoId = videos[0].id;
   // cancel if the playlist is somehow corrupted (empty)
-  if (!playlist.items[playlist.items.length - 1]) {
-    messagebox('error', t('Keine Videos in der Playlist gefunden.'));
+  if (!activeVideoId) {
+    messagebox('error', t('Video nicht gefunden.'));
     return;
   }
-  // start with the newest video on the playlist
-  
-  const videoUrl = window.location.origin + playlist.items[playlist.items.length - 1].url;
+  // get the object of the active video
+  let activeVideo;
+  for (const video of videos) {
+    if (video.id === activeVideoId) {
+      activeVideo = video;
+      break;
+    }
+  }
+  // ensure we have a video object
+  if (!activeVideo) {
+    messagebox('error', t('Videoobjekt nicht gefunden.'));
+    return;
+  }
+  const videoUrl = window.location.origin + activeVideo.url;
   // insert the pseudo-page overlay
   const overlay = `<div id="watchPlaylist_Overlay"></div>`.parseHTML(false).firstElementChild;
   const iframe = `<iframe id="watchPlaylist_iframe" src="${videoUrl}"></iframe>`.parseHTML(false).firstElementChild;
   overlay.appendChild(iframe);
-
   addToDOM(overlay, document.body, InsertionService.AsLastChild, true, 'watchPlaylist_Overlay');
-
+  
+  // if the user changes the page, then delegate it to the main window, otherwise the iframe would persist
+  iframe.contentWindow.addEventListener('beforeunload', function(ev) {
+    ev.preventDefault();
+    const clickedElement = ev.srcElement.activeElement;
+    if (clickedElement && clickedElement.href) {
+      window.location = clickedElement.href;
+    } else {
+      // fallback solution
+      removeFromDOM(overlay);
+    }
+    // restore scrollbars
+    document.body.style.overflow = '';
+  });
+  
+  // hide outer scrollbars
+  document.body.style.overflow = 'hidden';
+  
   // wait until the iframe is ready before going ahead
   iFrameReady(iframe, function() {
     const iframe_document = iframe.contentDocument || iframe.contentWindow.document;
-    let playlistRow = `
-        <div id="playlistRow" class="row" data-playlist-id="${playlist.id}">
-          <div id="loadPreviousVideo"><- vorheriges Video</div>
-          <div class="col-auto activeVideo" style="height: 100%; margin: auto;filter: brightness(1.5);">Video Tile 1</div>
-          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 2</div>
-          <div class="col-auto" style="height: 100%;margin: auto;">Video Tile 3</div>
-          <div id="loadNextVideo">nächstes Video -></div>
-        </div>
-      `;
-    let backToProfileButton = `
-        <div>
-          <a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a>
-        </div>
-      `;
-
-    // TODO: playlistRow ausprogrammieren
-
+    let playlistRow = `<div id="playlistRow" class="row" data-playlist-id="${playlist.id}"></div>`;
+    let backToProfileButton = `<div id="backToProfileBtnWrapper"><a id="backToProfileBtn" class="btn btn-small">Zurück zur Profil-Seite</a></div>`;
+    
     playlistRow = addToDOM(playlistRow.parseHTML(), iframe_document.getElementById('cmsFramework'), InsertionService.Before, false);
-    backToProfileButton = addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+    addToDOM(backToProfileButton.parseHTML(), playlistRow, InsertionService.After, false);
+    backToProfileButton = iframe_document.getElementById('backToProfileBtn');
 
+    // list all videos of the playlist
+    for (const video of videos) {
+      const videoTile = `<div class="videoTile${video.id === activeVideoId ? ' activeVideo' : ''}" data-video-id="${video.id}">${video.title}</div>`.parseHTML().firstElementChild;
+      addToDOM(videoTile, playlistRow, InsertionService.AsLastChild, false);
+      videoTile.addEventListener('click', function() {
+        removeFromDOM(overlay);
+        openWatchPlaylistFrame(playlist, video.id);
+      });
+    }
+
+    // insert playlist name above the video selection
+    const playlistHeadline = `<div id="playlistHeadlineWrapper"><h5 id="playlistHeadline">${playlist.name}</h5></div>`.parseHTML();
+    addToDOM(playlistHeadline, playlistRow, InsertionService.Before, false);
+    
     // spoof the displayed URL in the browser bar
     const realUrl = window.location.toString();
     window.history.replaceState(null,'', videoUrl);
@@ -979,26 +1015,12 @@ function openWatchPlaylistFrame() {
       removeFromDOM(overlay);
       window.history.replaceState(null, '', realUrl);
       updatePage();
+      document.body.style.overflow = '';
     });
   });
   
-  // TODO: Vorab (z.b per fetch api) prüfen, ob die Video-Page existiert (falls sich Permalink ändert, Video runtergenommen wird o.ä.)
-  //       und wenn nicht, den Vorgang abbrechen (oder nächstes Video in Liste testen), stattdessen Fehlermeldung ala "Video existiert nicht mehr" ausgeben und im entsprechenden
-  //       Video Item des Playlist-Datenobjekts das property unavailable auf true setzen
-
-  // TODO: Die innere Scrollbar loswerden.
-  //   Idee:
-  //   - Scrollbar in iframe ausblenden
-  //   - Alle Elemente in Body von Profil-Page ausblenden
-  //   - Ein Element in Body von Profil-Page einfügen mit der Höhe von Body der Video-Page
-  //   - Scroll-Handler auf window in iframe setzen, der scrollHeight von Profil-Page Body auf die scrollHeight von Video-Page Body setzt
-  //   - Kann bleiben, wenn Video wechselt
-  //   - EventHandler wieder entfernen wenn: (a) Button "Zurück zur Profilseite" geklickt wird (b) main Switch betätigt wird 
-
-
-  // TODO: Check whether second main switch within the iframe also works.
-  //       It further need to be synced with the first one because if someone toggles it in the iframe,
-  //       the iframe must disappear since it's a custom feature, which will make the first switch visible again.
+  // TODO: Äußeren main switch an den main switch im iframe koppeln
+  
 }
 
 
@@ -1297,7 +1319,7 @@ function insertSortingMenu() {
     </div>
   `.parseHTML();
 
-  // TODO: option handlers + click (rebuild menu) handler (see language menu)
+  // TODO: Menü einfügen und die ClickHandler zu den Options setzen
   
   
   
