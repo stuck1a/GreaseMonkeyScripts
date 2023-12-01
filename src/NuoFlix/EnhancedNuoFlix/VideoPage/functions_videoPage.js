@@ -278,7 +278,7 @@ function getPlaylistsContainingVideo(video) {
 
 
 /**
- * Collects all video data from the video current page and generates a video object from it.
+ * Collects all video data from the current video page and generates a video object from it.
  * 
  * @requires currentVideoObj
  * 
