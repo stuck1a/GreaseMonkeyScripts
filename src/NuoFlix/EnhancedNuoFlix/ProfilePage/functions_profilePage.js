@@ -843,7 +843,7 @@ function addPlaylistContainer() {
   `.parseHTML().firstElementChild;
   addToDOM(playlists, document.getElementById('playlistContainer'), InsertionService.AsFirstChild, true, 'playlists');
   
-  // disable all playlist buttons which require an selected playlist to become enabled
+  // disable all playlist buttons which requires a selected playlist to become enabled
   document.getElementById('startPlaylist').classList.add('disabled');
   document.getElementById('editPlaylist').classList.add('disabled');
   document.getElementById('deletePlaylist').classList.add('disabled');
@@ -860,10 +860,15 @@ function addPlaylistContainer() {
       playlist.item_cnt > 0
         ? document.getElementById('startPlaylist').classList.remove('disabled')
         : document.getElementById('startPlaylist').classList.add('disabled');
-      // only allow edit for custom playlists and for the "watch later" playlist (id 2)
-      if (playlist.is_custom || playlist.id === 2) {
+      // allow delete and edit for user playlists
+      if (playlist.is_custom) {
         document.getElementById('editPlaylist').classList.remove('disabled');
-        if (playlist.id !== 2) document.getElementById('deletePlaylist').classList.remove('disabled');
+        document.getElementById('deletePlaylist').classList.remove('disabled');
+      // allow edit only for default playlists watch later and favorites
+      } else if (playlist.id === watchLaterID || playlist.id === favoritesID) {
+        document.getElementById('editPlaylist').classList.remove('disabled');
+        document.getElementById('deletePlaylist').classList.add('disabled');
+      // lock both for all other playlists  
       } else {
         document.getElementById('editPlaylist').classList.add('disabled');
         document.getElementById('deletePlaylist').classList.add('disabled');
@@ -1034,7 +1039,7 @@ function addEditPlaylistDialog() {
   /*%% ProfilePage/editPlaylistDialog.js %%*/    // Inserts: const editPlaylistDialog
   addToDOM(editPlaylistDialog, document.body, InsertionService.AsLastChild, true, 'editPlaylistDialog');
 
-  // hide the "edit playlist name" button, if it is a default playlist
+  // only allow changing the playlist name for user playlists
   if (!playlist.is_custom) document.getElementById('changePlaylistName').classList.add('forceHidden');
   
   // fill the video list in the dialog
