@@ -2,9 +2,9 @@
 // @name            Enhanced NuoFlix
 // @name:de         NuoFlix 2.0
 // @namespace       http://tampermonkey.net/
-// @version         1.3.0
-// @description     Block feature: deletes comments from blocked user | profile page: pagination, comment filter (unread / only conversation with User XY)
-// @description:de  Blockierfunktion: entfernt Kommentare von blockierten Usern | Profilseite: Seitenumbruch, Kommentarfilter (ungelesene / nur Konversation mit User XY)
+// @version         1.3.1
+// @description     Adds a lot of improvements and new features to NuoFlix. See preview video for more details: https://www.youtube.com/watch?v=kxp2j46IWZA
+// @description:de  Fügt zahlreiche Verbesserungen und neue Funktionen zu NuoFlix hinzu. Weitere Details finden Sie im Vorschauvideo: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @icon            https://nuoflix.de/favicon-16x16.png
 // @icon64          https://nuoflix.de/apple-touch-icon.png
 // @grant           GM_getValue
