@@ -2,7 +2,7 @@
 // @name            Enhanced NuoFlix
 // @name:de         NuoFlix 2.0
 // @namespace       http://tampermonkey.net/
-// @version         1.5
+// @version         1.6
 // @description     Adds a lot of improvements and new features to NuoFlix. See preview video for more details: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @description:de  Fügt zahlreiche Verbesserungen und neue Funktionen zu NuoFlix hinzu. Weitere Details finden Sie im Vorschauvideo: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @icon            https://nuoflix.de/favicon-16x16.png
@@ -2589,11 +2589,13 @@ function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
       document.body.style.overflow = '';
     });
     const iframeMainSwitch = iframe_document.getElementById('mainSwitch');
-    iframeMainSwitch.addEventListener('change', function() {
-      const hiddenMainSwitch = document.getElementById('mainSwitch');
-      hiddenMainSwitch.checked = iframeMainSwitch.checked;
-      if (!iframeMainSwitch.checked) removeFromDOM(overlay);
-    });
+    if (iframeMainSwitch) {
+      iframeMainSwitch.addEventListener('change', function() {
+        const hiddenMainSwitch = document.getElementById('mainSwitch');
+        hiddenMainSwitch.checked = iframeMainSwitch.checked;
+        if (!iframeMainSwitch.checked) removeFromDOM(overlay);
+      });
+    }
   });
 }
 function addEditPlaylistDialog() {
@@ -3268,6 +3270,7 @@ function execute_genericPage() {
   document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
   withinPlaylistIframe = !!document.getElementById('playlistRow');
   const onReadyTasks = function() {
+    if (withinPlaylistIframe) document.getElementById('mainSwitch').classList.add('forceHidden');
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');
     if (isVideoInFavorites(parseInt(currentVideoId))) favoriteButton.classList.add('isFavorite');
     if (!withinPlaylistIframe) {
