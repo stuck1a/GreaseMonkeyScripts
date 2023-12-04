@@ -11,6 +11,7 @@
 /** @type {string[]}    */ let storedIgnoreList;
 /** @type {HTMLElement} */ let commentContainer;
 /** @type {object}      */ let currentVideoObj;
+/** @type {boolean}     */ let withinPlaylistIframe;
 
 execute_genericPage()
 
@@ -61,21 +62,22 @@ function execute_genericPage() {
   }
   document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
 
+  // check if we are within an iframe for watching playlists
+  withinPlaylistIframe = !!document.getElementById('playlistRow');
   
-  // some tasks require the DOM content to be loaded, so wait for it from this point
+  // some tasks require the DOM content to be fully loaded, so wait for it from this point
   const onReadyTasks = function() {
     // fetch video id
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');
     // fill heart icon, if video is already in playlist "favorites"
     if (isVideoInFavorites(parseInt(currentVideoId))) favoriteButton.classList.add('isFavorite');
     
-    // if this video page is not for watching a playlist in the iframe pseudo page...
-    const playlistRow = document.getElementById('playlistRow');
-    if (!playlistRow) {
-      // add the video to the playlist "last watched" (if it is already in the list, addVideoToPlaylist will also remove the old entry)
+    // if this video page is not for watching a playlist in the iframe pseudo page
+    if (!withinPlaylistIframe) {
+      // then add the video to the playlist "last watched" (if it is already in the list, addVideoToPlaylist will also remove the old entry)
       addVideoToPlaylist(getVideoItemObject(), lastWatchedID);
-    } else if (parseInt(playlistRow.getAttribute('data-playlist-id')) === watchLaterID) {
-      // if we are watching the playlist "watch later", then remove the video from the list now
+    } else if (parseInt(document.getElementById('playlistRow').getAttribute('data-playlist-id')) === watchLaterID) {
+      // otherwise if we are watching the playlist "watch later", then remove the video from the list now
       removeVideoFromPlaylist(getVideoItemObject(), watchLaterID);
     }
   };

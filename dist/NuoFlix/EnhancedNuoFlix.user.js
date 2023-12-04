@@ -2,7 +2,7 @@
 // @name            Enhanced NuoFlix
 // @name:de         NuoFlix 2.0
 // @namespace       http://tampermonkey.net/
-// @version         1.4
+// @version         1.5
 // @description     Adds a lot of improvements and new features to NuoFlix. See preview video for more details: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @description:de  Fügt zahlreiche Verbesserungen und neue Funktionen zu NuoFlix hinzu. Weitere Details finden Sie im Vorschauvideo: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @icon            https://nuoflix.de/favicon-16x16.png
@@ -2588,6 +2588,12 @@ function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
       updatePage();
       document.body.style.overflow = '';
     });
+    const iframeMainSwitch = iframe_document.getElementById('mainSwitch');
+    iframeMainSwitch.addEventListener('change', function() {
+      const hiddenMainSwitch = document.getElementById('mainSwitch');
+      hiddenMainSwitch.checked = iframeMainSwitch.checked;
+      if (!iframeMainSwitch.checked) removeFromDOM(overlay);
+    });
   });
 }
 function addEditPlaylistDialog() {
@@ -3145,6 +3151,7 @@ function updatePage() {
  let storedIgnoreList;
  let commentContainer;
  let currentVideoObj;
+ let withinPlaylistIframe;
 execute_genericPage()
 function execute_genericPage() {
   addToDOM(`<style>#favoriteIcon:hover path, #favoriteIcon.isFavorite path {
@@ -3259,13 +3266,13 @@ function execute_genericPage() {
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }
   document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
+  withinPlaylistIframe = !!document.getElementById('playlistRow');
   const onReadyTasks = function() {
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');
     if (isVideoInFavorites(parseInt(currentVideoId))) favoriteButton.classList.add('isFavorite');
-    const playlistRow = document.getElementById('playlistRow');
-    if (!playlistRow) {
+    if (!withinPlaylistIframe) {
       addVideoToPlaylist(getVideoItemObject(), lastWatchedID);
-    } else if (parseInt(playlistRow.getAttribute('data-playlist-id')) === watchLaterID) {
+    } else if (parseInt(document.getElementById('playlistRow').getAttribute('data-playlist-id')) === watchLaterID) {
       removeVideoFromPlaylist(getVideoItemObject(), watchLaterID);
     }
   };
