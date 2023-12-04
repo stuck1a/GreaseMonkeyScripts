@@ -68,7 +68,7 @@ function execute_genericPage() {
     withinPlaylistIframe = !!document.getElementById('playlistRow');
     
     // workaround for the double main switch issue - disable main switch in iframe  // TODO: Remove workaround after fixing the issue
-    if (withinPlaylistIframe) document.getElementById('mainSwitch').classList.add('forceHidden');
+    if (withinPlaylistIframe) document.getElementById('mainSwitch').parentElement.parentElement.classList.add('forceHidden');
     
     // fetch video id
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');

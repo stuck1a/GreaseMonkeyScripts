@@ -3270,7 +3270,7 @@ function execute_genericPage() {
   document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
   const onReadyTasks = function() {
     withinPlaylistIframe = !!document.getElementById('playlistRow');
-    if (withinPlaylistIframe) document.getElementById('mainSwitch').classList.add('forceHidden');
+    if (withinPlaylistIframe) document.getElementById('mainSwitch').parentElement.parentElement.classList.add('forceHidden');
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');
     if (isVideoInFavorites(parseInt(currentVideoId))) favoriteButton.classList.add('isFavorite');
     if (!withinPlaylistIframe) {
