@@ -61,12 +61,12 @@ function execute_genericPage() {
     document.getElementById('addToPlaylistIcon').removeEventListener('click', opener);
   }
   document.getElementById('addToPlaylistIcon').addEventListener('click', opener);
-
-  // check if we are within an iframe for watching playlists
-  withinPlaylistIframe = !!document.getElementById('playlistRow');
   
   // some tasks require the DOM content to be fully loaded, so wait for it from this point
   const onReadyTasks = function() {
+    // check if we are within an iframe for watching playlists
+    withinPlaylistIframe = !!document.getElementById('playlistRow');
+    
     // workaround for the double main switch issue - disable main switch in iframe  // TODO: Remove workaround after fixing the issue
     if (withinPlaylistIframe) document.getElementById('mainSwitch').classList.add('forceHidden');
     
