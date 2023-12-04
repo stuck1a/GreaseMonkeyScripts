@@ -67,6 +67,9 @@ function execute_genericPage() {
   
   // some tasks require the DOM content to be fully loaded, so wait for it from this point
   const onReadyTasks = function() {
+    // workaround for the double main switch issue - disable main switch in iframe  // TODO: Remove workaround after fixing the issue
+    if (withinPlaylistIframe) document.getElementById('mainSwitch').classList.add('forceHidden');
+    
     // fetch video id
     const currentVideoId = document.getElementById('sendcomment').getAttribute('data-id');
     // fill heart icon, if video is already in playlist "favorites"

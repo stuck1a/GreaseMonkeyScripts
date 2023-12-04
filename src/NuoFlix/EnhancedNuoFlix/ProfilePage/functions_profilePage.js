@@ -1024,14 +1024,17 @@ function openWatchPlaylistFrame(playlist = null, activeVideoId = null) {
     });
 
     // while the iframe is active the main switch needs an additional handle to disable it and also getting synced with the now hidden switch
+    // FIXME: mainSwitch ist noch nicht geladen zu diesem Zeitpunkt -> window.loaded event nutzen? Erstmal ist der mainSwitch im iframe deaktiviert...
     const iframeMainSwitch = iframe_document.getElementById('mainSwitch');
-    iframeMainSwitch.addEventListener('change', function() {
-      // sync switches
-      const hiddenMainSwitch = document.getElementById('mainSwitch');
-      hiddenMainSwitch.checked = iframeMainSwitch.checked;
-      // remove iframe on toggle off
-      if (!iframeMainSwitch.checked) removeFromDOM(overlay);
-    });
+    if (iframeMainSwitch) {
+      iframeMainSwitch.addEventListener('change', function() {
+        // sync switches
+        const hiddenMainSwitch = document.getElementById('mainSwitch');
+        hiddenMainSwitch.checked = iframeMainSwitch.checked;
+        // remove iframe on toggle off
+        if (!iframeMainSwitch.checked) removeFromDOM(overlay);
+      });
+    }
   });
 }
 
