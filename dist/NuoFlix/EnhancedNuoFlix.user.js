@@ -2,7 +2,7 @@
 // @name            Enhanced NuoFlix
 // @name:de         NuoFlix 2.0
 // @namespace       http://tampermonkey.net/
-// @version         1.6
+// @version         1.1
 // @description     Adds a lot of improvements and new features to NuoFlix. See preview video for more details: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @description:de  Fügt zahlreiche Verbesserungen und neue Funktionen zu NuoFlix hinzu. Weitere Details finden Sie im Vorschauvideo: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @icon            https://nuoflix.de/favicon-16x16.png
@@ -1928,7 +1928,7 @@ div:not(:last-child) > .playlistButton {
     ignoreFilter.value.push(user);
     ignoreFilter.active = true;
   }
-  originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+  originalCommentContainer = document.getElementsByClassName('profilContentInner')[1];
   if (!originalCommentContainer) {
     const msg = t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.');
     messagebox('error', msg);
@@ -2113,9 +2113,9 @@ function doUpdateDateFilter(fromInput, toInput) {
   updatePage();
 }
 function generateCommentObject() {
-  let RawData = document.getElementsByClassName('profilContentInner')[0];
-  if (!RawData) return [];
-  let commentBlocksRaw = RawData.getElementsByClassName('commentItem');
+  let rawData = document.getElementsByClassName('profilContentInner')[1];
+  if (!rawData) return [];
+  let commentBlocksRaw = rawData.getElementsByClassName('commentItem');
   let commentDataCollection = [];
   let counter = 0;
   let tmp;
@@ -2974,7 +2974,7 @@ function updatePaginationUI() {
   if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   paginationContainer = addToDOM(
     buildPaginationUi().parseHTML(),
-    document.getElementsByClassName('rowHeadlineHolder')[1],
+    document.getElementsByClassName('rowHeadlineHolder')[3],
     InsertionService.After,
     true,
     'paginationContainer'
@@ -3027,12 +3027,12 @@ function updateComments() {
   } else {
     customCommentContainer = document.getElementById('customCommentContainer');
     if (!customCommentContainer) {
-      customCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+      customCommentContainer = document.getElementsByClassName('profilContentInner')[1];
       customCommentContainer.id = 'customCommentContainer';
     }
   }
   insertPaginatedComments();
-  customCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+  customCommentContainer = document.getElementsByClassName('profilContentInner')[1];
   if (totalComments === 0) {
     const msg = `<div class="msgNoResults">${t('Noch keine Kommentare...')}</div>`.parseHTML();
     addToDOM(msg, customCommentContainer, InsertionService.AsLastChild, false);

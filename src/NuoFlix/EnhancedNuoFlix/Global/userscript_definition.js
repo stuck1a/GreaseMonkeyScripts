@@ -2,7 +2,7 @@
 // @name            Enhanced NuoFlix
 // @name:de         NuoFlix 2.0
 // @namespace       http://tampermonkey.net/
-// @version         1.6
+// @version         1.1
 // @description     Adds a lot of improvements and new features to NuoFlix. See preview video for more details: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @description:de  Fügt zahlreiche Verbesserungen und neue Funktionen zu NuoFlix hinzu. Weitere Details finden Sie im Vorschauvideo: https://www.youtube.com/watch?v=kxp2j46IWZA
 // @icon            https://nuoflix.de/favicon-16x16.png

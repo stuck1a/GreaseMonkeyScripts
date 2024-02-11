@@ -62,7 +62,7 @@ function execute_profilePage() {
   }
   
   // disable the original comment container
-  originalCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+  originalCommentContainer = document.getElementsByClassName('profilContentInner')[1];
   if (!originalCommentContainer) {
     const msg = t('DOM-Element nicht gefunden. Nicht eingeloggt? Falls doch, hat sich der DOM verändert.');
     messagebox('error', msg);
@@ -256,7 +256,7 @@ function execute_profilePage() {
     }
   });
 
-  // only enable the button for deleting users from block list if an entry is selected
+  // mount handler which only enables the "delete user from block list" button while an user is selected in the list
   document.getElementById('ignoredUsers').addEventListener('change', function() {
     const deleteButton = document.getElementById('deleteIgnoreUser');
     this.selectedIndex === -1 && deleteButton
@@ -334,17 +334,16 @@ function doUpdateDateFilter(fromInput, toInput) {
 
 
 /**
- * Generates the data object for storing existing comments
- * by parsing the container holding which contains all the
- * comments.
+ * This will search and parse all comments and generate a data
+ * object from it.
  *
  * @return {Object[]}  - Comment data collection
  */
 function generateCommentObject() {
   // get raw data
-  let RawData = document.getElementsByClassName('profilContentInner')[0];
-  if (!RawData) return [];
-  let commentBlocksRaw = RawData.getElementsByClassName('commentItem');
+  let rawData = document.getElementsByClassName('profilContentInner')[1];
+  if (!rawData) return [];
+  let commentBlocksRaw = rawData.getElementsByClassName('commentItem');
 
   // generate data array for each raw comment
   let commentDataCollection = [];
@@ -782,6 +781,12 @@ function convertGermanDate(string) {
 
 
 
+/**
+ * Creates the HTML structure of the pagination container for the
+ * current state of the page.
+ * 
+ * @return {string}
+ */
 function buildPaginationUi() {
   // use local copy to adjust the value after filter were applied
   let _totalComments = totalComments - filteredCommentsCount;
@@ -1486,9 +1491,13 @@ function updatePaginationUI() {
   if (typeof paginationControlContainer !== typeof undefined && paginationControlContainer instanceof HTMLElement) paginationControlContainer.remove();
   if (typeof paginationControlContainerBottom !== typeof undefined && paginationControlContainerBottom instanceof HTMLElement) paginationControlContainerBottom.remove();
   
+  // TODO: Aktuell wird mit ...[3] die Überschrift "---- Deine Kommentare ----" als Ref zum einfügen genutzt.
+  //       mal testen, ob man nicht einfach direkt den customCommentContainer nutzen kann. Eig sollte der hier
+  //       schon in jeder Situation verfügbar sein, aber lieber mal durchtesten...
+  
   paginationContainer = addToDOM(
     buildPaginationUi().parseHTML(),
-    document.getElementsByClassName('rowHeadlineHolder')[1],
+    document.getElementsByClassName('rowHeadlineHolder')[3],
     InsertionService.After,
     true,
     'paginationContainer'
@@ -1559,12 +1568,12 @@ function updateComments() {
     // on very first build
     customCommentContainer = document.getElementById('customCommentContainer');
     if (!customCommentContainer) {
-      customCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+      customCommentContainer = document.getElementsByClassName('profilContentInner')[1];
       customCommentContainer.id = 'customCommentContainer';
     }
   }
   insertPaginatedComments();
-  customCommentContainer = document.getElementsByClassName('profilContentInner')[0];
+  customCommentContainer = document.getElementsByClassName('profilContentInner')[1];
   // if no comments to display, display message instead
   if (totalComments === 0) {
     const msg = `<div class="msgNoResults">${t('Noch keine Kommentare...')}</div>`.parseHTML();
